@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -6,10 +6,16 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
-
+from datetime import datetime, timezone, timedelta
+import mercadopago
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+from openpyxl import Workbook
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from fastapi.responses import StreamingResponse
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -19,55 +25,1205 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
-app = FastAPI()
+# Mercado Pago SDK
+sdk = mercadopago.SDK(os.environ.get('MERCADO_PAGO_ACCESS_TOKEN'))
 
-# Create a router with the /api prefix
+# Create the main app
+app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
+# ========== MODELS ==========
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
-    
+class UserRegister(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    name: str
+    email: str
+    password: str
+    role: str = "user"  # user ou admin
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+class CompanyCreate(BaseModel):
+    user_id: str
+    name: str
+    segment: str
 
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
+class Company(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    name: str
+    segment: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
+class Subscription(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    status: str  # trial, active, expired, cancelled
+    trial_start: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    trial_end: datetime
+    subscription_start: Optional[datetime] = None
+    payment_id: Optional[str] = None
+    next_billing_date: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class TransactionCreate(BaseModel):
+    company_id: str
+    user_id: str
+    type: str  # receita, custo, despesa
+    description: str
+    amount: float
+    category: str
+    date: str
+    status: str = "previsto"  # previsto, realizado
+    notes: Optional[str] = None
+
+class Transaction(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    user_id: str
+    type: str
+    description: str
+    amount: float
+    category: str
+    date: str
+    status: str = "previsto"
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class MonthlyGoalCreate(BaseModel):
+    company_id: str
+    month: str  # formato: 2025-12
+    goal_amount: float
+
+class MonthlyGoal(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    month: str
+    goal_amount: float
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# ========== STARTUP: CRIAR PRIMEIRO ADMIN ==========
+
+@app.on_event("startup")
+async def create_first_admin():
+    """Criar primeiro admin automaticamente se não existir"""
+    admin_email = "admin@lucroliquido.com"
+    existing_admin = await db.users.find_one({"email": admin_email})
     
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
+    if not existing_admin:
+        admin = User(
+            name="Administrador",
+            email=admin_email,
+            password="admin123",
+            role="admin"
+        )
+        doc = admin.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        await db.users.insert_one(doc)
+        logger.info("✅ Primeiro admin criado com sucesso!")
+    else:
+        logger.info("✅ Admin já existe no sistema")
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
+# ========== ROTAS DE AUTENTICAÇÃO ==========
 
-# Include the router in the main app
+@api_router.post("/auth/register")
+async def register(user_data: UserRegister):
+    # Verificar se email já existe
+    existing = await db.users.find_one({"email": user_data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email já cadastrado")
+    
+    # Criar usuário
+    user = User(
+        name=user_data.name,
+        email=user_data.email,
+        password=user_data.password,
+        role="user"
+    )
+    
+    doc = user.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.users.insert_one(doc)
+    
+    # Criar trial de 7 dias automaticamente
+    trial_start = datetime.now(timezone.utc)
+    trial_end = trial_start + timedelta(days=7)
+    
+    subscription = Subscription(
+        user_id=user.id,
+        status="trial",
+        trial_start=trial_start,
+        trial_end=trial_end
+    )
+    
+    sub_doc = subscription.model_dump()
+    sub_doc['trial_start'] = sub_doc['trial_start'].isoformat()
+    sub_doc['trial_end'] = sub_doc['trial_end'].isoformat()
+    sub_doc['created_at'] = sub_doc['created_at'].isoformat()
+    await db.subscriptions.insert_one(sub_doc)
+    
+    return {
+        "message": "Usuário registrado com sucesso!",
+        "user_id": user.id,
+        "name": user.name,
+        "role": user.role,
+        "trial_days": 7
+    }
+
+@api_router.post("/auth/login")
+async def login(credentials: UserLogin):
+    user = await db.users.find_one({"email": credentials.email})
+    
+    if not user or user['password'] != credentials.password:
+        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    
+    return {
+        "user_id": user['id'],
+        "name": user['name'],
+        "email": user['email'],
+        "role": user['role']
+    }
+
+# ========== ROTAS DE EMPRESAS ==========
+
+@api_router.post("/companies")
+async def create_company(company_data: CompanyCreate):
+    company = Company(
+        user_id=company_data.user_id,
+        name=company_data.name,
+        segment=company_data.segment
+    )
+    
+    doc = company.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.companies.insert_one(doc)
+    
+    return {"message": "Empresa criada com sucesso!", "company_id": company.id}
+
+@api_router.get("/companies/{user_id}")
+async def get_companies(user_id: str):
+    # Adicionar projeção para buscar apenas campos necessários e limitar a 50
+    companies = await db.companies.find(
+        {"user_id": user_id}, 
+        {"_id": 0, "id": 1, "name": 1, "segment": 1, "created_at": 1}
+    ).to_list(50)
+    return companies
+
+# ========== ROTAS DE LANÇAMENTOS ==========
+
+@api_router.post("/transactions")
+async def create_transaction(transaction_data: TransactionCreate):
+    transaction = Transaction(**transaction_data.model_dump())
+    
+    doc = transaction.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.transactions.insert_one(doc)
+    
+    return {"message": "Lançamento criado com sucesso!", "transaction_id": transaction.id}
+
+@api_router.get("/transactions/{company_id}")
+async def get_transactions(company_id: str, month: Optional[str] = None):
+    query = {"company_id": company_id}
+    
+    if month:
+        query["date"] = {"$regex": f"^{month}"}
+    
+    # Limitar a 500 transações e ordenar por data decrescente
+    transactions = await db.transactions.find(
+        query, 
+        {"_id": 0}
+    ).sort("date", -1).limit(500).to_list(None)
+    return transactions
+
+@api_router.put("/transactions/{transaction_id}")
+async def update_transaction(transaction_id: str, transaction_data: TransactionCreate):
+    update_doc = transaction_data.model_dump()
+    
+    result = await db.transactions.update_one(
+        {"id": transaction_id},
+        {"$set": update_doc}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+    
+    return {"message": "Lançamento atualizado com sucesso!"}
+
+@api_router.delete("/transactions/{transaction_id}")
+async def delete_transaction(transaction_id: str):
+    result = await db.transactions.delete_one({"id": transaction_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+    
+    return {"message": "Lançamento excluído com sucesso!"}
+
+# ========== ROTAS DE MÉTRICAS ==========
+
+@api_router.get("/metrics/{company_id}/{month}")
+async def get_metrics(company_id: str, month: str):
+    # Usar aggregation para calcular no banco ao invés de em Python
+    pipeline = [
+        {"$match": {
+            "company_id": company_id,
+            "date": {"$regex": f"^{month}"},
+            "status": "realizado"
+        }},
+        {"$group": {
+            "_id": "$type",
+            "total": {"$sum": "$amount"}
+        }}
+    ]
+    
+    results = await db.transactions.aggregate(pipeline).to_list(None)
+    
+    metrics = {"faturamento": 0, "custos": 0, "despesas": 0, "lucro_liquido": 0}
+    
+    for result in results:
+        if result['_id'] == 'receita':
+            metrics['faturamento'] = result['total']
+        elif result['_id'] == 'custo':
+            metrics['custos'] = result['total']
+        elif result['_id'] == 'despesa':
+            metrics['despesas'] = result['total']
+    
+    metrics['lucro_liquido'] = metrics['faturamento'] - metrics['custos'] - metrics['despesas']
+    
+    return metrics
+
+# ========== ROTAS DE META MENSAL ==========
+
+@api_router.post("/monthly-goal")
+async def create_monthly_goal(goal_data: MonthlyGoalCreate):
+    # Verificar se já existe meta para o mês
+    existing = await db.monthly_goals.find_one({
+        "company_id": goal_data.company_id,
+        "month": goal_data.month
+    })
+    
+    if existing:
+        # Atualizar
+        await db.monthly_goals.update_one(
+            {"id": existing['id']},
+            {"$set": {"goal_amount": goal_data.goal_amount}}
+        )
+        return {"message": "Meta atualizada com sucesso!"}
+    
+    # Criar nova
+    goal = MonthlyGoal(**goal_data.model_dump())
+    doc = goal.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.monthly_goals.insert_one(doc)
+    
+    return {"message": "Meta criada com sucesso!", "goal_id": goal.id}
+
+@api_router.get("/monthly-goal/{company_id}/{month}")
+async def get_monthly_goal(company_id: str, month: str):
+    goal = await db.monthly_goals.find_one({
+        "company_id": company_id,
+        "month": month
+    }, {"_id": 0})
+    
+    if not goal:
+        return {"goal_amount": 0}
+    
+    return goal
+
+# ========== ROTAS DE CATEGORIAS ==========
+
+@api_router.get("/categories")
+async def get_categories():
+    return {
+        "receitas": [
+            "Vendas de Produtos",
+            "Prestação de Serviços",
+            "Outras Receitas"
+        ],
+        "custos": [
+            "Matéria-Prima",
+            "Embalagens",
+            "Frete de Compras",
+            "Impostos sobre Vendas",
+            "Comissões"
+        ],
+        "despesas": [
+            "Salários e Encargos",
+            "Aluguel",
+            "Energia Elétrica",
+            "Água",
+            "Telefone/Internet",
+            "Marketing e Publicidade",
+            "Contador",
+            "Manutenção",
+            "Material de Escritório",
+            "Limpeza",
+            "Segurança",
+            "Seguros",
+            "Taxas Bancárias",
+            "Depreciação",
+            "Outras Despesas"
+        ]
+    }
+
+# ========== ANÁLISE IA (CHATGPT) ==========
+
+@api_router.post("/ai-analysis")
+async def ai_analysis(data: dict):
+    try:
+        company_id = data['company_id']
+        month = data['month']
+        
+        # Usar aggregation para calcular métricas
+        pipeline = [
+            {"$match": {
+                "company_id": company_id,
+                "date": {"$regex": f"^{month}"},
+                "status": "realizado"
+            }},
+            {"$group": {
+                "_id": "$type",
+                "total": {"$sum": "$amount"}
+            }}
+        ]
+        
+        results = await db.transactions.aggregate(pipeline).to_list(None)
+        
+        faturamento = 0
+        custos = 0
+        despesas = 0
+        
+        for result in results:
+            if result['_id'] == 'receita':
+                faturamento = result['total']
+            elif result['_id'] == 'custo':
+                custos = result['total']
+            elif result['_id'] == 'despesa':
+                despesas = result['total']
+        
+        lucro = faturamento - custos - despesas
+        
+        # Prompt para ChatGPT
+        prompt = f"""
+        Analise os seguintes dados financeiros de uma empresa no mês {month}:
+        
+        - Faturamento Total: R$ {faturamento:,.2f}
+        - Custos Totais: R$ {custos:,.2f}
+        - Despesas Totais: R$ {despesas:,.2f}
+        - Lucro Líquido: R$ {lucro:,.2f}
+        
+        Por favor, forneça:
+        1. Pontos de atenção nos números apresentados
+        2. Oportunidades de economia
+        3. Sugestões para melhorar a gestão financeira
+        4. Insights sobre o negócio
+        
+        Seja objetivo e prático nas recomendações.
+        """
+        
+        # Usar Emergent LLM Chat
+        chat = LlmChat(
+            api_key=os.environ.get('OPENAI_API_KEY'),
+            session_id=f"analysis-{company_id}-{month}",
+            system_message="Você é um especialista em análise financeira empresarial."
+        ).with_model("openai", "gpt-4o-mini")
+        
+        user_message = UserMessage(text=prompt)
+        analysis = await chat.send_message(user_message)
+        
+        return {"analysis": analysis}
+    
+    except Exception as e:
+        logger.error(f"Erro na análise IA: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao analisar: {str(e)}")
+
+# ========== EXPLICAÇÃO DE TERMOS FINANCEIROS ==========
+
+@api_router.post("/financial-term-explanation")
+async def explain_financial_term(data: dict):
+    """Explicar termo financeiro usando IA"""
+    try:
+        term = data['term']
+        business_sector = data.get('business_sector', None)
+        
+        if not business_sector:
+            # Explicação geral do termo
+            prompt = f"""
+            Explique de forma clara, objetiva e didática o conceito financeiro: "{term}"
+            
+            Sua explicação deve:
+            - Ser acessível para empresários sem formação financeira
+            - Incluir exemplos práticos
+            - Ter no máximo 4 parágrafos
+            - Usar linguagem simples e direta
+            
+            Não use jargões técnicos desnecessários.
+            """
+        else:
+            # Explicação personalizada para o setor
+            prompt = f"""
+            Explique como o conceito financeiro "{term}" se aplica especificamente ao setor de {business_sector}.
+            
+            Sua explicação deve:
+            - Conectar o conceito com a realidade desse setor
+            - Dar exemplos práticos do dia a dia desse negócio
+            - Explicar a importância desse conceito para esse tipo de empresa
+            - Ser em no máximo 4 parágrafos
+            - Usar linguagem acessível
+            
+            Seja específico e prático, ajudando o empresário a entender como aplicar isso no seu negócio.
+            """
+        
+        # Usar Emergent LLM Chat
+        chat = LlmChat(
+            api_key=os.environ.get('OPENAI_API_KEY'),
+            session_id=f"term-explanation-{term}",
+            system_message="Você é um consultor financeiro especializado em educação empresarial. Seu objetivo é explicar conceitos financeiros de forma clara e aplicada à realidade das empresas."
+        ).with_model("openai", "gpt-4o-mini")
+        
+        user_message = UserMessage(text=prompt)
+        explanation = await chat.send_message(user_message)
+        
+        return {"explanation": explanation, "term": term}
+    
+    except Exception as e:
+        logger.error(f"Erro ao explicar termo: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao explicar: {str(e)}")
+
+# ========== ANÁLISE INTELIGENTE COM IA ==========
+
+@api_router.post("/business-health-score")
+async def calculate_business_health_score(data: dict):
+    """Calcular Score de Saúde do Negócio (0-100)"""
+    try:
+        company_id = data['company_id']
+        month = data.get('month', datetime.now(timezone.utc).strftime('%Y-%m'))
+        
+        # Usar aggregation para calcular métricas
+        pipeline = [
+            {"$match": {
+                "company_id": company_id,
+                "date": {"$regex": f"^{month}"},
+                "status": "realizado"
+            }},
+            {"$group": {
+                "_id": "$type",
+                "total": {"$sum": "$amount"}
+            }}
+        ]
+        
+        results = await db.transactions.aggregate(pipeline).to_list(None)
+        
+        faturamento = 0
+        custos = 0
+        despesas = 0
+        
+        for result in results:
+            if result['_id'] == 'receita':
+                faturamento = result['total']
+            elif result['_id'] == 'custo':
+                custos = result['total']
+            elif result['_id'] == 'despesa':
+                despesas = result['total']
+        
+        lucro = faturamento - custos - despesas
+        
+        # Calcular métricas para o score
+        margem_liquida = (lucro / faturamento * 100) if faturamento > 0 else 0
+        taxa_custos = (custos / faturamento * 100) if faturamento > 0 else 0
+        taxa_despesas = (despesas / faturamento * 100) if faturamento > 0 else 0
+        
+        # Buscar meta (apenas campos necessários)
+        goal = await db.monthly_goals.find_one({
+            "company_id": company_id,
+            "month": month
+        }, {"_id": 0, "goal_amount": 1})
+        
+        atingimento_meta = 0
+        if goal and goal.get('goal_amount', 0) > 0:
+            atingimento_meta = min((lucro / goal['goal_amount']) * 100, 100)
+        
+        # Prompt para IA calcular score e interpretar
+        prompt = f"""
+        Analise a saúde financeira desta empresa com base nos dados do mês {month}:
+        
+        - Faturamento: R$ {faturamento:,.2f}
+        - Custos: R$ {custos:,.2f} ({taxa_custos:.1f}% do faturamento)
+        - Despesas: R$ {despesas:,.2f} ({taxa_despesas:.1f}% do faturamento)
+        - Lucro Líquido: R$ {lucro:,.2f}
+        - Margem Líquida: {margem_liquida:.1f}%
+        - Atingimento de Meta: {atingimento_meta:.1f}%
+        
+        Com base nisso:
+        
+        1. Calcule um SCORE DE SAÚDE de 0 a 100 considerando:
+           - Lucratividade (peso 30%)
+           - Margem líquida (peso 25%)
+           - Controle de custos (peso 20%)
+           - Controle de despesas (peso 15%)
+           - Atingimento de meta (peso 10%)
+        
+        2. Classifique como: Excelente (85-100), Bom (70-84), Atenção (50-69), Crítico (0-49)
+        
+        3. Liste os 3 PRINCIPAIS PROBLEMAS detectados
+        
+        4. Dê 3 AÇÕES RECOMENDADAS práticas e objetivas
+        
+        Formato da resposta:
+        SCORE: [número]
+        CLASSIFICAÇÃO: [classificação]
+        
+        PROBLEMAS:
+        1. [problema]
+        2. [problema]
+        3. [problema]
+        
+        AÇÕES:
+        1. [ação]
+        2. [ação]
+        3. [ação]
+        
+        Seja objetivo e prático.
+        """
+        
+        chat = LlmChat(
+            api_key=os.environ.get('OPENAI_API_KEY'),
+            session_id=f"health-score-{company_id}-{month}",
+            system_message="Você é um consultor financeiro especializado em análise de saúde empresarial."
+        ).with_model("openai", "gpt-4o-mini")
+        
+        user_message = UserMessage(text=prompt)
+        analysis = await chat.send_message(user_message)
+        
+        return {
+            "score_analysis": analysis,
+            "raw_data": {
+                "faturamento": faturamento,
+                "custos": custos,
+                "despesas": despesas,
+                "lucro": lucro,
+                "margem_liquida": margem_liquida,
+                "atingimento_meta": atingimento_meta
+            }
+        }
+    
+    except Exception as e:
+        logger.error(f"Erro ao calcular score: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
+
+@api_router.post("/intelligent-alerts")
+async def generate_intelligent_alerts(data: dict):
+    """Gerar Alertas Inteligentes sobre anomalias"""
+    try:
+        company_id = data['company_id']
+        month = data.get('month', datetime.now(timezone.utc).strftime('%Y-%m'))
+        
+        # Calcular mês anterior
+        date_obj = datetime.strptime(month, '%Y-%m')
+        previous_month = (date_obj.replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
+        
+        # Buscar dados de ambos os meses em uma query com aggregation
+        pipeline = [
+            {"$match": {
+                "company_id": company_id,
+                "date": {"$regex": f"^({month}|{previous_month})"},
+                "status": "realizado"
+            }},
+            {"$project": {
+                "month": {"$substr": ["$date", 0, 7]},
+                "type": 1,
+                "amount": 1
+            }},
+            {"$group": {
+                "_id": {
+                    "month": "$month",
+                    "type": "$type"
+                },
+                "total": {"$sum": "$amount"}
+            }}
+        ]
+        
+        results = await db.transactions.aggregate(pipeline).to_list(None)
+        
+        # Processar resultados da aggregation
+        current_metrics = {"receita": 0, "custo": 0, "despesa": 0}
+        previous_metrics = {"receita": 0, "custo": 0, "despesa": 0}
+        
+        for result in results:
+            month_type = result['_id']['month']
+            transaction_type = result['_id']['type']
+            total = result['total']
+            
+            if month_type == month:
+                current_metrics[transaction_type] = total
+            elif month_type == previous_month:
+                previous_metrics[transaction_type] = total
+        
+        # Métricas atuais
+        faturamento_atual = current_metrics['receita']
+        custos_atual = current_metrics['custo']
+        despesas_atual = current_metrics['despesa']
+        lucro_atual = faturamento_atual - custos_atual - despesas_atual
+        
+        # Métricas anteriores
+        faturamento_anterior = previous_metrics['receita']
+        custos_anterior = previous_metrics['custo']
+        despesas_anterior = previous_metrics['despesa']
+        lucro_anterior = faturamento_anterior - custos_anterior - despesas_anterior
+        
+        # Buscar top 5 categorias de custos/despesas do mês atual
+        category_pipeline = [
+            {"$match": {
+                "company_id": company_id,
+                "date": {"$regex": f"^{month}"},
+                "status": "realizado",
+                "type": {"$in": ["custo", "despesa"]}
+            }},
+            {"$group": {
+                "_id": "$category",
+                "total": {"$sum": "$amount"}
+            }},
+            {"$sort": {"total": -1}},
+            {"$limit": 5}
+        ]
+        
+        top_expenses_result = await db.transactions.aggregate(category_pipeline).to_list(None)
+        top_expenses = [(r['_id'], r['total']) for r in top_expenses_result]
+        
+        # Prompt para IA detectar alertas
+        prompt = f"""
+        Você é um sistema de detecção de anomalias financeiras.
+        
+        Analise os dados e gere ALERTAS INTELIGENTES para o empresário:
+        
+        MÊS ATUAL ({month}):
+        - Faturamento: R$ {faturamento_atual:,.2f}
+        - Custos: R$ {custos_atual:,.2f}
+        - Despesas: R$ {despesas_atual:,.2f}
+        - Lucro: R$ {lucro_atual:,.2f}
+        
+        MÊS ANTERIOR ({previous_month}):
+        - Faturamento: R$ {faturamento_anterior:,.2f}
+        - Custos: R$ {custos_anterior:,.2f}
+        - Despesas: R$ {despesas_anterior:,.2f}
+        - Lucro: R$ {lucro_anterior:,.2f}
+        
+        TOP 5 MAIORES GASTOS ATUAIS:
+        {chr(10).join([f"- {cat}: R$ {val:,.2f}" for cat, val in top_expenses])}
+        
+        Detecte e gere até 5 ALERTAS se houver:
+        
+        1. Despesas muito acima da média
+        2. Aumento significativo de custos
+        3. Queda de faturamento
+        4. Queda de lucro
+        5. Margem perigosa
+        6. Dependência excessiva de categorias
+        
+        Para cada alerta, forneça:
+        - TÍTULO curto
+        - TIPO: crítico, atenção ou info
+        - MOTIVO claro
+        - IMPACTO no negócio
+        - AÇÃO RECOMENDADA imediata
+        
+        Formato:
+        ALERTA 1:
+        Título: [título]
+        Tipo: [tipo]
+        Motivo: [motivo]
+        Impacto: [impacto]
+        Ação: [ação]
+        
+        Se não houver alertas críticos, diga "SEM ALERTAS CRÍTICOS" e dê 2 dicas preventivas.
+        
+        Seja direto e prático.
+        """
+        
+        chat = LlmChat(
+            api_key=os.environ.get('OPENAI_API_KEY'),
+            session_id=f"alerts-{company_id}-{month}",
+            system_message="Você é um sistema de alerta financeiro inteligente."
+        ).with_model("openai", "gpt-4o-mini")
+        
+        user_message = UserMessage(text=prompt)
+        alerts_analysis = await chat.send_message(user_message)
+        
+        return {"alerts": alerts_analysis}
+    
+    except Exception as e:
+        logger.error(f"Erro ao gerar alertas: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
+
+@api_router.post("/complete-business-analysis")
+async def generate_complete_analysis(data: dict):
+    """Gerar Análise Completa do Negócio com IA"""
+    try:
+        company_id = data['company_id']
+        month = data.get('month', datetime.now(timezone.utc).strftime('%Y-%m'))
+        business_sector = data.get('business_sector', 'não informado')
+        
+        # Buscar todos os dados necessários
+        transactions = await db.transactions.find({
+            "company_id": company_id,
+            "date": {"$regex": f"^{month}"},
+            "status": "realizado"
+        }, {"_id": 0}).to_list(1000)
+        
+        company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+        
+        # Calcular métricas
+        faturamento = sum([t['amount'] for t in transactions if t['type'] == 'receita'])
+        custos = sum([t['amount'] for t in transactions if t['type'] == 'custo'])
+        despesas = sum([t['amount'] for t in transactions if t['type'] == 'despesa'])
+        lucro = faturamento - custos - despesas
+        
+        margem_liquida = (lucro / faturamento * 100) if faturamento > 0 else 0
+        margem_bruta = ((faturamento - custos) / faturamento * 100) if faturamento > 0 else 0
+        
+        # Análise por categoria
+        category_analysis = {}
+        for t in transactions:
+            cat = t['category']
+            if cat not in category_analysis:
+                category_analysis[cat] = {'receita': 0, 'custo': 0, 'despesa': 0}
+            category_analysis[cat][t['type']] += t['amount']
+        
+        # Buscar últimos 6 meses para tendência (query única otimizada)
+        months_list = []
+        for i in range(6):
+            m = (datetime.strptime(month, '%Y-%m').replace(day=1) - timedelta(days=30*i)).strftime('%Y-%m')
+            months_list.append(m)
+        
+        # Usar aggregation para calcular métricas de todos os meses em uma query
+        pipeline = [
+            {"$match": {
+                "company_id": company_id,
+                "status": "realizado",
+                "date": {"$regex": f"^({'|'.join(months_list)})"}
+            }},
+            {"$project": {
+                "month": {"$substr": ["$date", 0, 7]},
+                "type": 1,
+                "amount": 1
+            }},
+            {"$group": {
+                "_id": {
+                    "month": "$month",
+                    "type": "$type"
+                },
+                "total": {"$sum": "$amount"}
+            }},
+            {"$group": {
+                "_id": "$_id.month",
+                "data": {
+                    "$push": {
+                        "type": "$_id.type",
+                        "amount": "$total"
+                    }
+                }
+            }},
+            {"$sort": {"_id": -1}}
+        ]
+        
+        months_agg = await db.transactions.aggregate(pipeline).to_list(None)
+        
+        # Processar resultados
+        all_months_data = []
+        for month_data in months_agg:
+            m = month_data['_id']
+            faturamento = sum([d['amount'] for d in month_data['data'] if d['type'] == 'receita'])
+            custos_despesas = sum([d['amount'] for d in month_data['data'] if d['type'] in ['custo', 'despesa']])
+            lucro = faturamento - custos_despesas
+            all_months_data.append({"month": m, "faturamento": faturamento, "lucro": lucro})
+        
+        # Prompt completo para análise detalhada
+        prompt = f"""
+        Você é um CONSULTOR FINANCEIRO SÊNIOR analisando a empresa {company.get('name', 'Cliente')} do setor {business_sector}.
+        
+        Gere uma ANÁLISE FINANCEIRA COMPLETA E PROFUNDA baseada nos dados:
+        
+        📊 MÉTRICAS DO MÊS {month}:
+        - Faturamento: R$ {faturamento:,.2f}
+        - Custos: R$ {custos:,.2f}
+        - Despesas: R$ {despesas:,.2f}
+        - Lucro Líquido: R$ {lucro:,.2f}
+        - Margem Bruta: {margem_bruta:.1f}%
+        - Margem Líquida: {margem_liquida:.1f}%
+        
+        📈 TENDÊNCIA (6 MESES):
+        {chr(10).join([f"- {m['month']}: Fat R$ {m['faturamento']:,.2f} | Lucro R$ {m['lucro']:,.2f}" for m in all_months_data])}
+        
+        Sua análise DEVE incluir:
+        
+        ## 1. DIAGNÓSTICO GERAL
+        - Visão geral da saúde financeira
+        - Pontos fortes
+        - Pontos fracos
+        
+        ## 2. ANÁLISE DE MARGENS
+        - Interpretação das margens
+        - Comparação com setor {business_sector}
+        - Se está saudável ou perigoso
+        
+        ## 3. GARGALOS IDENTIFICADOS
+        - Principais problemas
+        - Impacto no lucro
+        - Risco para o negócio
+        
+        ## 4. TENDÊNCIAS
+        - Crescimento ou queda
+        - Sazonalidade detectada
+        - Padrões importantes
+        
+        ## 5. PREVISÃO (30/60/90 DIAS)
+        - Projeção de faturamento
+        - Projeção de lucro
+        - Probabilidade de atingir meta
+        
+        ## 6. RECOMENDAÇÕES ESTRATÉGICAS
+        - 5 ações prioritárias
+        - Ordem de importância
+        - Impacto esperado
+        
+        ## 7. OPORTUNIDADES
+        - Onde pode melhorar
+        - Como aumentar lucro
+        - Otimizações possíveis
+        
+        Seja PROFUNDO, ESPECÍFICO para o setor {business_sector} e PRÁTICO.
+        Use linguagem clara mas profissional.
+        """
+        
+        chat = LlmChat(
+            api_key=os.environ.get('OPENAI_API_KEY'),
+            session_id=f"complete-analysis-{company_id}-{month}",
+            system_message="Você é um consultor financeiro sênior com 20 anos de experiência. Suas análises são profundas, práticas e adaptadas ao setor do cliente."
+        ).with_model("openai", "gpt-4o-mini")
+        
+        user_message = UserMessage(text=prompt)
+        complete_analysis = await chat.send_message(user_message)
+        
+        return {
+            "analysis": complete_analysis,
+            "metrics": {
+                "faturamento": faturamento,
+                "custos": custos,
+                "despesas": despesas,
+                "lucro": lucro,
+                "margem_liquida": margem_liquida,
+                "margem_bruta": margem_bruta
+            }
+        }
+    
+    except Exception as e:
+        logger.error(f"Erro na análise completa: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
+
+# ========== ASSINATURA E PAGAMENTO ==========
+
+@api_router.get("/subscription/status/{user_id}")
+async def get_subscription_status(user_id: str):
+    subscription = await db.subscriptions.find_one({"user_id": user_id}, {"_id": 0})
+    
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Assinatura não encontrada")
+    
+    # Calcular dias restantes do trial
+    if subscription['status'] == 'trial':
+        trial_end = datetime.fromisoformat(subscription['trial_end'])
+        now = datetime.now(timezone.utc)
+        days_remaining = (trial_end - now).days
+        subscription['days_remaining'] = max(0, days_remaining)
+    
+    return subscription
+
+@api_router.post("/subscription/create-payment")
+async def create_payment(data: dict):
+    try:
+        # user_id será usado no futuro para tracking
+        # user_id = data['user_id']
+        
+        # Criar preferência de pagamento PIX
+        payment_data = {
+            "transaction_amount": 49.90,
+            "description": "Assinatura Mensal - Lucro Líquido",
+            "payment_method_id": "pix",
+            "payer": {
+                "email": data.get('email', 'usuario@email.com')
+            }
+        }
+        
+        payment_response = sdk.payment().create(payment_data)
+        payment = payment_response["response"]
+        
+        # Extrair QR Code
+        qr_code = payment.get('point_of_interaction', {}).get('transaction_data', {}).get('qr_code', '')
+        qr_code_base64 = payment.get('point_of_interaction', {}).get('transaction_data', {}).get('qr_code_base64', '')
+        
+        return {
+            "payment_id": payment['id'],
+            "qr_code": qr_code,
+            "qr_code_base64": qr_code_base64,
+            "amount": 49.90
+        }
+    
+    except Exception as e:
+        logger.error(f"Erro ao criar pagamento: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao criar pagamento: {str(e)}")
+
+@api_router.post("/subscription/webhook")
+async def webhook(data: dict):
+    """Webhook para receber notificações do Mercado Pago"""
+    try:
+        if data.get('type') == 'payment':
+            payment_id = data['data']['id']
+            
+            # Buscar informações do pagamento
+            payment_info = sdk.payment().get(payment_id)
+            payment = payment_info['response']
+            
+            if payment['status'] == 'approved':
+                # Atualizar assinatura para ativa
+                # Aqui você precisaria identificar o usuário pelo payment_id
+                logger.info(f"Pagamento aprovado: {payment_id}")
+        
+        return {"status": "ok"}
+    
+    except Exception as e:
+        logger.error(f"Erro no webhook: {str(e)}")
+        return {"status": "error"}
+
+# ========== ADMIN: VERIFICAR ROLE ==========
+
+async def verify_admin(user_id: str):
+    """Verificar se usuário é admin"""
+    user = await db.users.find_one({"id": user_id})
+    
+    if not user or user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+    
+    return True
+
+# ========== ADMIN: ESTATÍSTICAS ==========
+
+@api_router.get("/admin/stats")
+async def admin_stats(user_id: str):
+    await verify_admin(user_id)
+    
+    # Total de usuários
+    total_users = await db.users.count_documents({})
+    
+    # Assinaturas ativas
+    active_subs = await db.subscriptions.count_documents({"status": "active"})
+    
+    # MRR (Receita Mensal Recorrente)
+    mrr = active_subs * 49.90
+    
+    # ARR (Receita Anual)
+    arr = mrr * 12
+    
+    # Taxa de conversão (trial -> active)
+    # total_trials pode ser usado no futuro para cálculos mais detalhados
+    # total_trials = await db.subscriptions.count_documents({"status": "trial"})
+    conversion_rate = (active_subs / max(total_users - 1, 1)) * 100  # -1 para excluir admin
+    
+    # Total de empresas
+    total_companies = await db.companies.count_documents({})
+    
+    return {
+        "total_users": total_users,
+        "active_subscriptions": active_subs,
+        "mrr": mrr,
+        "arr": arr,
+        "conversion_rate": round(conversion_rate, 2),
+        "total_companies": total_companies
+    }
+
+@api_router.get("/admin/users")
+async def admin_users(user_id: str):
+    await verify_admin(user_id)
+    
+    # Usar aggregation pipeline para evitar N+1 queries
+    pipeline = [
+        {"$match": {"role": "user"}},
+        {"$project": {"_id": 0, "password": 0}},
+        {"$lookup": {
+            "from": "subscriptions",
+            "localField": "id",
+            "foreignField": "user_id",
+            "as": "subscription"
+        }},
+        {"$lookup": {
+            "from": "companies",
+            "localField": "id",
+            "foreignField": "user_id",
+            "as": "companies"
+        }},
+        {"$addFields": {
+            "subscription_status": {
+                "$ifNull": [
+                    {"$arrayElemAt": ["$subscription.status", 0]},
+                    "none"
+                ]
+            },
+            "companies_count": {"$size": "$companies"}
+        }},
+        {"$project": {"subscription": 0, "companies": 0}},
+        {"$limit": 100}
+    ]
+    
+    users = await db.users.aggregate(pipeline).to_list(None)
+    return users
+
+@api_router.get("/admin/subscriptions")
+async def admin_subscriptions(user_id: str, status: Optional[str] = None):
+    await verify_admin(user_id)
+    
+    # Usar aggregation pipeline para evitar N+1 queries
+    match_stage = {"$match": {}}
+    if status:
+        match_stage["$match"]["status"] = status
+    
+    pipeline = [
+        match_stage,
+        {"$project": {"_id": 0}},
+        {"$lookup": {
+            "from": "users",
+            "localField": "user_id",
+            "foreignField": "id",
+            "as": "user"
+        }},
+        {"$addFields": {
+            "user_name": {
+                "$ifNull": [
+                    {"$arrayElemAt": ["$user.name", 0]},
+                    "Desconhecido"
+                ]
+            },
+            "user_email": {
+                "$ifNull": [
+                    {"$arrayElemAt": ["$user.email", 0]},
+                    "Desconhecido"
+                ]
+            }
+        }},
+        {"$project": {"user": 0}},
+        {"$limit": 100}
+    ]
+    
+    subscriptions = await db.subscriptions.aggregate(pipeline).to_list(None)
+    return subscriptions
+
+@api_router.get("/admin/revenue-chart")
+async def admin_revenue_chart(admin_user_id: str):
+    await verify_admin(admin_user_id)
+    
+    # Gerar dados de receita mensal (últimos 12 meses)
+    # Para MVP, vamos simular com dados baseados nas assinaturas atuais
+    active_count = await db.subscriptions.count_documents({"status": "active"})
+    
+    months = []
+    now = datetime.now(timezone.utc)
+    
+    for i in range(11, -1, -1):
+        month_date = now - timedelta(days=i*30)
+        month_label = month_date.strftime("%b/%y")
+        
+        # Simular crescimento gradual
+        revenue = (active_count * 49.90) * ((12 - i) / 12)
+        
+        months.append({
+            "month": month_label,
+            "revenue": round(revenue, 2)
+        })
+    
+    return months
+
+@api_router.post("/admin/user/{target_id}/toggle-status")
+async def admin_toggle_user_status(target_id: str, admin_user_id: str):
+    await verify_admin(admin_user_id)
+    
+    # Buscar assinatura do usuário
+    subscription = await db.subscriptions.find_one({"user_id": target_id})
+    
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Assinatura não encontrada")
+    
+    # Alternar status
+    new_status = "expired" if subscription['status'] == "active" else "active"
+    
+    await db.subscriptions.update_one(
+        {"id": subscription['id']},
+        {"$set": {"status": new_status}}
+    )
+    
+    return {"message": f"Status alterado para {new_status}", "new_status": new_status}
+
+# ========== EXPORTAÇÃO ==========
+
+@api_router.get("/export/excel/{company_id}")
+async def export_excel(company_id: str, month: str):
+    transactions = await db.transactions.find({
+        "company_id": company_id,
+        "date": {"$regex": f"^{month}"}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Criar workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"Lançamentos {month}"
+    
+    # Headers
+    headers = ["Data", "Tipo", "Descrição", "Categoria", "Valor", "Status"]
+    ws.append(headers)
+    
+    # Dados
+    for t in transactions:
+        ws.append([
+            t['date'],
+            t['type'],
+            t['description'],
+            t['category'],
+            t['amount'],
+            t['status']
+        ])
+    
+    # Salvar em BytesIO
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=lancamentos_{month}.xlsx"}
+    )
+
+# ========== INCLUIR ROUTER ==========
+
 app.include_router(api_router)
+
+# Health check endpoints
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Backend funcionando!"}
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "backend": "ok"}
 
 app.add_middleware(
     CORSMiddleware,

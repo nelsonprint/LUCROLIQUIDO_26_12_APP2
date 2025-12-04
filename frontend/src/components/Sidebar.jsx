@@ -1,0 +1,88 @@
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, FileText, Target, Calculator, CreditCard, Shield, LogOut, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+export const Sidebar = ({ user, onLogout, onOpenGlossary }) => {
+  const location = useLocation();
+
+  const menuItems = [
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/lancamentos', icon: FileText, label: 'Lançamentos' },
+    { path: '/meta-mensal', icon: Target, label: 'Meta Mensal' },
+    { path: '/precificacao', icon: Calculator, label: 'Precificação' },
+    { path: '/assinatura', icon: CreditCard, label: 'Assinatura' },
+  ];
+
+  // Adicionar item admin se usuário for admin
+  if (user?.role === 'admin') {
+    menuItems.push({ path: '/admin', icon: Shield, label: 'Admin' });
+  }
+
+  return (
+    <div className="w-64 min-h-screen glass border-r border-white/10 flex flex-col" data-testid="sidebar">
+      {/* Logo */}
+      <div className="p-6 border-b border-white/10">
+        <h1 className="text-2xl font-bold gradient-text" data-testid="sidebar-logo">
+          Lucro Líquido
+        </h1>
+        <p className="text-sm text-gray-400 mt-1" data-testid="sidebar-subtitle">Gestão Financeira</p>
+      </div>
+
+      {/* Menu */}
+      <nav className="flex-1 p-4 space-y-2">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location.pathname === item.path;
+
+          return (
+            <Link key={item.path} to={item.path} data-testid={`sidebar-link-${item.label.toLowerCase().replace(' ', '-')}`}>
+              <div
+                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+                  isActive
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <Icon size={20} />
+                <span className="font-medium">{item.label}</span>
+              </div>
+            </Link>
+          );
+        })}
+
+        {/* Botão O que é... */}
+        <button
+          onClick={onOpenGlossary}
+          className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-300 hover:bg-white/5 hover:text-white"
+          data-testid="sidebar-glossary-button"
+        >
+          <BookOpen size={20} />
+          <span className="font-medium">O que é...</span>
+        </button>
+      </nav>
+
+      {/* User Info & Logout */}
+      <div className="p-4 border-t border-white/10">
+        <div className="mb-3 px-4 py-2 bg-white/5 rounded-lg" data-testid="sidebar-user-info">
+          <p className="text-sm font-medium text-white">{user?.name}</p>
+          <p className="text-xs text-gray-400">{user?.email}</p>
+          {user?.role === 'admin' && (
+            <span className="inline-block mt-2 px-2 py-1 text-xs bg-purple-600 rounded-full" data-testid="sidebar-admin-badge">
+              Administrador
+            </span>
+          )}
+        </div>
+        <Button
+          onClick={onLogout}
+          variant="outline"
+          className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+          data-testid="sidebar-logout-button"
+        >
+          <LogOut size={16} className="mr-2" />
+          Sair
+        </Button>
+      </div>
+    </div>
+  );
+};
