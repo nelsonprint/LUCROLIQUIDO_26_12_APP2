@@ -115,6 +115,43 @@ class MonthlyGoal(BaseModel):
     goal_amount: float
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# ========== MODELS DE CONTAS A PAGAR/RECEBER ==========
+
+class ContaCreate(BaseModel):
+    company_id: str
+    user_id: str
+    tipo: str  # PAGAR ou RECEBER
+    descricao: str
+    categoria: str
+    data_emissao: str  # formato: YYYY-MM-DD
+    data_vencimento: str  # formato: YYYY-MM-DD
+    valor: float
+    forma_pagamento: str  # PIX, Boleto, Cartão, Dinheiro, Transferência
+    observacoes: Optional[str] = None
+
+class Conta(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    user_id: str
+    tipo: str  # PAGAR ou RECEBER
+    descricao: str
+    categoria: str
+    data_emissao: str
+    data_vencimento: str
+    data_pagamento: Optional[str] = None
+    valor: float
+    status: str = "PENDENTE"  # PENDENTE, PAGO, ATRASADO, PARCIAL
+    forma_pagamento: str
+    observacoes: Optional[str] = None
+    lancamento_id: Optional[str] = None  # ID do lançamento vinculado
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ContaStatusUpdate(BaseModel):
+    status: str  # PAGO, RECEBIDO, PENDENTE, ATRASADO, PARCIAL
+    data_pagamento: Optional[str] = None
+
 # ========== STARTUP: CRIAR PRIMEIRO ADMIN ==========
 
 @app.on_event("startup")
