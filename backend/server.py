@@ -155,6 +155,21 @@ class ContaStatusUpdate(BaseModel):
     status: str  # PAGO, RECEBIDO, PENDENTE, ATRASADO, PARCIAL
     data_pagamento: Optional[str] = None
 
+# ========== MODELS DE CATEGORIAS PERSONALIZADAS ==========
+
+class CustomCategoryCreate(BaseModel):
+    company_id: str
+    tipo: str  # receita, custo, despesa
+    nome: str
+
+class CustomCategory(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    tipo: str  # receita, custo, despesa
+    nome: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # ========== STARTUP: CRIAR PRIMEIRO ADMIN ==========
 
 @app.on_event("startup")
