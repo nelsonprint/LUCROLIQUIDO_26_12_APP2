@@ -84,6 +84,26 @@ function App() {
           }
         />
         <Route
+          path="/contas-pagar"
+          element={
+            user ? (
+              <ContasPagar user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="/contas-receber"
+          element={
+            user ? (
+              <ContasReceber user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
           path="/meta-mensal"
           element={
             user ? (
