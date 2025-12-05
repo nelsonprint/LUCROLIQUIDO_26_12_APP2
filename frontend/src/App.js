@@ -11,6 +11,7 @@ import Lancamentos from './pages/Lancamentos';
 import ContasPagar from './pages/ContasPagar';
 import ContasReceber from './pages/ContasReceber';
 import CategoriasPersonalizadas from './pages/CategoriasPersonalizadas';
+import Empresa from './pages/Empresa';
 import MetaMensal from './pages/MetaMensal';
 import Precificacao from './pages/Precificacao';
 import Assinatura from './pages/Assinatura';
