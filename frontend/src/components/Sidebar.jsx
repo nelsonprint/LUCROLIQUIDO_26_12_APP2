@@ -23,6 +23,7 @@ export const Sidebar = ({ user, onLogout, onOpenGlossary }) => {
     { path: '/empresa', icon: Shield, label: 'Empresa' },
     { path: '/meta-mensal', icon: Target, label: 'Meta Mensal' },
     { path: '/precificacao', icon: Calculator, label: 'Precificação' },
+    { path: '/orcamentos', icon: FileText, label: 'Orçamentos' },
     { path: '/assinatura', icon: CreditCard, label: 'Assinatura' },
   ];
 
