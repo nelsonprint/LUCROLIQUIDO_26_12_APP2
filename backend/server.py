@@ -824,7 +824,7 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict) -> bytes:
     """Fallback: Gerar PDF usando ReportLab (sem dependências do sistema)"""
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import mm
-    from reportlab.pdfgen import canvas
+    from reportlab.pdfgen import canvas as pdf_canvas
     from reportlab.lib.colors import HexColor
     from datetime import datetime as dt
     
