@@ -364,10 +364,10 @@ const Lancamentos = ({ user, onLogout }) => {
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="transaction-form">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-gray-300">Tipo</Label>
+                  <Label className="text-gray-300">Tipo *</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value) => setFormData({ ...formData, type: value, category: '' })}
+                    onValueChange={handleTypeChange}
                   >
                     <SelectTrigger className="bg-white/5 border-white/10 text-white" data-testid="transaction-type-select">
                       <SelectValue />
@@ -380,10 +380,17 @@ const Lancamentos = ({ user, onLogout }) => {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-gray-300">Categoria</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                  <Label className="text-gray-300">
+                    Categoria * 
+                    {availableCategories.length === 0 && <span className="text-xs text-gray-500 ml-2">(selecione o tipo primeiro)</span>}
+                  </Label>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    disabled={availableCategories.length === 0}
+                  >
                     <SelectTrigger className="bg-white/5 border-white/10 text-white" data-testid="transaction-category-select">
-                      <SelectValue placeholder="Selecione..." />
+                      <SelectValue placeholder={availableCategories.length === 0 ? "Selecione o tipo primeiro" : "Selecione a categoria"} />
                     </SelectTrigger>
                     <SelectContent>
                       {getCategoryOptions().map((cat) => (
