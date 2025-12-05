@@ -965,6 +965,17 @@ const Precificacao = ({ user, onLogout }) => {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* Botão Gerar Orçamento */}
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleGerarOrcamento}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-lg px-8 py-6"
+                    >
+                      <FileText className="w-5 h-5 mr-2" />
+                      Gerar Orçamento para Cliente
+                    </Button>
+                  </div>
                 </div>
               )}
 
