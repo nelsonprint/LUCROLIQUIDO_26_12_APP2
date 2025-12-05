@@ -17,6 +17,24 @@ import { useNavigate } from 'react-router-dom';
 const Precificacao = ({ user, onLogout }) => {
   const [tipoPrecificacao, setTipoPrecificacao] = useState('produto');
   const [tipoCobrancaServico, setTipoCobrancaServico] = useState('por-m2');
+  const [showOrcamentoModal, setShowOrcamentoModal] = useState(false);
+  const [loadingOrcamento, setLoadingOrcamento] = useState(false);
+  const navigate = useNavigate();
+
+  const company = JSON.parse(localStorage.getItem('company') || '{}');
+
+  const [orcamentoData, setOrcamentoData] = useState({
+    cliente_nome: '',
+    cliente_documento: '',
+    cliente_email: '',
+    cliente_telefone: '',
+    cliente_whatsapp: '',
+    cliente_endereco: '',
+    validade_proposta: '',
+    condicoes_pagamento: '',
+    prazo_execucao: '',
+    observacoes: '',
+  });
 
   // ========== ESTADOS PARA PRODUTO (LÓGICA ANTIGA) ==========
   const [formProduto, setFormProduto] = useState({
