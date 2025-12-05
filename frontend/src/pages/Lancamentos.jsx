@@ -51,11 +51,37 @@ const Lancamentos = ({ user, onLogout }) => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axiosInstance.get('/categories');
+      const url = company.id ? `/categories?company_id=${company.id}` : '/categories';
+      const response = await axiosInstance.get(url);
       setCategories(response.data);
+      // Inicializar categorias disponíveis baseado no tipo inicial
+      updateAvailableCategories('receita', response.data);
     } catch (error) {
       toast.error('Erro ao carregar categorias');
     }
+  };
+
+  // Atualizar categorias disponíveis quando o tipo mudar
+  const updateAvailableCategories = (type, categoriesData = categories) => {
+    if (type === 'receita') {
+      setAvailableCategories(categoriesData.receita || []);
+    } else if (type === 'custo') {
+      setAvailableCategories(categoriesData.custo || []);
+    } else if (type === 'despesa') {
+      setAvailableCategories(categoriesData.despesa || []);
+    } else {
+      setAvailableCategories([]);
+    }
+  };
+
+  // Handler para mudança de tipo - limpa categoria e atualiza opções
+  const handleTypeChange = (newType) => {
+    setFormData({
+      ...formData,
+      type: newType,
+      category: '' // Limpar categoria ao mudar tipo
+    });
+    updateAvailableCategories(newType);
   };
 
   const fetchTransactions = async () => {
