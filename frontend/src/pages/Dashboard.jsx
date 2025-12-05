@@ -385,6 +385,87 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
         )}
 
+        {/* KPIs de Contas a Pagar/Receber */}
+        {contasResumo && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="glass border-white/10 hover-lift border-l-4 border-l-red-500" data-testid="kpi-contas-pagar">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-400">Total a Pagar</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl font-bold text-red-400">
+                      R$ {contasResumo.pagar.pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {contasResumo.pagar.quantidade_total} conta(s) pendente(s)
+                    </p>
+                  </div>
+                  <AlertTriangle className="text-red-400" size={32} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="glass border-white/10 hover-lift border-l-4 border-l-green-500" data-testid="kpi-contas-receber">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-400">Total a Receber</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl font-bold text-green-400">
+                      R$ {contasResumo.receber.pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {contasResumo.receber.quantidade_total} conta(s) pendente(s)
+                    </p>
+                  </div>
+                  <DollarSign className="text-green-400" size={32} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="glass border-white/10 hover-lift border-l-4 border-l-blue-500" data-testid="kpi-saldo-projetado">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-400">Saldo Projetado</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-2xl font-bold ${contasResumo.saldo_projetado >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                      R$ {contasResumo.saldo_projetado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {contasResumo.saldo_projetado >= 0 ? 'Positivo' : 'Negativo'}
+                    </p>
+                  </div>
+                  <TrendingUp className={contasResumo.saldo_projetado >= 0 ? 'text-blue-400' : 'text-red-400'} size={32} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="glass border-white/10 hover-lift border-l-4 border-l-yellow-500" data-testid="kpi-contas-atrasadas">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-400">Contas Atrasadas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl font-bold text-yellow-400">
+                      R$ {contasResumo.contas_atrasadas.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Pagar: R$ {contasResumo.pagar.atrasado.toLocaleString('pt-BR')} | Receber: R$ {contasResumo.receber.atrasado.toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                  <AlertCircle className="text-yellow-400" size={32} />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Gráfico de Evolução */}
         <Card className="glass border-white/10" data-testid="evolution-chart-card">
           <CardHeader>
