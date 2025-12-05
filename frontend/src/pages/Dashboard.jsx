@@ -225,6 +225,18 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
+  const fetchContasResumo = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const response = await axiosInstance.get(`/contas/resumo-mensal?company_id=${selectedCompany.id}&mes=${currentMonth}`);
+      setContasResumo(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar resumo de contas:', error);
+    }
+  };
+
   const analyzeWithAI = async () => {
     setAnalyzingAI(true);
 
