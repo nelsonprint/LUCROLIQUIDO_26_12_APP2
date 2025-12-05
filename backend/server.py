@@ -56,6 +56,26 @@ class CompanyCreate(BaseModel):
     user_id: str
     name: str
     segment: str
+    # Dados da empresa
+    razao_social: Optional[str] = None
+    nome_fantasia: Optional[str] = None
+    cnpj: Optional[str] = None
+    inscricao_estadual: Optional[str] = None
+    inscricao_municipal: Optional[str] = None
+    # Endereço
+    logradouro: Optional[str] = None
+    numero: Optional[str] = None
+    complemento: Optional[str] = None
+    bairro: Optional[str] = None
+    cidade: Optional[str] = None
+    estado: Optional[str] = None
+    cep: Optional[str] = None
+    # Contatos
+    telefone_fixo: Optional[str] = None
+    celular_whatsapp: Optional[str] = None
+    email_empresa: Optional[str] = None
+    site: Optional[str] = None
+    contato_principal: Optional[str] = None
 
 class Company(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -63,7 +83,28 @@ class Company(BaseModel):
     user_id: str
     name: str
     segment: str
+    # Dados da empresa
+    razao_social: Optional[str] = None
+    nome_fantasia: Optional[str] = None
+    cnpj: Optional[str] = None
+    inscricao_estadual: Optional[str] = None
+    inscricao_municipal: Optional[str] = None
+    # Endereço
+    logradouro: Optional[str] = None
+    numero: Optional[str] = None
+    complemento: Optional[str] = None
+    bairro: Optional[str] = None
+    cidade: Optional[str] = None
+    estado: Optional[str] = None
+    cep: Optional[str] = None
+    # Contatos
+    telefone_fixo: Optional[str] = None
+    celular_whatsapp: Optional[str] = None
+    email_empresa: Optional[str] = None
+    site: Optional[str] = None
+    contato_principal: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Subscription(BaseModel):
     model_config = ConfigDict(extra="ignore")
