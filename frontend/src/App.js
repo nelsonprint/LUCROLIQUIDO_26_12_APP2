@@ -8,6 +8,8 @@ import './App.css';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import Lancamentos from './pages/Lancamentos';
+import ContasPagar from './pages/ContasPagar';
+import ContasReceber from './pages/ContasReceber';
 import MetaMensal from './pages/MetaMensal';
 import Precificacao from './pages/Precificacao';
 import Assinatura from './pages/Assinatura';
