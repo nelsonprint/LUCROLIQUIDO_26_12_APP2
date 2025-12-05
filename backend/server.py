@@ -1046,6 +1046,444 @@ async def webhook(data: dict):
         logger.error(f"Erro no webhook: {str(e)}")
         return {"status": "error"}
 
+# ========== CONTAS A PAGAR E RECEBER ==========
+
+async def create_lancamento_from_conta(conta: dict, tipo_lancamento: str):
+    """Criar lançamento financeiro automaticamente quando conta é paga/recebida"""
+    transaction = Transaction(
+        company_id=conta['company_id'],
+        user_id=conta['user_id'],
+        type=tipo_lancamento,  # despesa (para PAGAR) ou receita (para RECEBER)
+        description=conta['descricao'],
+        amount=conta['valor'],
+        category=conta['categoria'],
+        date=conta['data_pagamento'] or conta['data_vencimento'],
+        status="realizado",
+        notes=f"Lançamento automático de conta {conta['tipo'].lower()}",
+        origem="conta",
+        conta_id=conta['id'],
+        cancelled=False
+    )
+    
+    doc = transaction.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.transactions.insert_one(doc)
+    
+    return transaction.id
+
+async def cancel_lancamento_from_conta(conta_id: str):
+    """Marcar lançamento como cancelado quando conta volta para PENDENTE"""
+    result = await db.transactions.update_one(
+        {"conta_id": conta_id},
+        {"$set": {"cancelled": True}}
+    )
+    return result.modified_count > 0
+
+@api_router.get("/contas/categorias")
+async def get_categorias_contas():
+    """Retorna categorias de contas a pagar e receber"""
+    return {
+        "pagar": [
+            "Aluguel",
+            "Folha de Pagamento",
+            "Impostos",
+            "Fornecedores",
+            "Água",
+            "Luz",
+            "Internet",
+            "Telefone",
+            "Manutenção",
+            "Seguros",
+            "Empréstimos",
+            "Marketing",
+            "Contador",
+            "Outros"
+        ],
+        "receber": [
+            "Cliente",
+            "Contrato",
+            "Plano Mensalidade",
+            "Serviço Prestado",
+            "Venda Produto",
+            "Projeto",
+            "Consultoria",
+            "Parceria",
+            "Outros"
+        ]
+    }
+
+# ===== CONTAS A PAGAR =====
+
+@api_router.post("/contas/pagar")
+async def create_conta_pagar(conta_data: ContaCreate):
+    """Criar nova conta a pagar"""
+    if conta_data.tipo != "PAGAR":
+        raise HTTPException(status_code=400, detail="Tipo deve ser PAGAR")
+    
+    conta = Conta(**conta_data.model_dump())
+    
+    # Verificar se está atrasada
+    from datetime import datetime as dt
+    hoje = dt.now().strftime("%Y-%m-%d")
+    if conta.data_vencimento < hoje and conta.status == "PENDENTE":
+        conta.status = "ATRASADO"
+    
+    doc = conta.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    await db.contas.insert_one(doc)
+    
+    return {"message": "Conta a pagar criada com sucesso!", "conta_id": conta.id}
+
+@api_router.get("/contas/pagar")
+async def get_contas_pagar(
+    company_id: str,
+    status: Optional[str] = None,
+    mes: Optional[str] = None,
+    categoria: Optional[str] = None
+):
+    """Listar contas a pagar com filtros"""
+    query = {"company_id": company_id, "tipo": "PAGAR"}
+    
+    if status:
+        query["status"] = status
+    if mes:
+        query["data_vencimento"] = {"$regex": f"^{mes}"}
+    if categoria:
+        query["categoria"] = categoria
+    
+    contas = await db.contas.find(query, {"_id": 0}).sort("data_vencimento", 1).to_list(500)
+    return contas
+
+@api_router.get("/contas/pagar/{conta_id}")
+async def get_conta_pagar(conta_id: str):
+    """Buscar conta a pagar por ID"""
+    conta = await db.contas.find_one({"id": conta_id, "tipo": "PAGAR"}, {"_id": 0})
+    
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    return conta
+
+@api_router.put("/contas/pagar/{conta_id}")
+async def update_conta_pagar(conta_id: str, conta_data: ContaCreate):
+    """Atualizar conta a pagar"""
+    if conta_data.tipo != "PAGAR":
+        raise HTTPException(status_code=400, detail="Tipo deve ser PAGAR")
+    
+    from datetime import datetime as dt
+    update_doc = conta_data.model_dump()
+    update_doc['updated_at'] = dt.now(timezone.utc).isoformat()
+    
+    result = await db.contas.update_one(
+        {"id": conta_id},
+        {"$set": update_doc}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    return {"message": "Conta atualizada com sucesso!"}
+
+@api_router.delete("/contas/pagar/{conta_id}")
+async def delete_conta_pagar(conta_id: str):
+    """Deletar conta a pagar"""
+    # Verificar se tem lançamento vinculado
+    conta = await db.contas.find_one({"id": conta_id})
+    if conta and conta.get('lancamento_id'):
+        # Cancelar lançamento vinculado
+        await cancel_lancamento_from_conta(conta_id)
+    
+    result = await db.contas.delete_one({"id": conta_id, "tipo": "PAGAR"})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    return {"message": "Conta excluída com sucesso!"}
+
+@api_router.patch("/contas/pagar/{conta_id}/status")
+async def update_status_conta_pagar(conta_id: str, status_data: ContaStatusUpdate):
+    """Atualizar status da conta a pagar"""
+    conta = await db.contas.find_one({"id": conta_id, "tipo": "PAGAR"})
+    
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    from datetime import datetime as dt
+    update_fields = {
+        "status": status_data.status,
+        "updated_at": dt.now(timezone.utc).isoformat()
+    }
+    
+    # Se marcar como PAGO, criar lançamento automático
+    if status_data.status == "PAGO" and not conta.get('lancamento_id'):
+        data_pagamento = status_data.data_pagamento or dt.now().strftime("%Y-%m-%d")
+        update_fields['data_pagamento'] = data_pagamento
+        
+        # Atualizar conta primeiro
+        await db.contas.update_one({"id": conta_id}, {"$set": update_fields})
+        
+        # Criar lançamento de despesa
+        conta_atualizada = await db.contas.find_one({"id": conta_id})
+        lancamento_id = await create_lancamento_from_conta(conta_atualizada, "despesa")
+        
+        # Vincular lançamento à conta
+        await db.contas.update_one(
+            {"id": conta_id},
+            {"$set": {"lancamento_id": lancamento_id}}
+        )
+        
+        return {"message": "Conta marcada como PAGA e lançamento criado!", "lancamento_id": lancamento_id}
+    
+    # Se voltar para PENDENTE, cancelar lançamento
+    elif status_data.status == "PENDENTE" and conta.get('lancamento_id'):
+        await cancel_lancamento_from_conta(conta_id)
+        update_fields['data_pagamento'] = None
+        update_fields['lancamento_id'] = None
+    
+    await db.contas.update_one({"id": conta_id}, {"$set": update_fields})
+    
+    return {"message": "Status atualizado com sucesso!"}
+
+# ===== CONTAS A RECEBER =====
+
+@api_router.post("/contas/receber")
+async def create_conta_receber(conta_data: ContaCreate):
+    """Criar nova conta a receber"""
+    if conta_data.tipo != "RECEBER":
+        raise HTTPException(status_code=400, detail="Tipo deve ser RECEBER")
+    
+    conta = Conta(**conta_data.model_dump())
+    
+    # Verificar se está atrasada
+    from datetime import datetime as dt
+    hoje = dt.now().strftime("%Y-%m-%d")
+    if conta.data_vencimento < hoje and conta.status == "PENDENTE":
+        conta.status = "ATRASADO"
+    
+    doc = conta.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    await db.contas.insert_one(doc)
+    
+    return {"message": "Conta a receber criada com sucesso!", "conta_id": conta.id}
+
+@api_router.get("/contas/receber")
+async def get_contas_receber(
+    company_id: str,
+    status: Optional[str] = None,
+    mes: Optional[str] = None,
+    categoria: Optional[str] = None
+):
+    """Listar contas a receber com filtros"""
+    query = {"company_id": company_id, "tipo": "RECEBER"}
+    
+    if status:
+        query["status"] = status
+    if mes:
+        query["data_vencimento"] = {"$regex": f"^{mes}"}
+    if categoria:
+        query["categoria"] = categoria
+    
+    contas = await db.contas.find(query, {"_id": 0}).sort("data_vencimento", 1).to_list(500)
+    return contas
+
+@api_router.get("/contas/receber/{conta_id}")
+async def get_conta_receber(conta_id: str):
+    """Buscar conta a receber por ID"""
+    conta = await db.contas.find_one({"id": conta_id, "tipo": "RECEBER"}, {"_id": 0})
+    
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    return conta
+
+@api_router.put("/contas/receber/{conta_id}")
+async def update_conta_receber(conta_id: str, conta_data: ContaCreate):
+    """Atualizar conta a receber"""
+    if conta_data.tipo != "RECEBER":
+        raise HTTPException(status_code=400, detail="Tipo deve ser RECEBER")
+    
+    from datetime import datetime as dt
+    update_doc = conta_data.model_dump()
+    update_doc['updated_at'] = dt.now(timezone.utc).isoformat()
+    
+    result = await db.contas.update_one(
+        {"id": conta_id},
+        {"$set": update_doc}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    return {"message": "Conta atualizada com sucesso!"}
+
+@api_router.delete("/contas/receber/{conta_id}")
+async def delete_conta_receber(conta_id: str):
+    """Deletar conta a receber"""
+    # Verificar se tem lançamento vinculado
+    conta = await db.contas.find_one({"id": conta_id})
+    if conta and conta.get('lancamento_id'):
+        # Cancelar lançamento vinculado
+        await cancel_lancamento_from_conta(conta_id)
+    
+    result = await db.contas.delete_one({"id": conta_id, "tipo": "RECEBER"})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    return {"message": "Conta excluída com sucesso!"}
+
+@api_router.patch("/contas/receber/{conta_id}/status")
+async def update_status_conta_receber(conta_id: str, status_data: ContaStatusUpdate):
+    """Atualizar status da conta a receber"""
+    conta = await db.contas.find_one({"id": conta_id, "tipo": "RECEBER"})
+    
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    from datetime import datetime as dt
+    update_fields = {
+        "status": status_data.status,
+        "updated_at": dt.now(timezone.utc).isoformat()
+    }
+    
+    # Se marcar como RECEBIDO, criar lançamento automático
+    if status_data.status == "RECEBIDO" and not conta.get('lancamento_id'):
+        data_pagamento = status_data.data_pagamento or dt.now().strftime("%Y-%m-%d")
+        update_fields['data_pagamento'] = data_pagamento
+        
+        # Atualizar conta primeiro
+        await db.contas.update_one({"id": conta_id}, {"$set": update_fields})
+        
+        # Criar lançamento de receita
+        conta_atualizada = await db.contas.find_one({"id": conta_id})
+        lancamento_id = await create_lancamento_from_conta(conta_atualizada, "receita")
+        
+        # Vincular lançamento à conta
+        await db.contas.update_one(
+            {"id": conta_id},
+            {"$set": {"lancamento_id": lancamento_id}}
+        )
+        
+        return {"message": "Conta marcada como RECEBIDA e lançamento criado!", "lancamento_id": lancamento_id}
+    
+    # Se voltar para PENDENTE, cancelar lançamento
+    elif status_data.status == "PENDENTE" and conta.get('lancamento_id'):
+        await cancel_lancamento_from_conta(conta_id)
+        update_fields['data_pagamento'] = None
+        update_fields['lancamento_id'] = None
+    
+    await db.contas.update_one({"id": conta_id}, {"$set": update_fields})
+    
+    return {"message": "Status atualizado com sucesso!"}
+
+# ===== RESUMOS E CONSULTAS =====
+
+@api_router.get("/contas/resumo-mensal")
+async def get_resumo_mensal(company_id: str, mes: str):
+    """Resumo mensal de contas a pagar e receber"""
+    # Aggregation para contas a pagar
+    pipeline_pagar = [
+        {"$match": {
+            "company_id": company_id,
+            "tipo": "PAGAR",
+            "data_vencimento": {"$regex": f"^{mes}"}
+        }},
+        {"$group": {
+            "_id": "$status",
+            "total": {"$sum": "$valor"},
+            "quantidade": {"$sum": 1}
+        }}
+    ]
+    
+    # Aggregation para contas a receber
+    pipeline_receber = [
+        {"$match": {
+            "company_id": company_id,
+            "tipo": "RECEBER",
+            "data_vencimento": {"$regex": f"^{mes}"}
+        }},
+        {"$group": {
+            "_id": "$status",
+            "total": {"$sum": "$valor"},
+            "quantidade": {"$sum": 1}
+        }}
+    ]
+    
+    results_pagar = await db.contas.aggregate(pipeline_pagar).to_list(None)
+    results_receber = await db.contas.aggregate(pipeline_receber).to_list(None)
+    
+    # Processar resultados
+    pagar = {"pendente": 0, "pago": 0, "atrasado": 0, "total": 0, "quantidade_total": 0}
+    receber = {"pendente": 0, "recebido": 0, "atrasado": 0, "total": 0, "quantidade_total": 0}
+    
+    for r in results_pagar:
+        status = r['_id'].lower()
+        if status == "pendente":
+            pagar['pendente'] = r['total']
+        elif status == "pago":
+            pagar['pago'] = r['total']
+        elif status == "atrasado":
+            pagar['atrasado'] = r['total']
+        pagar['total'] += r['total']
+        pagar['quantidade_total'] += r['quantidade']
+    
+    for r in results_receber:
+        status = r['_id'].lower()
+        if status == "pendente":
+            receber['pendente'] = r['total']
+        elif status in ["recebido", "pago"]:
+            receber['recebido'] = r['total']
+        elif status == "atrasado":
+            receber['atrasado'] = r['total']
+        receber['total'] += r['total']
+        receber['quantidade_total'] += r['quantidade']
+    
+    # Calcular saldo projetado
+    saldo_projetado = receber['pendente'] - pagar['pendente']
+    
+    return {
+        "pagar": pagar,
+        "receber": receber,
+        "saldo_projetado": saldo_projetado,
+        "contas_atrasadas": {
+            "pagar": pagar['atrasado'],
+            "receber": receber['atrasado'],
+            "total": pagar['atrasado'] + receber['atrasado']
+        }
+    }
+
+@api_router.get("/contas/proximos-vencimentos")
+async def get_proximos_vencimentos(company_id: str, dias: int = 7):
+    """Listar próximas contas a vencer nos próximos N dias"""
+    from datetime import datetime as dt, timedelta
+    
+    hoje = dt.now()
+    data_limite = hoje + timedelta(days=dias)
+    
+    # Buscar contas pendentes ou atrasadas que vencem nos próximos N dias
+    pipeline = [
+        {"$match": {
+            "company_id": company_id,
+            "status": {"$in": ["PENDENTE", "ATRASADO"]},
+            "data_vencimento": {
+                "$gte": hoje.strftime("%Y-%m-%d"),
+                "$lte": data_limite.strftime("%Y-%m-%d")
+            }
+        }},
+        {"$sort": {"data_vencimento": 1}},
+        {"$project": {"_id": 0}}
+    ]
+    
+    contas = await db.contas.aggregate(pipeline).to_list(100)
+    
+    return {
+        "periodo": f"{dias} dias",
+        "quantidade": len(contas),
+        "contas": contas
+    }
+
 # ========== ADMIN: VERIFICAR ROLE ==========
 
 async def verify_admin(user_id: str):
