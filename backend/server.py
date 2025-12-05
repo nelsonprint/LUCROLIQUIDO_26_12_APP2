@@ -286,22 +286,27 @@ class OrcamentoStatusUpdate(BaseModel):
 @app.on_event("startup")
 async def create_first_admin():
     """Criar primeiro admin automaticamente se não existir"""
-    admin_email = "admin@lucroliquido.com"
-    existing_admin = await db.users.find_one({"email": admin_email})
-    
-    if not existing_admin:
-        admin = User(
-            name="Administrador",
-            email=admin_email,
-            password="admin123",
-            role="admin"
-        )
-        doc = admin.model_dump()
-        doc['created_at'] = doc['created_at'].isoformat()
-        await db.users.insert_one(doc)
-        logger.info("✅ Primeiro admin criado com sucesso!")
-    else:
-        logger.info("✅ Admin já existe no sistema")
+    try:
+        admin_email = "admin@lucroliquido.com"
+        existing_admin = await db.users.find_one({"email": admin_email})
+        
+        if not existing_admin:
+            admin = User(
+                name="Administrador",
+                email=admin_email,
+                password="admin123",
+                role="admin"
+            )
+            doc = admin.model_dump()
+            doc['created_at'] = doc['created_at'].isoformat()
+            await db.users.insert_one(doc)
+            logger.info("✅ Primeiro admin criado com sucesso!")
+        else:
+            logger.info("✅ Admin já existe no sistema")
+    except Exception as e:
+        logger.error(f"⚠️ Erro ao criar admin: {e}")
+        # Não falha o startup se não conseguir criar admin
+        # Pode ser um problema temporário de conexão com MongoDB
 
 # ========== ROTAS DE AUTENTICAÇÃO ==========
 
