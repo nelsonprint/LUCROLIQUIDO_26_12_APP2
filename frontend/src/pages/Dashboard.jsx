@@ -45,6 +45,9 @@ const Dashboard = ({ user, onLogout }) => {
       fetchCostAlerts();
       fetchDetailedAnalysis();
       fetchContasResumo();
+      fetchFluxoCaixa();
+      fetchContasPagarPorCategoria();
+      fetchContasReceberPorCliente();
     }
   }, [selectedCompany]);
 
