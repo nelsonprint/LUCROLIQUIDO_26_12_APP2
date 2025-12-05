@@ -486,6 +486,71 @@ async def get_categories(company_id: Optional[str] = None):
     
     return categories
 
+# ========== ROTAS DE CATEGORIAS PERSONALIZADAS ==========
+
+@api_router.get("/custom-categories/{company_id}")
+async def get_custom_categories(company_id: str):
+    """Listar todas as categorias personalizadas de uma empresa"""
+    categories = await db.custom_categories.find(
+        {"company_id": company_id},
+        {"_id": 0}
+    ).sort("nome", 1).to_list(None)
+    return categories
+
+@api_router.post("/custom-categories")
+async def create_custom_category(category_data: CustomCategoryCreate):
+    """Criar nova categoria personalizada"""
+    # Validar tipo
+    if category_data.tipo not in ["receita", "custo", "despesa"]:
+        raise HTTPException(status_code=400, detail="Tipo deve ser: receita, custo ou despesa")
+    
+    # Verificar se já existe categoria com mesmo nome e tipo para essa empresa
+    existing = await db.custom_categories.find_one({
+        "company_id": category_data.company_id,
+        "tipo": category_data.tipo,
+        "nome": category_data.nome
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Categoria já existe para este tipo")
+    
+    category = CustomCategory(**category_data.model_dump())
+    doc = category.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.custom_categories.insert_one(doc)
+    
+    return {"message": "Categoria criada com sucesso!", "category_id": category.id}
+
+@api_router.put("/custom-categories/{category_id}")
+async def update_custom_category(category_id: str, category_data: CustomCategoryCreate):
+    """Atualizar categoria personalizada"""
+    # Validar tipo
+    if category_data.tipo not in ["receita", "custo", "despesa"]:
+        raise HTTPException(status_code=400, detail="Tipo deve ser: receita, custo ou despesa")
+    
+    result = await db.custom_categories.update_one(
+        {"id": category_id},
+        {"$set": {
+            "tipo": category_data.tipo,
+            "nome": category_data.nome
+        }}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    return {"message": "Categoria atualizada com sucesso!"}
+
+@api_router.delete("/custom-categories/{category_id}")
+async def delete_custom_category(category_id: str):
+    """Deletar categoria personalizada"""
+    result = await db.custom_categories.delete_one({"id": category_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    return {"message": "Categoria excluída com sucesso!"}
+
 # ========== ANÁLISE IA (CHATGPT) ==========
 
 @api_router.post("/ai-analysis")
