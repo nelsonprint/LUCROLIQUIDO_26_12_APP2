@@ -1034,6 +1034,161 @@ const Precificacao = ({ user, onLogout }) => {
           </Card>
         </div>
       </div>
+
+      {/* Modal de Criação de Orçamento */}
+      <Dialog open={showOrcamentoModal} onOpenChange={setShowOrcamentoModal}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerar Orçamento para Cliente</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleCriarOrcamento} className="space-y-6">
+            {/* Dados do Cliente */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold border-b border-zinc-700 pb-2">Dados do Cliente</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Nome do Cliente *</Label>
+                  <Input
+                    required
+                    value={orcamentoData.cliente_nome}
+                    onChange={(e) => setOrcamentoData({ ...orcamentoData, cliente_nome: e.target.value })}
+                    placeholder="Nome completo"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+
+                <div>
+                  <Label>CPF/CNPJ</Label>
+                  <Input
+                    value={orcamentoData.cliente_documento}
+                    onChange={(e) => setOrcamentoData({ ...orcamentoData, cliente_documento: e.target.value })}
+                    placeholder="000.000.000-00"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+
+                <div>
+                  <Label>WhatsApp *</Label>
+                  <Input
+                    required
+                    value={orcamentoData.cliente_whatsapp}
+                    onChange={(e) => setOrcamentoData({ ...orcamentoData, cliente_whatsapp: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                  <p className="text-xs text-zinc-500 mt-1">Necessário para envio do orçamento</p>
+                </div>
+
+                <div>
+                  <Label>E-mail</Label>
+                  <Input
+                    type="email"
+                    value={orcamentoData.cliente_email}
+                    onChange={(e) => setOrcamentoData({ ...orcamentoData, cliente_email: e.target.value })}
+                    placeholder="cliente@email.com"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label>Endereço</Label>
+                  <Input
+                    value={orcamentoData.cliente_endereco}
+                    onChange={(e) => setOrcamentoData({ ...orcamentoData, cliente_endereco: e.target.value })}
+                    placeholder="Endereço completo do cliente"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Condições Comerciais */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold border-b border-zinc-700 pb-2">Condições Comerciais</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Validade da Proposta *</Label>
+                  <Input
+                    required
+                    value={orcamentoData.validade_proposta}
+                    onChange={(e) => setOrcamentoData({ ...orcamentoData, validade_proposta: e.target.value })}
+                    placeholder="Ex: 30 dias"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+
+                <div>
+                  <Label>Prazo de Execução *</Label>
+                  <Input
+                    required
+                    value={orcamentoData.prazo_execucao}
+                    onChange={(e) => setOrcamentoData({ ...orcamentoData, prazo_execucao: e.target.value })}
+                    placeholder="Ex: 15 dias úteis"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label>Condições de Pagamento *</Label>
+                  <Input
+                    required
+                    value={orcamentoData.condicoes_pagamento}
+                    onChange={(e) => setOrcamentoData({ ...orcamentoData, condicoes_pagamento: e.target.value })}
+                    placeholder="Ex: 50% antecipado, 50% na entrega"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label>Observações</Label>
+                  <Textarea
+                    value={orcamentoData.observacoes}
+                    onChange={(e) => setOrcamentoData({ ...orcamentoData, observacoes: e.target.value })}
+                    placeholder="Observações adicionais sobre o orçamento..."
+                    className="bg-zinc-800 border-zinc-700"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Resumo do Valor */}
+            {(resultadoServico || resultadoProduto) && (
+              <div className="p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg border border-purple-500/30">
+                <p className="text-sm text-zinc-400 mb-2">Valor da Proposta</p>
+                <p className="text-3xl font-bold text-green-400">
+                  R$ {resultadoServico 
+                    ? parseFloat(resultadoServico.precoSugerido).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                    : parseFloat(resultadoProduto.precoVenda).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                  }
+                </p>
+              </div>
+            )}
+
+            {/* Botões */}
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowOrcamentoModal(false)}
+                className="border-zinc-700"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={loadingOrcamento}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+              >
+                {loadingOrcamento ? 'Criando...' : 'Criar Orçamento'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
