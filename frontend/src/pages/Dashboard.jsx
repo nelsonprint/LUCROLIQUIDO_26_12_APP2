@@ -240,6 +240,41 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
+  const fetchFluxoCaixa = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      const response = await axiosInstance.get(`/contas/fluxo-caixa-projetado?company_id=${selectedCompany.id}&meses=6`);
+      setFluxoCaixaData(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar fluxo de caixa:', error);
+    }
+  };
+
+  const fetchContasPagarPorCategoria = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const response = await axiosInstance.get(`/contas/pagar-por-categoria?company_id=${selectedCompany.id}&mes=${currentMonth}`);
+      setContasPagarPorCategoria(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar contas a pagar por categoria:', error);
+    }
+  };
+
+  const fetchContasReceberPorCliente = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const response = await axiosInstance.get(`/contas/receber-por-cliente?company_id=${selectedCompany.id}&mes=${currentMonth}`);
+      setContasReceberPorCliente(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar contas a receber por cliente:', error);
+    }
+  };
+
   const analyzeWithAI = async () => {
     setAnalyzingAI(true);
 
