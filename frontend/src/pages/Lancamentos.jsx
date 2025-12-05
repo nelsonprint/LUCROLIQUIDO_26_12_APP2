@@ -179,16 +179,8 @@ const Lancamentos = ({ user, onLogout }) => {
   };
 
   const getCategoryOptions = () => {
-    switch (formData.type) {
-      case 'receita':
-        return categories.receitas;
-      case 'custo':
-        return categories.custos;
-      case 'despesa':
-        return categories.despesas;
-      default:
-        return [];
-    }
+    // Retorna categorias baseado no tipo selecionado
+    return availableCategories;
   };
 
   const getTypeLabel = (type) => {
