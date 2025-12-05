@@ -1970,6 +1970,139 @@ async def get_proximos_vencimentos(company_id: str, dias: int = 7):
         "contas": contas
     }
 
+
+@api_router.get("/contas/fluxo-caixa-projetado")
+async def get_fluxo_caixa_projetado(company_id: str, meses: int = 6):
+    """Retorna fluxo de caixa projetado (contas a pagar e receber) para os próximos N meses"""
+    from datetime import datetime as dt
+    from dateutil.relativedelta import relativedelta
+    
+    hoje = dt.now()
+    resultado = []
+    
+    for i in range(meses):
+        mes_ref = hoje + relativedelta(months=i)
+        mes_str = mes_ref.strftime("%Y-%m")
+        mes_label = mes_ref.strftime("%b/%Y")
+        
+        # Contas a receber (entradas)
+        pipeline_entradas = [
+            {"$match": {
+                "company_id": company_id,
+                "tipo": "RECEBER",
+                "data_vencimento": {"$regex": f"^{mes_str}"}
+            }},
+            {"$group": {
+                "_id": None,
+                "total": {"$sum": "$valor"}
+            }}
+        ]
+        
+        # Contas a pagar (saídas)
+        pipeline_saidas = [
+            {"$match": {
+                "company_id": company_id,
+                "tipo": "PAGAR",
+                "data_vencimento": {"$regex": f"^{mes_str}"}
+            }},
+            {"$group": {
+                "_id": None,
+                "total": {"$sum": "$valor"}
+            }}
+        ]
+        
+        result_entradas = await db.contas.aggregate(pipeline_entradas).to_list(None)
+        result_saidas = await db.contas.aggregate(pipeline_saidas).to_list(None)
+        
+        entradas = result_entradas[0]['total'] if result_entradas else 0
+        saidas = result_saidas[0]['total'] if result_saidas else 0
+        
+        resultado.append({
+            "mes": mes_label,
+            "entradas": entradas,
+            "saidas": saidas,
+            "saldo": entradas - saidas
+        })
+    
+    return resultado
+
+@api_router.get("/contas/pagar-por-categoria")
+async def get_contas_pagar_por_categoria(company_id: str, mes: Optional[str] = None):
+    """Agrupa contas a pagar por categoria"""
+    from datetime import datetime as dt
+    
+    if not mes:
+        mes = dt.now().strftime("%Y-%m")
+    
+    pipeline = [
+        {"$match": {
+            "company_id": company_id,
+            "tipo": "PAGAR",
+            "data_vencimento": {"$regex": f"^{mes}"}
+        }},
+        {"$group": {
+            "_id": "$categoria",
+            "total": {"$sum": "$valor"},
+            "quantidade": {"$sum": 1}
+        }},
+        {"$sort": {"total": -1}},
+        {"$limit": 10}
+    ]
+    
+    results = await db.contas.aggregate(pipeline).to_list(None)
+    
+    # Calcular total para percentuais
+    total_geral = sum(r['total'] for r in results)
+    
+    return [
+        {
+            "categoria": r['_id'],
+            "valor": r['total'],
+            "quantidade": r['quantidade'],
+            "percentual": round((r['total'] / total_geral * 100), 1) if total_geral > 0 else 0
+        }
+        for r in results
+    ]
+
+@api_router.get("/contas/receber-por-cliente")
+async def get_contas_receber_por_cliente(company_id: str, mes: Optional[str] = None):
+    """Agrupa contas a receber por cliente (descrição)"""
+    from datetime import datetime as dt
+    
+    if not mes:
+        mes = dt.now().strftime("%Y-%m")
+    
+    # Agrupar por descrição (que geralmente contém o nome do cliente)
+    pipeline = [
+        {"$match": {
+            "company_id": company_id,
+            "tipo": "RECEBER",
+            "data_vencimento": {"$regex": f"^{mes}"}
+        }},
+        {"$group": {
+            "_id": "$categoria",
+            "total": {"$sum": "$valor"},
+            "quantidade": {"$sum": 1}
+        }},
+        {"$sort": {"total": -1}},
+        {"$limit": 10}
+    ]
+    
+    results = await db.contas.aggregate(pipeline).to_list(None)
+    
+    # Calcular total para percentuais
+    total_geral = sum(r['total'] for r in results)
+    
+    return [
+        {
+            "cliente": r['_id'],
+            "valor": r['total'],
+            "quantidade": r['quantidade'],
+            "percentual": round((r['total'] / total_geral * 100), 1) if total_geral > 0 else 0
+        }
+        for r in results
+    ]
+
 # ========== ADMIN: VERIFICAR ROLE ==========
 
 async def verify_admin(user_id: str):
