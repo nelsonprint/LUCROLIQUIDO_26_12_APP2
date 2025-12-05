@@ -105,6 +105,16 @@ function App() {
           }
         />
         <Route
+          path="/categorias"
+          element={
+            user ? (
+              <CategoriasPersonalizadas user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
           path="/meta-mensal"
           element={
             user ? (
