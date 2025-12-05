@@ -152,6 +152,8 @@ const Lancamentos = ({ user, onLogout }) => {
 
   const handleEdit = (transaction) => {
     setEditingTransaction(transaction);
+    // Atualizar categorias disponíveis baseado no tipo da transação
+    updateAvailableCategories(transaction.type);
     setFormData({
       type: transaction.type,
       description: transaction.description,
