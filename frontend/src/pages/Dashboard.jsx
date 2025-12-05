@@ -41,6 +41,7 @@ const Dashboard = ({ user, onLogout }) => {
       generateChartData();
       fetchCostAlerts();
       fetchDetailedAnalysis();
+      fetchContasResumo();
     }
   }, [selectedCompany]);
 
