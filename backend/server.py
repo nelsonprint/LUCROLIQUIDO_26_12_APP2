@@ -211,6 +211,76 @@ class CustomCategory(BaseModel):
     nome: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# ========== MODELS DE ORÇAMENTOS ==========
+
+class OrcamentoCreate(BaseModel):
+    empresa_id: str
+    usuario_id: str
+    # Cliente
+    cliente_nome: str
+    cliente_documento: Optional[str] = None
+    cliente_email: Optional[str] = None
+    cliente_telefone: Optional[str] = None
+    cliente_whatsapp: Optional[str] = None
+    cliente_endereco: Optional[str] = None
+    # Dados do orçamento
+    tipo: str  # produto, servico_hora, servico_m2, valor_fechado
+    descricao_servico_ou_produto: str
+    area_m2: Optional[float] = None
+    quantidade: Optional[float] = None
+    detalhes_itens: Optional[dict] = None
+    custo_total: float
+    preco_minimo: float
+    preco_sugerido: float
+    preco_praticado: float
+    # Condições comerciais
+    validade_proposta: str  # data no formato YYYY-MM-DD
+    condicoes_pagamento: str
+    prazo_execucao: str
+    observacoes: Optional[str] = None
+
+class Orcamento(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    numero_orcamento: str  # Será gerado automaticamente
+    empresa_id: str
+    usuario_id: str
+    # Cliente
+    cliente_nome: str
+    cliente_documento: Optional[str] = None
+    cliente_email: Optional[str] = None
+    cliente_telefone: Optional[str] = None
+    cliente_whatsapp: Optional[str] = None
+    cliente_endereco: Optional[str] = None
+    # Dados do orçamento
+    tipo: str
+    descricao_servico_ou_produto: str
+    area_m2: Optional[float] = None
+    quantidade: Optional[float] = None
+    detalhes_itens: Optional[dict] = None
+    custo_total: float
+    preco_minimo: float
+    preco_sugerido: float
+    preco_praticado: float
+    # Condições comerciais
+    validade_proposta: str
+    condicoes_pagamento: str
+    prazo_execucao: str
+    observacoes: Optional[str] = None
+    # Status e envio
+    status: str = "RASCUNHO"  # RASCUNHO, ENVIADO, APROVADO, NAO_APROVADO
+    enviado_em: Optional[datetime] = None
+    aprovado_em: Optional[datetime] = None
+    nao_aprovado_em: Optional[datetime] = None
+    canal_envio: Optional[str] = None
+    # Auditoria
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class OrcamentoStatusUpdate(BaseModel):
+    status: str  # ENVIADO, APROVADO, NAO_APROVADO
+    canal_envio: Optional[str] = None
+
 # ========== STARTUP: CRIAR PRIMEIRO ADMIN ==========
 
 @app.on_event("startup")
