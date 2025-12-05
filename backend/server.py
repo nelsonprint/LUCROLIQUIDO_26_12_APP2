@@ -822,7 +822,12 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
 
 @api_router.get("/orcamento/{orcamento_id}/pdf")
 async def generate_orcamento_pdf(orcamento_id: str):
-    """Gerar PDF do orçamento"""
+    """Gerar PDF do orçamento com template HTML/CSS profissional"""
+    from weasyprint import HTML
+    from jinja2 import Environment, FileSystemLoader
+    import os
+    from datetime import datetime as dt
+    
     # Buscar orçamento
     orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
     
@@ -832,141 +837,69 @@ async def generate_orcamento_pdf(orcamento_id: str):
     # Buscar dados da empresa
     empresa = await db.companies.find_one({"id": orcamento['empresa_id']}, {"_id": 0})
     
-    # Criar PDF
-    buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
+    if not empresa:
+        empresa = {"name": "Empresa"}
     
-    # Configurar fonte
-    p.setFont("Helvetica-Bold", 20)
+    # Preparar dados para o template
+    data_emissao = orcamento.get('created_at', '')
+    if isinstance(data_emissao, str) and len(data_emissao) >= 10:
+        try:
+            data_emissao = dt.fromisoformat(data_emissao.replace('Z', '+00:00'))
+            data_emissao = data_emissao.strftime("%d/%m/%Y")
+        except:
+            data_emissao = data_emissao[:10]
     
-    # Título
-    p.drawString(50, height - 50, "ORÇAMENTO")
+    data_geracao = dt.now().strftime("%d/%m/%Y %H:%M")
     
-    # Número do orçamento
-    p.setFont("Helvetica", 12)
-    p.drawString(50, height - 80, f"Nº: {orcamento.get('numero_orcamento', 'N/A')}")
-    p.drawString(50, height - 100, f"Data: {orcamento.get('created_at', '')[:10]}")
+    # Formatar status
+    status = orcamento.get('status', 'RASCUNHO')
+    status_label_map = {
+        'RASCUNHO': 'Rascunho',
+        'ENVIADO': 'Enviado',
+        'APROVADO': 'Aprovado',
+        'NAO_APROVADO': 'Não Aprovado'
+    }
+    status_label = status_label_map.get(status, status)
     
-    # Dados da empresa
-    p.setFont("Helvetica-Bold", 14)
-    p.drawString(50, height - 140, "DADOS DA EMPRESA")
-    p.setFont("Helvetica", 10)
-    y = height - 160
+    context = {
+        'numero_orcamento': orcamento.get('numero_orcamento', 'N/A'),
+        'data_emissao': data_emissao,
+        'data_geracao': data_geracao,
+        'status': status_label,
+        'empresa': empresa,
+        'cliente_nome': orcamento.get('cliente_nome', ''),
+        'cliente_documento': orcamento.get('cliente_documento'),
+        'cliente_whatsapp': orcamento.get('cliente_whatsapp'),
+        'cliente_telefone': orcamento.get('cliente_telefone'),
+        'cliente_email': orcamento.get('cliente_email'),
+        'cliente_endereco': orcamento.get('cliente_endereco'),
+        'tipo': orcamento.get('tipo', ''),
+        'descricao_servico_ou_produto': orcamento.get('descricao_servico_ou_produto', ''),
+        'area_m2': orcamento.get('area_m2'),
+        'quantidade': orcamento.get('quantidade'),
+        'custo_total': orcamento.get('custo_total', 0),
+        'preco_minimo': orcamento.get('preco_minimo', 0),
+        'preco_sugerido': orcamento.get('preco_sugerido', 0),
+        'preco_praticado': orcamento.get('preco_praticado', 0),
+        'validade_proposta': orcamento.get('validade_proposta', ''),
+        'condicoes_pagamento': orcamento.get('condicoes_pagamento', ''),
+        'prazo_execucao': orcamento.get('prazo_execucao', ''),
+        'observacoes': orcamento.get('observacoes'),
+    }
     
-    if empresa:
-        if empresa.get('razao_social'):
-            p.drawString(50, y, f"Razão Social: {empresa.get('razao_social')}")
-            y -= 15
-        if empresa.get('cnpj'):
-            p.drawString(50, y, f"CNPJ: {empresa.get('cnpj')}")
-            y -= 15
-        if empresa.get('logradouro'):
-            endereco = f"{empresa.get('logradouro', '')}, {empresa.get('numero', '')}"
-            if empresa.get('bairro'):
-                endereco += f" - {empresa.get('bairro')}"
-            if empresa.get('cidade'):
-                endereco += f" - {empresa.get('cidade')}/{empresa.get('estado', '')}"
-            p.drawString(50, y, f"Endereço: {endereco}")
-            y -= 15
-        if empresa.get('celular_whatsapp'):
-            p.drawString(50, y, f"WhatsApp: {empresa.get('celular_whatsapp')}")
-            y -= 15
-        if empresa.get('email_empresa'):
-            p.drawString(50, y, f"E-mail: {empresa.get('email_empresa')}")
-            y -= 15
+    # Carregar template
+    template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+    env = Environment(loader=FileSystemLoader(template_dir))
+    template = env.get_template('orcamento.html')
     
-    # Dados do cliente
-    y -= 20
-    p.setFont("Helvetica-Bold", 14)
-    p.drawString(50, y, "DADOS DO CLIENTE")
-    y -= 20
-    p.setFont("Helvetica", 10)
+    # Renderizar HTML
+    html_content = template.render(**context)
     
-    p.drawString(50, y, f"Nome: {orcamento.get('cliente_nome', '')}")
-    y -= 15
-    if orcamento.get('cliente_documento'):
-        p.drawString(50, y, f"CPF/CNPJ: {orcamento.get('cliente_documento')}")
-        y -= 15
-    if orcamento.get('cliente_whatsapp'):
-        p.drawString(50, y, f"WhatsApp: {orcamento.get('cliente_whatsapp')}")
-        y -= 15
-    if orcamento.get('cliente_email'):
-        p.drawString(50, y, f"E-mail: {orcamento.get('cliente_email')}")
-        y -= 15
-    
-    # Descrição do serviço/produto
-    y -= 20
-    p.setFont("Helvetica-Bold", 14)
-    p.drawString(50, y, "DESCRIÇÃO")
-    y -= 20
-    p.setFont("Helvetica", 10)
-    
-    descricao = orcamento.get('descricao_servico_ou_produto', '')
-    # Quebrar texto longo
-    max_chars = 80
-    if len(descricao) > max_chars:
-        lines = [descricao[i:i+max_chars] for i in range(0, len(descricao), max_chars)]
-        for line in lines:
-            p.drawString(50, y, line)
-            y -= 15
-    else:
-        p.drawString(50, y, descricao)
-        y -= 15
-    
-    # Detalhes adicionais
-    if orcamento.get('area_m2'):
-        p.drawString(50, y, f"Área: {orcamento.get('area_m2')} m²")
-        y -= 15
-    if orcamento.get('quantidade'):
-        p.drawString(50, y, f"Quantidade: {orcamento.get('quantidade')}")
-        y -= 15
-    
-    # Valores
-    y -= 20
-    p.setFont("Helvetica-Bold", 14)
-    p.drawString(50, y, "VALORES")
-    y -= 20
-    p.setFont("Helvetica", 10)
-    
-    p.drawString(50, y, f"Custo Total: R$ {orcamento.get('custo_total', 0):,.2f}")
-    y -= 15
-    p.drawString(50, y, f"Preço Mínimo: R$ {orcamento.get('preco_minimo', 0):,.2f}")
-    y -= 15
-    
-    p.setFont("Helvetica-Bold", 12)
-    p.drawString(50, y, f"VALOR DA PROPOSTA: R$ {orcamento.get('preco_praticado', 0):,.2f}")
-    y -= 25
-    
-    # Condições comerciais
-    p.setFont("Helvetica-Bold", 14)
-    p.drawString(50, y, "CONDIÇÕES COMERCIAIS")
-    y -= 20
-    p.setFont("Helvetica", 10)
-    
-    p.drawString(50, y, f"Validade: {orcamento.get('validade_proposta', '')}")
-    y -= 15
-    p.drawString(50, y, f"Pagamento: {orcamento.get('condicoes_pagamento', '')}")
-    y -= 15
-    p.drawString(50, y, f"Prazo: {orcamento.get('prazo_execucao', '')}")
-    y -= 15
-    
-    if orcamento.get('observacoes'):
-        y -= 10
-        p.drawString(50, y, f"Observações: {orcamento.get('observacoes')}")
-    
-    # Rodapé
-    p.setFont("Helvetica", 8)
-    p.drawString(50, 50, "Este orçamento tem validade conforme especificado acima.")
-    p.drawString(50, 35, "Proposta sujeita a análise de crédito e disponibilidade.")
-    
-    p.showPage()
-    p.save()
-    
-    buffer.seek(0)
+    # Converter para PDF
+    pdf_file = HTML(string=html_content).write_pdf()
     
     return StreamingResponse(
-        buffer,
+        BytesIO(pdf_file),
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento.get('numero_orcamento', orcamento_id)}.pdf"}
     )
