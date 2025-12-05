@@ -386,39 +386,90 @@ async def get_monthly_goal(company_id: str, month: str):
 
 # ========== ROTAS DE CATEGORIAS ==========
 
+# Categorias padrão do sistema organizadas por tipo
+CATEGORIAS_PADRAO = {
+    "receita": [
+        "Vendas de produtos",
+        "Vendas de serviços",
+        "Mensalidades / Assinaturas",
+        "Honorários / Consultoria",
+        "Comissões recebidas",
+        "Receitas recorrentes (planos, contratos)",
+        "Receitas eventuais (jobs pontuais, extras)",
+        "Receitas financeiras (juros, rendimentos)",
+        "Descontos obtidos",
+        "Outras receitas operacionais"
+    ],
+    "custo": [
+        "Matéria-prima",
+        "Embalagens",
+        "Frete de compras",
+        "Frete de vendas / entrega",
+        "Mão de obra direta (produção/serviço)",
+        "Insumos de produção (peças, químicos, materiais)",
+        "Terceirização de produção / serviços",
+        "Energia elétrica da produção",
+        "Impostos sobre vendas",
+        "Comissões sobre vendas",
+        "Taxas de plataformas de venda (marketplaces, apps etc.)",
+        "Outros custos operacionais diretos"
+    ],
+    "despesa": [
+        # Administrativas / estruturais
+        "Aluguel e condomínio",
+        "Água, luz, telefone e internet",
+        "Salários administrativos",
+        "Encargos trabalhistas (INSS, FGTS, benefícios)",
+        "Contabilidade e assessoria",
+        "Licenças, alvarás e taxas",
+        "Seguros (empresa, veículos, responsabilidade civil)",
+        "Material de escritório e limpeza",
+        # Comerciais / marketing
+        "Marketing e anúncios (Google, Meta, etc.)",
+        "Materiais promocionais e brindes",
+        "Viagens e representação comercial",
+        "Comissões de representantes",
+        # Tecnologia / operação
+        "Softwares e sistemas (SaaS em geral)",
+        "Hospedagem de site / e-mail",
+        "Manutenção de máquinas, equipamentos e TI",
+        "Manutenção de veículos",
+        # Financeiras / tributos
+        "Tarifas bancárias",
+        "Juros bancários",
+        "Taxas de cartão de crédito/débito",
+        "Multas e encargos",
+        "Tributos fixos (Simples, ISS, ICMS fixo etc.)",
+        # Coringa
+        "Outras despesas operacionais"
+    ]
+}
+
 @api_router.get("/categories")
-async def get_categories():
-    return {
-        "receitas": [
-            "Vendas de Produtos",
-            "Prestação de Serviços",
-            "Outras Receitas"
-        ],
-        "custos": [
-            "Matéria-Prima",
-            "Embalagens",
-            "Frete de Compras",
-            "Impostos sobre Vendas",
-            "Comissões"
-        ],
-        "despesas": [
-            "Salários e Encargos",
-            "Aluguel",
-            "Energia Elétrica",
-            "Água",
-            "Telefone/Internet",
-            "Marketing e Publicidade",
-            "Contador",
-            "Manutenção",
-            "Material de Escritório",
-            "Limpeza",
-            "Segurança",
-            "Seguros",
-            "Taxas Bancárias",
-            "Depreciação",
-            "Outras Despesas"
-        ]
+async def get_categories(company_id: Optional[str] = None):
+    """
+    Retorna categorias padrão + personalizadas (se company_id fornecido)
+    Organizado por tipo: receita, custo, despesa
+    """
+    categories = {
+        "receita": CATEGORIAS_PADRAO["receita"].copy(),
+        "custo": CATEGORIAS_PADRAO["custo"].copy(),
+        "despesa": CATEGORIAS_PADRAO["despesa"].copy()
     }
+    
+    # Buscar categorias personalizadas da empresa
+    if company_id:
+        custom_cats = await db.custom_categories.find(
+            {"company_id": company_id},
+            {"_id": 0}
+        ).to_list(None)
+        
+        for cat in custom_cats:
+            tipo = cat['tipo']
+            if tipo in categories:
+                categories[tipo].append(cat['nome'])
+    
+    return categories
 
 # ========== ANÁLISE IA (CHATGPT) ==========
 
