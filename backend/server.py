@@ -388,6 +388,32 @@ async def get_companies(user_id: str):
     ).to_list(50)
     return companies
 
+@api_router.get("/company/{company_id}")
+async def get_company_detail(company_id: str):
+    """Buscar detalhes completos da empresa"""
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    
+    return company
+
+@api_router.put("/company/{company_id}")
+async def update_company(company_id: str, company_data: CompanyCreate):
+    """Atualizar dados da empresa"""
+    update_doc = company_data.model_dump()
+    update_doc['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.companies.update_one(
+        {"id": company_id},
+        {"$set": update_doc}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    
+    return {"message": "Empresa atualizada com sucesso!"}
+
 # ========== ROTAS DE LANÇAMENTOS ==========
 
 @api_router.post("/transactions")
