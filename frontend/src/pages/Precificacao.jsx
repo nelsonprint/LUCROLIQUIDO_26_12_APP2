@@ -211,6 +211,74 @@ const Precificacao = ({ user, onLogout }) => {
     });
   };
 
+  // ========== FUNÇÃO PARA GERAR ORÇAMENTO ==========
+  const handleGerarOrcamento = () => {
+    if (!resultadoServico && !resultadoProduto) {
+      toast.error('Calcule o preço antes de gerar o orçamento');
+      return;
+    }
+    setShowOrcamentoModal(true);
+  };
+
+  const handleCriarOrcamento = async (e) => {
+    e.preventDefault();
+    setLoadingOrcamento(true);
+
+    try {
+      const data = {
+        empresa_id: company.id,
+        usuario_id: user.user_id,
+        ...orcamentoData,
+      };
+
+      // Se for serviço por m²
+      if (tipoPrecificacao === 'servico' && tipoCobrancaServico === 'por-m2' && resultadoServico) {
+        data.tipo = 'servico_m2';
+        data.descricao_servico_ou_produto = formServico.nomeServico || 'Serviço por m²';
+        data.area_m2 = parseFloat(formServico.areaTotal) || 0;
+        data.custo_total = parseFloat(resultadoServico.custoTotal);
+        data.preco_minimo = parseFloat(resultadoServico.precoMinimo);
+        data.preco_sugerido = parseFloat(resultadoServico.precoSugerido);
+        data.preco_praticado = parseFloat(resultadoServico.precoSugerido);
+      }
+      // Se for produto
+      else if (tipoPrecificacao === 'produto' && resultadoProduto) {
+        data.tipo = 'produto';
+        data.descricao_servico_ou_produto = 'Produto';
+        data.custo_total = parseFloat(resultadoProduto.custoTotal);
+        data.preco_minimo = parseFloat(resultadoProduto.precoVenda);
+        data.preco_sugerido = parseFloat(resultadoProduto.precoVenda);
+        data.preco_praticado = parseFloat(resultadoProduto.precoVenda);
+        data.quantidade = 1;
+      }
+
+      const response = await axiosInstance.post('/orcamentos', data);
+      toast.success(`Orçamento ${response.data.numero_orcamento} criado com sucesso!`);
+      setShowOrcamentoModal(false);
+      
+      // Resetar form orçamento
+      setOrcamentoData({
+        cliente_nome: '',
+        cliente_documento: '',
+        cliente_email: '',
+        cliente_telefone: '',
+        cliente_whatsapp: '',
+        cliente_endereco: '',
+        validade_proposta: '',
+        condicoes_pagamento: '',
+        prazo_execucao: '',
+        observacoes: '',
+      });
+
+      // Redirecionar para página de orçamentos
+      setTimeout(() => navigate('/orcamentos'), 1500);
+    } catch (error) {
+      toast.error('Erro ao criar orçamento');
+    } finally {
+      setLoadingOrcamento(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-zinc-950 text-white">
       <Sidebar user={user} onLogout={onLogout} activePage="precificacao" />
