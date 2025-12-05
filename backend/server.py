@@ -688,6 +688,289 @@ async def delete_custom_category(category_id: str):
     
     return {"message": "Categoria excluída com sucesso!"}
 
+# ========== ROTAS DE ORÇAMENTOS ==========
+
+async def gerar_numero_orcamento(empresa_id: str):
+    """Gerar número sequencial de orçamento (formato: LL-YYYY-NNNN)"""
+    ano_atual = datetime.now().year
+    
+    # Buscar último orçamento do ano
+    ultimo_orcamento = await db.orcamentos.find_one(
+        {
+            "empresa_id": empresa_id,
+            "numero_orcamento": {"$regex": f"^LL-{ano_atual}-"}
+        },
+        sort=[("created_at", -1)]
+    )
+    
+    if ultimo_orcamento:
+        # Extrair número do último orçamento
+        try:
+            ultimo_numero = int(ultimo_orcamento['numero_orcamento'].split('-')[-1])
+            proximo_numero = ultimo_numero + 1
+        except:
+            proximo_numero = 1
+    else:
+        proximo_numero = 1
+    
+    return f"LL-{ano_atual}-{proximo_numero:04d}"
+
+@api_router.post("/orcamentos")
+async def create_orcamento(orcamento_data: OrcamentoCreate):
+    """Criar novo orçamento"""
+    # Gerar número do orçamento
+    numero_orcamento = await gerar_numero_orcamento(orcamento_data.empresa_id)
+    
+    orcamento = Orcamento(
+        numero_orcamento=numero_orcamento,
+        **orcamento_data.model_dump()
+    )
+    
+    doc = orcamento.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    await db.orcamentos.insert_one(doc)
+    
+    return {"message": "Orçamento criado com sucesso!", "orcamento_id": orcamento.id, "numero_orcamento": numero_orcamento}
+
+@api_router.get("/orcamentos/{empresa_id}")
+async def get_orcamentos(
+    empresa_id: str,
+    status: Optional[str] = None,
+    data_inicio: Optional[str] = None,
+    data_fim: Optional[str] = None,
+    cliente: Optional[str] = None
+):
+    """Listar orçamentos com filtros"""
+    query = {"empresa_id": empresa_id}
+    
+    if status:
+        query["status"] = status
+    if cliente:
+        query["cliente_nome"] = {"$regex": cliente, "$options": "i"}
+    if data_inicio and data_fim:
+        query["created_at"] = {
+            "$gte": data_inicio,
+            "$lte": data_fim
+        }
+    
+    orcamentos = await db.orcamentos.find(query, {"_id": 0}).sort("created_at", -1).limit(100).to_list(None)
+    return orcamentos
+
+@api_router.get("/orcamento/{orcamento_id}")
+async def get_orcamento_detail(orcamento_id: str):
+    """Buscar detalhes de um orçamento específico"""
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    return orcamento
+
+@api_router.put("/orcamento/{orcamento_id}")
+async def update_orcamento(orcamento_id: str, orcamento_data: OrcamentoCreate):
+    """Atualizar orçamento"""
+    update_doc = orcamento_data.model_dump()
+    update_doc['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.orcamentos.update_one(
+        {"id": orcamento_id},
+        {"$set": update_doc}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    return {"message": "Orçamento atualizado com sucesso!"}
+
+@api_router.delete("/orcamento/{orcamento_id}")
+async def delete_orcamento(orcamento_id: str):
+    """Deletar orçamento"""
+    result = await db.orcamentos.delete_one({"id": orcamento_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    return {"message": "Orçamento excluído com sucesso!"}
+
+@api_router.patch("/orcamento/{orcamento_id}/status")
+async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatusUpdate):
+    """Atualizar status do orçamento"""
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id})
+    
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    update_fields = {
+        "status": status_data.status,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Atualizar datas específicas baseado no status
+    if status_data.status == "ENVIADO":
+        update_fields['enviado_em'] = datetime.now(timezone.utc).isoformat()
+        if status_data.canal_envio:
+            update_fields['canal_envio'] = status_data.canal_envio
+    elif status_data.status == "APROVADO":
+        update_fields['aprovado_em'] = datetime.now(timezone.utc).isoformat()
+    elif status_data.status == "NAO_APROVADO":
+        update_fields['nao_aprovado_em'] = datetime.now(timezone.utc).isoformat()
+    
+    await db.orcamentos.update_one({"id": orcamento_id}, {"$set": update_fields})
+    
+    return {"message": f"Status atualizado para {status_data.status}!"}
+
+@api_router.get("/orcamento/{orcamento_id}/pdf")
+async def generate_orcamento_pdf(orcamento_id: str):
+    """Gerar PDF do orçamento"""
+    # Buscar orçamento
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    # Buscar dados da empresa
+    empresa = await db.companies.find_one({"id": orcamento['empresa_id']}, {"_id": 0})
+    
+    # Criar PDF
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    
+    # Configurar fonte
+    p.setFont("Helvetica-Bold", 20)
+    
+    # Título
+    p.drawString(50, height - 50, "ORÇAMENTO")
+    
+    # Número do orçamento
+    p.setFont("Helvetica", 12)
+    p.drawString(50, height - 80, f"Nº: {orcamento.get('numero_orcamento', 'N/A')}")
+    p.drawString(50, height - 100, f"Data: {orcamento.get('created_at', '')[:10]}")
+    
+    # Dados da empresa
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, height - 140, "DADOS DA EMPRESA")
+    p.setFont("Helvetica", 10)
+    y = height - 160
+    
+    if empresa:
+        if empresa.get('razao_social'):
+            p.drawString(50, y, f"Razão Social: {empresa.get('razao_social')}")
+            y -= 15
+        if empresa.get('cnpj'):
+            p.drawString(50, y, f"CNPJ: {empresa.get('cnpj')}")
+            y -= 15
+        if empresa.get('logradouro'):
+            endereco = f"{empresa.get('logradouro', '')}, {empresa.get('numero', '')}"
+            if empresa.get('bairro'):
+                endereco += f" - {empresa.get('bairro')}"
+            if empresa.get('cidade'):
+                endereco += f" - {empresa.get('cidade')}/{empresa.get('estado', '')}"
+            p.drawString(50, y, f"Endereço: {endereco}")
+            y -= 15
+        if empresa.get('celular_whatsapp'):
+            p.drawString(50, y, f"WhatsApp: {empresa.get('celular_whatsapp')}")
+            y -= 15
+        if empresa.get('email_empresa'):
+            p.drawString(50, y, f"E-mail: {empresa.get('email_empresa')}")
+            y -= 15
+    
+    # Dados do cliente
+    y -= 20
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "DADOS DO CLIENTE")
+    y -= 20
+    p.setFont("Helvetica", 10)
+    
+    p.drawString(50, y, f"Nome: {orcamento.get('cliente_nome', '')}")
+    y -= 15
+    if orcamento.get('cliente_documento'):
+        p.drawString(50, y, f"CPF/CNPJ: {orcamento.get('cliente_documento')}")
+        y -= 15
+    if orcamento.get('cliente_whatsapp'):
+        p.drawString(50, y, f"WhatsApp: {orcamento.get('cliente_whatsapp')}")
+        y -= 15
+    if orcamento.get('cliente_email'):
+        p.drawString(50, y, f"E-mail: {orcamento.get('cliente_email')}")
+        y -= 15
+    
+    # Descrição do serviço/produto
+    y -= 20
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "DESCRIÇÃO")
+    y -= 20
+    p.setFont("Helvetica", 10)
+    
+    descricao = orcamento.get('descricao_servico_ou_produto', '')
+    # Quebrar texto longo
+    max_chars = 80
+    if len(descricao) > max_chars:
+        lines = [descricao[i:i+max_chars] for i in range(0, len(descricao), max_chars)]
+        for line in lines:
+            p.drawString(50, y, line)
+            y -= 15
+    else:
+        p.drawString(50, y, descricao)
+        y -= 15
+    
+    # Detalhes adicionais
+    if orcamento.get('area_m2'):
+        p.drawString(50, y, f"Área: {orcamento.get('area_m2')} m²")
+        y -= 15
+    if orcamento.get('quantidade'):
+        p.drawString(50, y, f"Quantidade: {orcamento.get('quantidade')}")
+        y -= 15
+    
+    # Valores
+    y -= 20
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "VALORES")
+    y -= 20
+    p.setFont("Helvetica", 10)
+    
+    p.drawString(50, y, f"Custo Total: R$ {orcamento.get('custo_total', 0):,.2f}")
+    y -= 15
+    p.drawString(50, y, f"Preço Mínimo: R$ {orcamento.get('preco_minimo', 0):,.2f}")
+    y -= 15
+    
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(50, y, f"VALOR DA PROPOSTA: R$ {orcamento.get('preco_praticado', 0):,.2f}")
+    y -= 25
+    
+    # Condições comerciais
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "CONDIÇÕES COMERCIAIS")
+    y -= 20
+    p.setFont("Helvetica", 10)
+    
+    p.drawString(50, y, f"Validade: {orcamento.get('validade_proposta', '')}")
+    y -= 15
+    p.drawString(50, y, f"Pagamento: {orcamento.get('condicoes_pagamento', '')}")
+    y -= 15
+    p.drawString(50, y, f"Prazo: {orcamento.get('prazo_execucao', '')}")
+    y -= 15
+    
+    if orcamento.get('observacoes'):
+        y -= 10
+        p.drawString(50, y, f"Observações: {orcamento.get('observacoes')}")
+    
+    # Rodapé
+    p.setFont("Helvetica", 8)
+    p.drawString(50, 50, "Este orçamento tem validade conforme especificado acima.")
+    p.drawString(50, 35, "Proposta sujeita a análise de crédito e disponibilidade.")
+    
+    p.showPage()
+    p.save()
+    
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento.get('numero_orcamento', orcamento_id)}.pdf"}
+    )
+
 # ========== ANÁLISE IA (CHATGPT) ==========
 
 @api_router.post("/ai-analysis")
