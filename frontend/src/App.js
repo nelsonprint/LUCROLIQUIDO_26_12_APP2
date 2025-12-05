@@ -116,6 +116,16 @@ function App() {
           }
         />
         <Route
+          path="/empresa"
+          element={
+            user ? (
+              <Empresa user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
           path="/meta-mensal"
           element={
             user ? (
