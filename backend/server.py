@@ -100,6 +100,9 @@ class Transaction(BaseModel):
     date: str
     status: str = "previsto"
     notes: Optional[str] = None
+    origem: str = "manual"  # manual ou conta (vindo de contas a pagar/receber)
+    conta_id: Optional[str] = None  # ID da conta vinculada (se origem = conta)
+    cancelled: bool = False  # Indica se o lançamento foi cancelado
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class MonthlyGoalCreate(BaseModel):
