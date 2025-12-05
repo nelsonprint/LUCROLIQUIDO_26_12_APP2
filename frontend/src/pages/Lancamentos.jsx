@@ -18,7 +18,8 @@ import FinancialGlossary from '@/components/FinancialGlossary';
 const Lancamentos = ({ user, onLogout }) => {
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
-  const [categories, setCategories] = useState({ receitas: [], custos: [], despesas: [] });
+  const [categories, setCategories] = useState({ receita: [], custo: [], despesa: [] });
+  const [availableCategories, setAvailableCategories] = useState([]);
   const [showDialog, setShowDialog] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
