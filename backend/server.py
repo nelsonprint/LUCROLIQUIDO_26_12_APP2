@@ -305,6 +305,11 @@ async def create_first_admin():
 
 # ========== ROTAS DE AUTENTICAÇÃO ==========
 
+@api_router.get("/")
+async def api_root():
+    """Root endpoint for API - useful for health checks"""
+    return {"status": "ok", "message": "API funcionando!", "version": "1.0"}
+
 @api_router.post("/auth/register")
 async def register(user_data: UserRegister):
     # Verificar se email já existe
