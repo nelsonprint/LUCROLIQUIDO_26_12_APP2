@@ -14,6 +14,8 @@ import CategoriasPersonalizadas from './pages/CategoriasPersonalizadas';
 import Empresa from './pages/Empresa';
 import MetaMensal from './pages/MetaMensal';
 import Precificacao from './pages/Precificacao';
+import Orcamentos from './pages/Orcamentos';
+import OrcamentoDetalhe from './pages/OrcamentoDetalhe';
 import Assinatura from './pages/Assinatura';
 import AdminPanel from './pages/AdminPanel';
 
