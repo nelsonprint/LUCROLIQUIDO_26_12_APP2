@@ -41,7 +41,55 @@ export const Sidebar = ({ user, onLogout, onOpenGlossary }) => {
 
       {/* Menu */}
       <nav className="flex-1 p-4 space-y-2">
-        {menuItems.map((item) => {
+        {menuItems.map((item, index) => {
+          // Se for submenu (Contas)
+          if (item.type === 'submenu') {
+            const Icon = item.icon;
+            const isAnySubActive = item.items.some(subItem => location.pathname === subItem.path);
+            
+            return (
+              <div key={`submenu-${index}`}>
+                <button
+                  onClick={() => setContasMenuOpen(!contasMenuOpen)}
+                  className={`w-full flex items-center justify-between space-x-3 px-4 py-3 rounded-lg transition-all ${
+                    isAnySubActive
+                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                      : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                  }`}
+                  data-testid="sidebar-contas-menu"
+                >
+                  <div className="flex items-center space-x-3">
+                    <Icon size={20} />
+                    <span className="font-medium">{item.label}</span>
+                  </div>
+                  {contasMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                </button>
+                
+                {contasMenuOpen && (
+                  <div className="mt-2 ml-8 space-y-1">
+                    {item.items.map((subItem) => {
+                      const isSubActive = location.pathname === subItem.path;
+                      return (
+                        <Link key={subItem.path} to={subItem.path}>
+                          <div
+                            className={`px-4 py-2 rounded-lg text-sm transition-all ${
+                              isSubActive
+                                ? 'bg-white/10 text-white font-medium'
+                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                            }`}
+                          >
+                            {subItem.label}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+          
+          // Menu normal
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
 
