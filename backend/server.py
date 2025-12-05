@@ -829,7 +829,7 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict) -> bytes:
     from datetime import datetime as dt
     
     buffer = BytesIO()
-    c = canvas.Canvas(buffer, pagesize=A4)
+    c = pdf_canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
     
     # Cores
