@@ -28,6 +28,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [costAlerts, setCostAlerts] = useState([]);
   const [detailedAnalysis, setDetailedAnalysis] = useState([]);
   const [showGlossary, setShowGlossary] = useState(false);
+  const [contasResumo, setContasResumo] = useState(null);
 
   useEffect(() => {
     fetchCompanies();
