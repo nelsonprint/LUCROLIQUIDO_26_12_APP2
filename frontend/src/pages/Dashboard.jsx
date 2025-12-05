@@ -29,6 +29,9 @@ const Dashboard = ({ user, onLogout }) => {
   const [detailedAnalysis, setDetailedAnalysis] = useState([]);
   const [showGlossary, setShowGlossary] = useState(false);
   const [contasResumo, setContasResumo] = useState(null);
+  const [fluxoCaixaData, setFluxoCaixaData] = useState([]);
+  const [contasPagarPorCategoria, setContasPagarPorCategoria] = useState([]);
+  const [contasReceberPorCliente, setContasReceberPorCliente] = useState([]);
 
   useEffect(() => {
     fetchCompanies();
