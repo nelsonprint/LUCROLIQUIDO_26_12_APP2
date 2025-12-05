@@ -1,14 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Target, Calculator, CreditCard, Shield, LogOut, BookOpen } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Calculator, CreditCard, Shield, LogOut, BookOpen, Receipt, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const Sidebar = ({ user, onLogout, onOpenGlossary }) => {
   const location = useLocation();
+  const [contasMenuOpen, setContasMenuOpen] = useState(false);
 
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/lancamentos', icon: FileText, label: 'Lançamentos' },
+    { 
+      type: 'submenu',
+      icon: Receipt, 
+      label: 'Contas',
+      items: [
+        { path: '/contas-pagar', label: 'Contas a Pagar' },
+        { path: '/contas-receber', label: 'Contas a Receber' }
+      ]
+    },
     { path: '/meta-mensal', icon: Target, label: 'Meta Mensal' },
     { path: '/precificacao', icon: Calculator, label: 'Precificação' },
     { path: '/assinatura', icon: CreditCard, label: 'Assinatura' },
