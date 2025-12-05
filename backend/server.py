@@ -834,7 +834,6 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict) -> bytes:
     
     # Cores
     primary_color = HexColor('#7C3AED')
-    secondary_color = HexColor('#3B82F6')
     text_color = HexColor('#444444')
     
     # Header com gradiente (simulado com retângulo)
