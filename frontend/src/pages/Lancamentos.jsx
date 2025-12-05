@@ -176,6 +176,8 @@ const Lancamentos = ({ user, onLogout }) => {
       status: 'realizado',
       notes: '',
     });
+    // Resetar categorias para receita (tipo padrão)
+    updateAvailableCategories('receita');
     setEditingTransaction(null);
     setShowDialog(false);
   };
