@@ -28,6 +28,10 @@ db = client[os.environ['DB_NAME']]
 # Mercado Pago SDK
 sdk = mercadopago.SDK(os.environ.get('MERCADO_PAGO_ACCESS_TOKEN'))
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Create the main app
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
