@@ -823,7 +823,17 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
 @api_router.get("/orcamento/{orcamento_id}/pdf")
 async def generate_orcamento_pdf(orcamento_id: str):
     """Gerar PDF do orçamento com template HTML/CSS profissional"""
-    from weasyprint import HTML
+    try:
+        from weasyprint import HTML
+    except (OSError, ImportError) as e:
+        # WeasyPrint requer dependências do sistema (libpango)
+        # Se não estiverem disponíveis, retorna erro informativo
+        raise HTTPException(
+            status_code=503,
+            detail="Serviço de geração de PDF temporariamente indisponível. "
+                   "Dependências do sistema necessárias: libpango-1.0-0, libpangoft2-1.0-0, libpangocairo-1.0-0"
+        )
+    
     from jinja2 import Environment, FileSystemLoader
     import os
     from datetime import datetime as dt
