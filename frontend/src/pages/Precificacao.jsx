@@ -421,6 +421,17 @@ const Precificacao = ({ user, onLogout }) => {
                           <span className="text-purple-400 font-semibold">{resultadoProduto.margemEfetiva}%</span>
                         </div>
                       </div>
+
+                      {/* Botão Gerar Orçamento */}
+                      <div className="flex justify-center pt-4">
+                        <Button
+                          onClick={handleGerarOrcamento}
+                          className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 px-6 py-5"
+                        >
+                          <FileText className="w-5 h-5 mr-2" />
+                          Gerar Orçamento para Cliente
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 )}
