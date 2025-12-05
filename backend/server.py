@@ -316,11 +316,13 @@ async def delete_transaction(transaction_id: str):
 @api_router.get("/metrics/{company_id}/{month}")
 async def get_metrics(company_id: str, month: str):
     # Usar aggregation para calcular no banco ao invés de em Python
+    # Excluir lançamentos cancelados
     pipeline = [
         {"$match": {
             "company_id": company_id,
             "date": {"$regex": f"^{month}"},
-            "status": "realizado"
+            "status": "realizado",
+            "cancelled": {"$ne": True}  # Excluir cancelados
         }},
         {"$group": {
             "_id": "$type",
