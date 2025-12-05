@@ -507,6 +507,200 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
         )}
 
+        {/* Gráficos de Contas a Pagar e Receber */}
+        {(fluxoCaixaData.length > 0 || contasPagarPorCategoria.length > 0 || contasReceberPorCliente.length > 0) && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            {/* Fluxo de Caixa Projetado */}
+            {fluxoCaixaData.length > 0 && (
+              <Card className="glass border-white/10 border-l-4 border-l-blue-500">
+                <CardHeader>
+                  <CardTitle className="text-white text-base">Fluxo de Caixa Projetado</CardTitle>
+                  <p className="text-xs text-gray-400 mt-1">Próximos 6 meses</p>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={fluxoCaixaData}>
+                      <defs>
+                        <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#EF4444" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis 
+                        dataKey="mes" 
+                        stroke="#9CA3AF" 
+                        style={{ fontSize: '10px' }}
+                      />
+                      <YAxis 
+                        stroke="#9CA3AF" 
+                        style={{ fontSize: '10px' }}
+                        tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip
+                        contentStyle={{ 
+                          backgroundColor: '#1F2937', 
+                          border: '1px solid #3B82F6',
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                        formatter={(value) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']}
+                      />
+                      <Legend 
+                        wrapperStyle={{ fontSize: '12px' }}
+                        formatter={(value) => {
+                          const labels = {
+                            'entradas': 'Entradas',
+                            'saidas': 'Saídas',
+                            'saldo': 'Saldo'
+                          };
+                          return labels[value] || value;
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="entradas" 
+                        stroke="#10B981" 
+                        fillOpacity={1} 
+                        fill="url(#colorEntradas)"
+                        name="entradas"
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="saidas" 
+                        stroke="#EF4444" 
+                        fillOpacity={1} 
+                        fill="url(#colorSaidas)"
+                        name="saidas"
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="saldo" 
+                        stroke="#3B82F6" 
+                        strokeWidth={2}
+                        dot={{ fill: '#3B82F6', r: 4 }}
+                        name="saldo"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Contas a Pagar por Categoria */}
+            {contasPagarPorCategoria.length > 0 && (
+              <Card className="glass border-white/10 border-l-4 border-l-red-500">
+                <CardHeader>
+                  <CardTitle className="text-white text-base">Contas a Pagar por Categoria</CardTitle>
+                  <p className="text-xs text-gray-400 mt-1">Mês atual</p>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={contasPagarPorCategoria}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        dataKey="valor"
+                        label={({ percentual }) => `${percentual}%`}
+                        labelLine={false}
+                      >
+                        {contasPagarPorCategoria.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={['#EF4444', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4'][index % 5]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ 
+                          backgroundColor: '#1F2937', 
+                          border: '1px solid #EF4444',
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                        formatter={(value) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 space-y-2 max-h-[120px] overflow-y-auto">
+                    {contasPagarPorCategoria.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: ['#EF4444', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4'][index % 5] }}
+                          />
+                          <span className="text-gray-300 text-xs">{item.categoria}</span>
+                        </div>
+                        <span className="text-white font-medium text-xs">
+                          R$ {(item.valor / 1000).toFixed(1)}k
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Contas a Receber por Cliente */}
+            {contasReceberPorCliente.length > 0 && (
+              <Card className="glass border-white/10 border-l-4 border-l-green-500">
+                <CardHeader>
+                  <CardTitle className="text-white text-base">Contas a Receber por Cliente</CardTitle>
+                  <p className="text-xs text-gray-400 mt-1">Mês atual</p>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={contasReceberPorCliente}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        dataKey="valor"
+                        label={({ percentual }) => `${percentual}%`}
+                        labelLine={false}
+                      >
+                        {contasReceberPorCliente.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={['#10B981', '#3B82F6', '#7C3AED', '#F59E0B', '#EC4899'][index % 5]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ 
+                          backgroundColor: '#1F2937', 
+                          border: '1px solid #10B981',
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                        formatter={(value) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 space-y-2 max-h-[120px] overflow-y-auto">
+                    {contasReceberPorCliente.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: ['#10B981', '#3B82F6', '#7C3AED', '#F59E0B', '#EC4899'][index % 5] }}
+                          />
+                          <span className="text-gray-300 text-xs">{item.cliente}</span>
+                        </div>
+                        <span className="text-white font-medium text-xs">
+                          R$ {(item.valor / 1000).toFixed(1)}k
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
         {/* Gráfico de Evolução */}
         <Card className="glass border-white/10" data-testid="evolution-chart-card">
           <CardHeader>
