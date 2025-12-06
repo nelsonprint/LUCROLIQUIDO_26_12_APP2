@@ -170,6 +170,26 @@ function App() {
           }
         />
         <Route
+          path="/orcamento/:id/editar"
+          element={
+            user ? (
+              <EditarOrcamento user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="/materiais"
+          element={
+            user ? (
+              <Materiais user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
           path="/assinatura"
           element={
             user ? (
