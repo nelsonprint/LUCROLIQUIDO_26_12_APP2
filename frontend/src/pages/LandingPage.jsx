@@ -93,14 +93,14 @@ const LandingPage = ({ setUser }) => {
                 Falar agora pelo WhatsApp
               </Button>
               <Button 
-                onClick={handleLogin}
+                onClick={() => setShowLoginModal(true)}
                 variant="outline" 
                 className="border-purple-500/50"
               >
                 Entrar
               </Button>
               <Button 
-                onClick={handleStartTrial}
+                onClick={() => setShowRegisterModal(true)}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
                 Teste Grátis 7 Dias
