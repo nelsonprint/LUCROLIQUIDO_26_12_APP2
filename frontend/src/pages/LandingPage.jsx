@@ -1,18 +1,72 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { TrendingUp, Target, Calculator, FileText, CheckCircle, ArrowRight, MessageCircle, DollarSign, AlertTriangle, BarChart } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { TrendingUp, Target, Calculator, FileText, CheckCircle, ArrowRight, MessageCircle, DollarSign, AlertTriangle, BarChart, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { axiosInstance } from '../App';
 
-const LandingPageNew = () => {
-  const navigate = useNavigate();
+const LandingPage = ({ setUser }) => {
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [loginData, setLoginData] = useState({ email: '', password: '' });
+  const [registerData, setRegisterData] = useState({ name: '', email: '', password: '' });
+  const [loading, setLoading] = useState(false);
 
-  const handleStartTrial = () => {
-    navigate('/register');
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const response = await axiosInstance.post('/auth/login', loginData);
+      
+      if (response.data.user_id) {
+        const user = {
+          id: response.data.user_id,
+          name: response.data.name,
+          email: loginData.email,
+          role: response.data.role,
+        };
+        
+        localStorage.setItem('user', JSON.stringify(user));
+        setUser(user);
+        toast.success('Login realizado com sucesso!');
+        setShowLoginModal(false);
+      }
+    } catch (error) {
+      toast.error('Erro ao fazer login. Verifique suas credenciais.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleLogin = () => {
-    navigate('/login');
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const response = await axiosInstance.post('/auth/register', registerData);
+      
+      if (response.data.user_id) {
+        const user = {
+          id: response.data.user_id,
+          name: registerData.name,
+          email: registerData.email,
+          role: 'user',
+        };
+        
+        localStorage.setItem('user', JSON.stringify(user));
+        setUser(user);
+        toast.success('Conta criada com sucesso! Bem-vindo ao Lucro Líquido!');
+        setShowRegisterModal(false);
+      }
+    } catch (error) {
+      toast.error('Erro ao criar conta. Este email pode já estar cadastrado.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleWhatsApp = () => {
