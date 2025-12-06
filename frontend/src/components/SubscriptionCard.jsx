@@ -18,10 +18,12 @@ export const SubscriptionCard = ({ user }) => {
 
   const fetchSubscription = async () => {
     try {
-      const response = await axiosInstance.get(`/subscription/status/${user.user_id}`);
+      const userId = user?.id || user?.user_id;
+      const response = await axiosInstance.get(`/subscription/status/${userId}`);
       setSubscription(response.data);
     } catch (error) {
-      toast.error('Erro ao carregar assinatura');
+      console.error('Erro ao carregar assinatura:', error);
+      // Não mostrar toast de erro aqui para não poluir a UI
     } finally {
       setLoading(false);
     }
