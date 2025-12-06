@@ -1103,25 +1103,31 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
     
     # Preparar dados para WhatsApp
     import re
+    from urllib.parse import quote
+    
     whatsapp_number = re.sub(r'\D', '', orcamento.get('cliente_whatsapp', ''))
+    
+    # Formatar valor monetário
+    valor_formatado = f"R$ {float(orcamento.get('preco_praticado', 0)):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    
     mensagem = f"""Olá {orcamento.get('cliente_nome')}!
 
 Segue o orçamento {orcamento.get('numero_orcamento')} para sua análise.
 
 *{orcamento.get('descricao_servico_ou_produto')}*
 
-💰 Valor: R$ {orcamento.get('preco_praticado', 0):,.2f}
+💰 Valor: {valor_formatado}
 
 Validade: {orcamento.get('validade_proposta')}
 Prazo: {orcamento.get('prazo_execucao')}
 
-📄 Ver orçamento completo: {pdf_url}
+📄 Ver orçamento completo (PDF): {pdf_url}
 
 Qualquer dúvida, estou à disposição!"""
     
     return {
         "pdf_url": pdf_url,
-        "whatsapp_url": f"https://wa.me/55{whatsapp_number}?text={mensagem}",
+        "whatsapp_url": f"https://wa.me/55{whatsapp_number}?text={quote(mensagem)}",
         "token": token,
         "expires_in": "24 horas"
     }
