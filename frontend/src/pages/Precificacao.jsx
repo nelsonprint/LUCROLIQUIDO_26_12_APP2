@@ -13,12 +13,14 @@ import { Calculator, DollarSign, TrendingUp, Users, Truck, UtensilsCrossed, Wren
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import OrcamentoMateriais from '@/components/OrcamentoMateriais';
 
 const Precificacao = ({ user, onLogout }) => {
   const [tipoPrecificacao, setTipoPrecificacao] = useState('produto');
   const [tipoCobrancaServico, setTipoCobrancaServico] = useState('por-m2');
   const [showOrcamentoModal, setShowOrcamentoModal] = useState(false);
   const [loadingOrcamento, setLoadingOrcamento] = useState(false);
+  const [totalMateriais, setTotalMateriais] = useState(0);
   const navigate = useNavigate();
 
   const company = JSON.parse(localStorage.getItem('company') || '{}');
@@ -1474,16 +1476,58 @@ const Precificacao = ({ user, onLogout }) => {
               </div>
             </div>
 
+            {/* Seção de Materiais */}
+            <div className="space-y-4">
+              <OrcamentoMateriais 
+                orcamentoId={null}
+                onTotalChange={(total) => setTotalMateriais(total)}
+              />
+            </div>
+
             {/* Resumo do Valor */}
             {(resultadoServico || resultadoProduto) && (
-              <div className="p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg border border-purple-500/30">
-                <p className="text-sm text-zinc-400 mb-2">Valor da Proposta</p>
-                <p className="text-3xl font-bold text-green-400">
-                  R$ {resultadoServico 
-                    ? parseFloat(resultadoServico.precoSugerido).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
-                    : parseFloat(resultadoProduto.precoVenda).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
-                  }
-                </p>
+              <div className="p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg border border-purple-500/30 space-y-2">
+                {totalMateriais > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-zinc-400">Serviço:</span>
+                      <span className="text-white">
+                        R$ {resultadoServico 
+                          ? parseFloat(resultadoServico.precoSugerido).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                          : parseFloat(resultadoProduto.precoVenda).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-zinc-400">Materiais:</span>
+                      <span className="text-white">
+                        R$ {totalMateriais.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="pt-2 border-t border-purple-500/30">
+                      <p className="text-sm text-zinc-400 mb-1">Valor Total da Proposta</p>
+                      <p className="text-3xl font-bold text-green-400">
+                        R$ {(
+                          (resultadoServico 
+                            ? parseFloat(resultadoServico.precoSugerido)
+                            : parseFloat(resultadoProduto.precoVenda)
+                          ) + totalMateriais
+                        ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </>
+                )}
+                {totalMateriais === 0 && (
+                  <>
+                    <p className="text-sm text-zinc-400 mb-2">Valor da Proposta</p>
+                    <p className="text-3xl font-bold text-green-400">
+                      R$ {resultadoServico 
+                        ? parseFloat(resultadoServico.precoSugerido).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                        : parseFloat(resultadoProduto.precoVenda).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                      }
+                    </p>
+                  </>
+                )}
               </div>
             )}
 
