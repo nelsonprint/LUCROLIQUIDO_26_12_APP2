@@ -209,7 +209,7 @@ const LandingPage = ({ setUser }) => {
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
-                  onClick={handleStartTrial}
+                  onClick={() => setShowRegisterModal(true)}
                   size="lg"
                   className="text-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg shadow-purple-500/50"
                 >
