@@ -854,7 +854,6 @@ const Dashboard = ({ user, onLogout }) => {
                 </Card>
               )}
             </div>
-            </div>
           );
         })()}
 
