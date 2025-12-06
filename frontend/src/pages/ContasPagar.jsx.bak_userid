@@ -15,7 +15,7 @@ import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Filter, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
-const ContasReceber = ({ user, onLogout }) => {
+const ContasPagar = ({ user, onLogout }) => {
   const [contas, setContas] = useState([]);
   const [filteredContas, setFilteredContas] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -47,7 +47,7 @@ const ContasReceber = ({ user, onLogout }) => {
   const fetchCategorias = async () => {
     try {
       const response = await axiosInstance.get('/contas/categorias');
-      setCategorias(response.data.receber || []);
+      setCategorias(response.data.pagar || []);
     } catch (error) {
       toast.error('Erro ao carregar categorias');
     }
@@ -57,7 +57,7 @@ const ContasReceber = ({ user, onLogout }) => {
     if (!company.id) return;
 
     try {
-      let url = `/contas/receber?company_id=${company.id}`;
+      let url = `/contas/pagar?company_id=${company.id}`;
       if (selectedMonth) url += `&mes=${selectedMonth}`;
       if (filterStatus !== 'all') url += `&status=${filterStatus}`;
       if (filterCategoria !== 'all') url += `&categoria=${filterCategoria}`;
@@ -66,7 +66,7 @@ const ContasReceber = ({ user, onLogout }) => {
       setContas(response.data);
       setFilteredContas(response.data);
     } catch (error) {
-      toast.error('Erro ao carregar contas a receber');
+      toast.error('Erro ao carregar contas a pagar');
     }
   };
 
@@ -77,17 +77,17 @@ const ContasReceber = ({ user, onLogout }) => {
     try {
       const data = {
         company_id: company.id,
-        user_id: (user?.id || user?.user_id),
-        tipo: 'RECEBER',
+        user_id: user.user_id,
+        tipo: 'PAGAR',
         ...formData,
         valor: parseFloat(formData.valor),
       };
 
       if (editingConta) {
-        await axiosInstance.put(`/contas/receber/${editingConta.id}`, data);
+        await axiosInstance.put(`/contas/pagar/${editingConta.id}`, data);
         toast.success('Conta atualizada!');
       } else {
-        await axiosInstance.post('/contas/receber', data);
+        await axiosInstance.post('/contas/pagar', data);
         toast.success('Conta criada!');
       }
 
@@ -119,7 +119,7 @@ const ContasReceber = ({ user, onLogout }) => {
     if (!window.confirm('Deseja realmente excluir esta conta?')) return;
 
     try {
-      await axiosInstance.delete(`/contas/receber/${id}`);
+      await axiosInstance.delete(`/contas/pagar/${id}`);
       toast.success('Conta excluída!');
       fetchContas();
     } catch (error) {
@@ -127,20 +127,20 @@ const ContasReceber = ({ user, onLogout }) => {
     }
   };
 
-  const handleMarcarRecebido = async (conta) => {
+  const handleMarcarPago = async (conta) => {
     try {
-      await axiosInstance.patch(`/contas/receber/${conta.id}/status`, {
-        status: 'RECEBIDO',
+      await axiosInstance.patch(`/contas/pagar/${conta.id}/status`, {
+        status: 'PAGO',
         data_pagamento: new Date().toISOString().slice(0, 10),
       });
-      toast.success('Conta marcada como recebida!');
+      toast.success('Conta marcada como paga!');
       fetchContas();
     } catch (error) {
-      toast.error('Erro ao marcar como recebida');
+      toast.error('Erro ao marcar como paga');
     }
   };
 
-  const handleMarcarRecebidoEmLote = async () => {
+  const handleMarcarPagoEmLote = async () => {
     if (selectedContas.length === 0) {
       toast.error('Selecione pelo menos uma conta');
       return;
@@ -148,18 +148,18 @@ const ContasReceber = ({ user, onLogout }) => {
 
     try {
       const promises = selectedContas.map((id) =>
-        axiosInstance.patch(`/contas/receber/${id}/status`, {
-          status: 'RECEBIDO',
+        axiosInstance.patch(`/contas/pagar/${id}/status`, {
+          status: 'PAGO',
           data_pagamento: new Date().toISOString().slice(0, 10),
         })
       );
 
       await Promise.all(promises);
-      toast.success(`${selectedContas.length} conta(s) marcada(s) como recebida(s)!`);
+      toast.success(`${selectedContas.length} conta(s) marcada(s) como paga(s)!`);
       setSelectedContas([]);
       fetchContas();
     } catch (error) {
-      toast.error('Erro ao marcar contas como recebidas');
+      toast.error('Erro ao marcar contas como pagas');
     }
   };
 
@@ -179,7 +179,6 @@ const ContasReceber = ({ user, onLogout }) => {
   const getStatusBadge = (status) => {
     const variants = {
       PENDENTE: 'default',
-      RECEBIDO: 'success',
       PAGO: 'success',
       ATRASADO: 'destructive',
       PARCIAL: 'warning',
@@ -187,7 +186,6 @@ const ContasReceber = ({ user, onLogout }) => {
 
     const icons = {
       PENDENTE: <AlertCircle className="w-3 h-3 mr-1" />,
-      RECEBIDO: <CheckCircle className="w-3 h-3 mr-1" />,
       PAGO: <CheckCircle className="w-3 h-3 mr-1" />,
       ATRASADO: <XCircle className="w-3 h-3 mr-1" />,
       PARCIAL: <AlertCircle className="w-3 h-3 mr-1" />,
@@ -224,13 +222,13 @@ const ContasReceber = ({ user, onLogout }) => {
     .filter((c) => c.status === 'PENDENTE' || c.status === 'ATRASADO')
     .reduce((sum, c) => sum + c.valor, 0);
 
-  const totalRecebido = filteredContas
-    .filter((c) => c.status === 'RECEBIDO' || c.status === 'PAGO')
+  const totalPago = filteredContas
+    .filter((c) => c.status === 'PAGO')
     .reduce((sum, c) => sum + c.valor, 0);
 
   return (
     <div className="flex min-h-screen bg-zinc-950 text-white">
-      <Sidebar user={user} onLogout={onLogout} activePage="contas-receber" />
+      <Sidebar user={user} onLogout={onLogout} activePage="contas-pagar" />
 
       <div className="flex-1 p-8 ml-64">
         <div className="max-w-7xl mx-auto space-y-6">
@@ -239,18 +237,18 @@ const ContasReceber = ({ user, onLogout }) => {
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold">Contas a Receber</h1>
-              <p className="text-zinc-400 mt-1">Gerencie seus recebimentos e contratos</p>
+              <h1 className="text-3xl font-bold">Contas a Pagar</h1>
+              <p className="text-zinc-400 mt-1">Gerencie suas contas e compromissos financeiros</p>
             </div>
             <Button
               onClick={() => {
                 resetForm();
                 setShowDialog(true);
               }}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-red-600 hover:bg-red-700"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Nova Conta a Receber
+              Nova Conta a Pagar
             </Button>
           </div>
 
@@ -261,7 +259,7 @@ const ContasReceber = ({ user, onLogout }) => {
                 <CardTitle className="text-sm font-medium text-zinc-400">Pendente</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-yellow-500">
+                <div className="text-2xl font-bold text-red-500">
                   R$ {totalPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">
@@ -272,14 +270,14 @@ const ContasReceber = ({ user, onLogout }) => {
 
             <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader>
-                <CardTitle className="text-sm font-medium text-zinc-400">Recebido</CardTitle>
+                <CardTitle className="text-sm font-medium text-zinc-400">Pago</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-500">
-                  R$ {totalRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {totalPago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">
-                  {filteredContas.filter((c) => c.status === 'RECEBIDO' || c.status === 'PAGO').length} conta(s)
+                  {filteredContas.filter((c) => c.status === 'PAGO').length} conta(s)
                 </p>
               </CardContent>
             </Card>
@@ -290,7 +288,7 @@ const ContasReceber = ({ user, onLogout }) => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  R$ {(totalPendente + totalRecebido).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {(totalPendente + totalPago).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">{filteredContas.length} conta(s)</p>
               </CardContent>
@@ -320,7 +318,7 @@ const ContasReceber = ({ user, onLogout }) => {
                     <SelectContent>
                       <SelectItem value="all">Todos</SelectItem>
                       <SelectItem value="PENDENTE">Pendente</SelectItem>
-                      <SelectItem value="RECEBIDO">Recebido</SelectItem>
+                      <SelectItem value="PAGO">Pago</SelectItem>
                       <SelectItem value="ATRASADO">Atrasado</SelectItem>
                       <SelectItem value="PARCIAL">Parcial</SelectItem>
                     </SelectContent>
@@ -350,8 +348,8 @@ const ContasReceber = ({ user, onLogout }) => {
                   <span className="text-sm text-zinc-400">
                     {selectedContas.length} conta(s) selecionada(s)
                   </span>
-                  <Button onClick={handleMarcarRecebidoEmLote} size="sm" className="bg-green-600 hover:bg-green-700">
-                    Marcar como Recebido
+                  <Button onClick={handleMarcarPagoEmLote} size="sm" className="bg-green-600 hover:bg-green-700">
+                    Marcar como Pago
                   </Button>
                 </div>
               )}
@@ -402,18 +400,18 @@ const ContasReceber = ({ user, onLogout }) => {
                         <TableCell>
                           {new Date(conta.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR')}
                         </TableCell>
-                        <TableCell className="font-medium text-green-500">
+                        <TableCell className="font-medium text-red-500">
                           R$ {conta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell>{getStatusBadge(conta.status)}</TableCell>
                         <TableCell>{conta.forma_pagamento}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            {conta.status !== 'RECEBIDO' && conta.status !== 'PAGO' && (
+                            {conta.status !== 'PAGO' && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleMarcarRecebido(conta)}
+                                onClick={() => handleMarcarPago(conta)}
                                 className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
                               >
                                 <CheckCircle className="w-4 h-4" />
@@ -451,7 +449,7 @@ const ContasReceber = ({ user, onLogout }) => {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingConta ? 'Editar Conta' : 'Nova Conta a Receber'}</DialogTitle>
+            <DialogTitle>{editingConta ? 'Editar Conta' : 'Nova Conta a Pagar'}</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -461,7 +459,7 @@ const ContasReceber = ({ user, onLogout }) => {
                 required
                 value={formData.descricao}
                 onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                placeholder="Ex: Pagamento do cliente X"
+                placeholder="Ex: Aluguel do escritório"
                 className="bg-zinc-800 border-zinc-700"
               />
             </div>
@@ -527,7 +525,7 @@ const ContasReceber = ({ user, onLogout }) => {
             </div>
 
             <div>
-              <Label>Forma de Recebimento *</Label>
+              <Label>Forma de Pagamento *</Label>
               <Select
                 required
                 value={formData.forma_pagamento}
@@ -569,7 +567,7 @@ const ContasReceber = ({ user, onLogout }) => {
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700">
+              <Button type="submit" disabled={loading} className="bg-red-600 hover:bg-red-700">
                 {loading ? 'Salvando...' : editingConta ? 'Atualizar' : 'Criar'}
               </Button>
             </div>
@@ -580,4 +578,4 @@ const ContasReceber = ({ user, onLogout }) => {
   );
 };
 
-export default ContasReceber;
+export default ContasPagar;

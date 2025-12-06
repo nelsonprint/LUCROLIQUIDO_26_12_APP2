@@ -37,7 +37,7 @@ const AdminPanel = ({ user, onLogout }) => {
 
   const fetchStats = async () => {
     try {
-      const response = await axiosInstance.get(`/admin/stats?user_id=${(user?.id || user?.user_id)}`);
+      const response = await axiosInstance.get(`/admin/stats?user_id=${user.user_id}`);
       setStats(response.data);
     } catch (error) {
       toast.error('Erro ao carregar estatísticas');
@@ -46,7 +46,7 @@ const AdminPanel = ({ user, onLogout }) => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axiosInstance.get(`/admin/users?user_id=${(user?.id || user?.user_id)}`);
+      const response = await axiosInstance.get(`/admin/users?user_id=${user.user_id}`);
       setUsers(response.data);
     } catch (error) {
       toast.error('Erro ao carregar usuários');
@@ -57,7 +57,7 @@ const AdminPanel = ({ user, onLogout }) => {
     try {
       const status = filterStatus === 'all' ? '' : filterStatus;
       const response = await axiosInstance.get(
-        `/admin/subscriptions?user_id=${(user?.id || user?.user_id)}${status ? `&status=${status}` : ''}`
+        `/admin/subscriptions?user_id=${user.user_id}${status ? `&status=${status}` : ''}`
       );
       setSubscriptions(response.data);
     } catch (error) {
@@ -67,7 +67,7 @@ const AdminPanel = ({ user, onLogout }) => {
 
   const fetchRevenueChart = async () => {
     try {
-      const response = await axiosInstance.get(`/admin/revenue-chart?admin_user_id=${(user?.id || user?.user_id)}`);
+      const response = await axiosInstance.get(`/admin/revenue-chart?admin_user_id=${user.user_id}`);
       setRevenueChart(response.data);
     } catch (error) {
       console.error('Erro ao carregar gráfico:', error);
@@ -79,7 +79,7 @@ const AdminPanel = ({ user, onLogout }) => {
 
     try {
       const response = await axiosInstance.post(
-        `/admin/user/${targetUserId}/toggle-status?admin_user_id=${(user?.id || user?.user_id)}`
+        `/admin/user/${targetUserId}/toggle-status?admin_user_id=${user.user_id}`
       );
       toast.success(response.data.message);
       fetchUsers();

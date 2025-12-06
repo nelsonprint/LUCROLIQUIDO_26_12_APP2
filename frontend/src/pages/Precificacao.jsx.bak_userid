@@ -227,7 +227,7 @@ const Precificacao = ({ user, onLogout }) => {
     try {
       const data = {
         empresa_id: company.id,
-        usuario_id: (user?.id || user?.user_id),
+        usuario_id: user.user_id,
         ...orcamentoData,
       };
 

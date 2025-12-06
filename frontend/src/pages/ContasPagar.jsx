@@ -77,7 +77,7 @@ const ContasPagar = ({ user, onLogout }) => {
     try {
       const data = {
         company_id: company.id,
-        user_id: user.user_id,
+        user_id: (user?.id || user?.user_id),
         tipo: 'PAGAR',
         ...formData,
         valor: parseFloat(formData.valor),

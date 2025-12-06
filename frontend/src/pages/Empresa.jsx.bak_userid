@@ -80,7 +80,7 @@ const Empresa = ({ user, onLogout }) => {
 
     try {
       await axiosInstance.put(`/company/${company.id}`, {
-        user_id: (user?.id || user?.user_id),
+        user_id: user.user_id,
         ...formData,
       });
       toast.success('Dados da empresa atualizados com sucesso!');
