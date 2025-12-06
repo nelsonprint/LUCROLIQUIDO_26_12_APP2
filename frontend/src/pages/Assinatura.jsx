@@ -34,8 +34,9 @@ const Assinatura = ({ user, onLogout }) => {
     setLoading(true);
 
     try {
+      const userId = user?.id || user?.user_id;
       const response = await axiosInstance.post('/subscription/create-payment', {
-        user_id: user.user_id,
+        user_id: userId,
         email: user.email,
       });
 
@@ -43,6 +44,7 @@ const Assinatura = ({ user, onLogout }) => {
       setShowPaymentDialog(true);
       toast.success('QR Code PIX gerado!');
     } catch (error) {
+      console.error('Erro ao gerar pagamento:', error);
       toast.error('Erro ao gerar pagamento');
     } finally {
       setLoading(false);
