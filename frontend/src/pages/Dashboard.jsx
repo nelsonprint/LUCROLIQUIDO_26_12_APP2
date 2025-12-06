@@ -509,7 +509,7 @@ const Dashboard = ({ user, onLogout }) => {
 
         {/* Gráficos de Contas a Pagar e Receber */}
         {(fluxoCaixaData.length > 0 || contasPagarPorCategoria.length > 0 || contasReceberPorCliente.length > 0) && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 mb-6">
             {/* Fluxo de Caixa Projetado */}
             {fluxoCaixaData.length > 0 && (
               <Card className="glass border-white/10 border-l-4 border-l-blue-500">
