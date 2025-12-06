@@ -39,7 +39,27 @@ export const Sidebar = ({ user, onLogout, onOpenGlossary }) => {
         <h1 className="text-2xl font-bold gradient-text" data-testid="sidebar-logo">
           Lucro Líquido
         </h1>
-        <p className="text-sm text-gray-400 mt-1" data-testid="sidebar-subtitle">Gestão Financeira</p>
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex-1">
+            <p className="text-sm text-gray-400 mt-1" data-testid="sidebar-subtitle">Gestão Financeira</p>
+          </div>
+        </div>
+        
+        {/* User Info inline */}
+        <div className="mt-3 flex items-center justify-between">
+          <div className="flex-1" data-testid="sidebar-user-info">
+            <p className="text-xs font-medium text-white">{user?.name}</p>
+            <p className="text-xs text-gray-500">{user?.email}</p>
+          </div>
+          <button
+            onClick={onLogout}
+            className="p-2 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all"
+            title="Sair do sistema"
+            data-testid="sidebar-logout-button"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Menu */}
