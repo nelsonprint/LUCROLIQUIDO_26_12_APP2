@@ -1068,6 +1068,168 @@ async def generate_orcamento_pdf(orcamento_id: str):
 
 # ========== ANÁLISE IA (CHATGPT) ==========
 
+@api_router.post("/orcamento/{orcamento_id}/whatsapp")
+async def enviar_orcamento_whatsapp(orcamento_id: str):
+    """
+    Prepara o orçamento para envio via WhatsApp
+    Retorna uma URL pública temporária do PDF
+    """
+    import secrets
+    import time
+    
+    # Buscar orçamento
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    # Gerar token único para este PDF
+    token = secrets.token_urlsafe(32)
+    expiration = int(time.time()) + (24 * 3600)  # Expira em 24 horas
+    
+    # Salvar token no banco
+    await db.orcamentos.update_one(
+        {"id": orcamento_id},
+        {"$set": {
+            "pdf_share_token": token,
+            "pdf_share_expiration": expiration
+        }}
+    )
+    
+    # Retornar URL pública
+    # Em produção, use a URL da aplicação
+    base_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001/api')
+    pdf_url = f"{base_url}/orcamento/share/{token}"
+    
+    # Preparar dados para WhatsApp
+    whatsapp_number = orcamento.get('cliente_whatsapp', '').replace(/\D/g, '')
+    mensagem = f"""Olá {orcamento.get('cliente_nome')}!
+
+Segue o orçamento {orcamento.get('numero_orcamento')} para sua análise.
+
+*{orcamento.get('descricao_servico_ou_produto')}*
+
+💰 Valor: R$ {orcamento.get('preco_praticado', 0):,.2f}
+
+Validade: {orcamento.get('validade_proposta')}
+Prazo: {orcamento.get('prazo_execucao')}
+
+📄 Ver orçamento completo: {pdf_url}
+
+Qualquer dúvida, estou à disposição!"""
+    
+    return {
+        "pdf_url": pdf_url,
+        "whatsapp_url": f"https://wa.me/55{whatsapp_number}?text={mensagem}",
+        "token": token,
+        "expires_in": "24 horas"
+    }
+
+@api_router.get("/orcamento/share/{token}")
+async def share_orcamento_pdf(token: str):
+    """Endpoint público para compartilhar PDF via token temporário"""
+    import time
+    
+    # Buscar orçamento pelo token
+    orcamento = await db.orcamentos.find_one({
+        "pdf_share_token": token
+    }, {"_id": 0})
+    
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Link inválido ou expirado")
+    
+    # Verificar se o token ainda é válido
+    expiration = orcamento.get('pdf_share_expiration', 0)
+    if int(time.time()) > expiration:
+        raise HTTPException(status_code=410, detail="Link expirado. Solicite um novo ao vendedor.")
+    
+    # Buscar empresa
+    empresa = await db.companies.find_one({"id": orcamento['empresa_id']}, {"_id": 0})
+    if not empresa:
+        empresa = {"name": "Empresa"}
+    
+    # Gerar PDF
+    try:
+        from weasyprint import HTML
+        from jinja2 import Environment, FileSystemLoader
+        import os
+        from datetime import datetime as dt
+        
+        # Preparar dados para o template
+        data_emissao = orcamento.get('created_at', '')
+        if isinstance(data_emissao, str) and len(data_emissao) >= 10:
+            try:
+                data_emissao = dt.fromisoformat(data_emissao.replace('Z', '+00:00'))
+                data_emissao = data_emissao.strftime("%d/%m/%Y")
+            except:
+                data_emissao = data_emissao[:10]
+        
+        data_geracao = dt.now().strftime("%d/%m/%Y %H:%M")
+        
+        status = orcamento.get('status', 'RASCUNHO')
+        status_label_map = {
+            'RASCUNHO': 'Rascunho',
+            'ENVIADO': 'Enviado',
+            'APROVADO': 'Aprovado',
+            'NAO_APROVADO': 'Não Aprovado'
+        }
+        status_label = status_label_map.get(status, status)
+        
+        context = {
+            'numero_orcamento': orcamento.get('numero_orcamento', 'N/A'),
+            'data_emissao': data_emissao,
+            'data_geracao': data_geracao,
+            'status': status_label,
+            'empresa': empresa,
+            'cliente_nome': orcamento.get('cliente_nome', ''),
+            'cliente_documento': orcamento.get('cliente_documento'),
+            'cliente_whatsapp': orcamento.get('cliente_whatsapp'),
+            'cliente_telefone': orcamento.get('cliente_telefone'),
+            'cliente_email': orcamento.get('cliente_email'),
+            'cliente_endereco': orcamento.get('cliente_endereco'),
+            'tipo': orcamento.get('tipo', ''),
+            'descricao_servico_ou_produto': orcamento.get('descricao_servico_ou_produto', ''),
+            'area_m2': orcamento.get('area_m2'),
+            'quantidade': orcamento.get('quantidade'),
+            'custo_total': orcamento.get('custo_total', 0),
+            'preco_minimo': orcamento.get('preco_minimo', 0),
+            'preco_sugerido': orcamento.get('preco_sugerido', 0),
+            'preco_praticado': orcamento.get('preco_praticado', 0),
+            'validade_proposta': orcamento.get('validade_proposta', ''),
+            'condicoes_pagamento': orcamento.get('condicoes_pagamento', ''),
+            'prazo_execucao': orcamento.get('prazo_execucao', ''),
+            'observacoes': orcamento.get('observacoes'),
+        }
+        
+        template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+        env = Environment(loader=FileSystemLoader(template_dir))
+        template = env.get_template('orcamento.html')
+        html_content = template.render(**context)
+        pdf_file = HTML(string=html_content).write_pdf()
+        
+        return StreamingResponse(
+            BytesIO(pdf_file),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"inline; filename=orcamento_{orcamento.get('numero_orcamento', token)}.pdf",
+                "Cache-Control": "no-cache"
+            }
+        )
+        
+    except (OSError, ImportError) as e:
+        # Fallback: usar ReportLab
+        logger.warning(f"WeasyPrint não disponível, usando ReportLab: {str(e)}")
+        pdf_bytes = generate_pdf_with_reportlab(orcamento, empresa)
+        
+        return StreamingResponse(
+            BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"inline; filename=orcamento_{orcamento.get('numero_orcamento', token)}.pdf",
+                "Cache-Control": "no-cache"
+            }
+        )
+
 @api_router.post("/ai-analysis")
 async def ai_analysis(data: dict):
     try:
