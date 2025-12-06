@@ -1102,7 +1102,8 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
     pdf_url = f"{base_url}/orcamento/share/{token}"
     
     # Preparar dados para WhatsApp
-    whatsapp_number = orcamento.get('cliente_whatsapp', '').replace(/\D/g, '')
+    import re
+    whatsapp_number = re.sub(r'\D', '', orcamento.get('cliente_whatsapp', ''))
     mensagem = f"""Olá {orcamento.get('cliente_nome')}!
 
 Segue o orçamento {orcamento.get('numero_orcamento')} para sua análise.
