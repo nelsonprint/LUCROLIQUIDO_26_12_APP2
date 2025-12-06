@@ -20,6 +20,15 @@
     -->
         <title>Emergent | Fullstack App</title>
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
+        <script>
+            // Suprimir erros do ResizeObserver que são comuns com gráficos Recharts
+            window.addEventListener('error', function(e) {
+                if (e.message && e.message.includes('ResizeObserver loop')) {
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            });
+        </script>
     </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
