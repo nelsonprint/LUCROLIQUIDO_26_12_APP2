@@ -54,27 +54,47 @@ const OrcamentoDetalhe = ({ user, onLogout }) => {
 
   const handleEnviarWhatsApp = async () => {
     try {
-      // Atualizar status para ENVIADO
-      await axiosInstance.patch(`/orcamento/${id}/status`, {
-        status: 'ENVIADO',
-        canal_envio: 'WhatsApp',
-      });
-
-      // Montar mensagem
       const whatsapp = orcamento.cliente_whatsapp?.replace(/\D/g, '');
       if (!whatsapp) {
         toast.error('Cliente não possui WhatsApp cadastrado');
         return;
       }
 
-      const mensagem = `Olá ${orcamento.cliente_nome}!\n\nSegue o orçamento ${orcamento.numero_orcamento} para sua análise.\n\n*${orcamento.descricao_servico_ou_produto}*\n\n💰 Valor: R$ ${parseFloat(orcamento.preco_praticado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\nValidade: ${orcamento.validade_proposta}\nPrazo: ${orcamento.prazo_execucao}\n\nQualquer dúvida, estou à disposição!`;
+      // PASSO 1: Fazer download do PDF automaticamente
+      toast.info('Preparando PDF para envio...');
+      
+      const pdfResponse = await axiosInstance.get(`/orcamento/${id}/pdf`, {
+        responseType: 'blob',
+      });
+      
+      const pdfBlob = new Blob([pdfResponse.data], { type: 'application/pdf' });
+      const pdfUrl = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.setAttribute('download', `orcamento_${orcamento.numero_orcamento}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      // PASSO 2: Aguardar um pouco para o download começar
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // PASSO 3: Atualizar status para ENVIADO
+      await axiosInstance.patch(`/orcamento/${id}/status`, {
+        status: 'ENVIADO',
+        canal_envio: 'WhatsApp',
+      });
+
+      // PASSO 4: Abrir WhatsApp com mensagem
+      const mensagem = `Olá ${orcamento.cliente_nome}!\n\nSegue o orçamento ${orcamento.numero_orcamento} para sua análise.\n\n*${orcamento.descricao_servico_ou_produto}*\n\n💰 Valor: R$ ${parseFloat(orcamento.preco_praticado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\nValidade: ${orcamento.validade_proposta}\nPrazo: ${orcamento.prazo_execucao}\n\n📎 *Por favor, anexe o PDF que acabou de ser baixado (orcamento_${orcamento.numero_orcamento}.pdf)*\n\nQualquer dúvida, estou à disposição!`;
       
       const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
       window.open(url, '_blank');
       
-      toast.success('Orçamento marcado como enviado!');
+      toast.success('✅ PDF baixado! Anexe o arquivo no WhatsApp que foi aberto.');
       fetchOrcamento();
     } catch (error) {
+      console.error('Erro ao enviar por WhatsApp:', error);
       toast.error('Erro ao enviar por WhatsApp');
     }
   };
