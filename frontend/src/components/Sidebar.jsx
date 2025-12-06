@@ -143,27 +143,14 @@ export const Sidebar = ({ user, onLogout, onOpenGlossary }) => {
         </button>
       </nav>
 
-      {/* User Info & Logout */}
-      <div className="p-4 border-t border-white/10">
-        <div className="mb-3 px-4 py-2 bg-white/5 rounded-lg" data-testid="sidebar-user-info">
-          <p className="text-sm font-medium text-white">{user?.name}</p>
-          <p className="text-xs text-gray-400">{user?.email}</p>
-          {user?.role === 'admin' && (
-            <span className="inline-block mt-2 px-2 py-1 text-xs bg-purple-600 rounded-full" data-testid="sidebar-admin-badge">
-              Administrador
-            </span>
-          )}
+      {/* Admin Badge (se aplicável) */}
+      {user?.role === 'admin' && (
+        <div className="p-4 border-t border-white/10">
+          <span className="inline-block px-3 py-1 text-xs bg-purple-600 rounded-full text-white" data-testid="sidebar-admin-badge">
+            👑 Administrador
+          </span>
         </div>
-        <Button
-          onClick={onLogout}
-          variant="outline"
-          className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-          data-testid="sidebar-logout-button"
-        >
-          <LogOut size={16} className="mr-2" />
-          Sair
-        </Button>
-      </div>
+      )}
     </div>
   );
 };
