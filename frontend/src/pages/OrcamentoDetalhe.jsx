@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
-import { Download, MessageCircle, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+import { Download, MessageCircle, ArrowLeft, CheckCircle, XCircle, Edit2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const OrcamentoDetalhe = ({ user, onLogout }) => {
@@ -159,6 +159,14 @@ const OrcamentoDetalhe = ({ user, onLogout }) => {
           <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="pt-6">
               <div className="flex flex-wrap gap-3">
+                <Button
+                  onClick={() => navigate(`/orcamento/${id}/editar`)}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Editar Orçamento
+                </Button>
+                
                 <Button
                   onClick={handleDownloadPDF}
                   className="bg-blue-600 hover:bg-blue-700"
