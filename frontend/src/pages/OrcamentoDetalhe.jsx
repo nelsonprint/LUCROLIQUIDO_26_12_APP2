@@ -60,42 +60,35 @@ const OrcamentoDetalhe = ({ user, onLogout }) => {
         return;
       }
 
-      // PASSO 1: Fazer download do PDF automaticamente
-      toast.info('Preparando PDF para envio...');
-      
-      const pdfResponse = await axiosInstance.get(`/orcamento/${id}/pdf`, {
-        responseType: 'blob',
-      });
-      
-      const pdfBlob = new Blob([pdfResponse.data], { type: 'application/pdf' });
-      const pdfUrl = window.URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = pdfUrl;
-      link.setAttribute('download', `orcamento_${orcamento.numero_orcamento}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      
-      // PASSO 2: Aguardar um pouco para o download começar
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.info('Gerando link compartilhável do PDF...');
 
-      // PASSO 3: Atualizar status para ENVIADO
+      // PASSO 1: Criar link público temporário do PDF
+      const response = await axiosInstance.post(`/orcamento/${id}/whatsapp`);
+      
+      const { pdf_url, whatsapp_url, expires_in } = response.data;
+
+      // PASSO 2: Atualizar status para ENVIADO
       await axiosInstance.patch(`/orcamento/${id}/status`, {
         status: 'ENVIADO',
         canal_envio: 'WhatsApp',
       });
 
-      // PASSO 4: Abrir WhatsApp com mensagem
-      const mensagem = `Olá ${orcamento.cliente_nome}!\n\nSegue o orçamento ${orcamento.numero_orcamento} para sua análise.\n\n*${orcamento.descricao_servico_ou_produto}*\n\n💰 Valor: R$ ${parseFloat(orcamento.preco_praticado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\nValidade: ${orcamento.validade_proposta}\nPrazo: ${orcamento.prazo_execucao}\n\n📎 *Por favor, anexe o PDF que acabou de ser baixado (orcamento_${orcamento.numero_orcamento}.pdf)*\n\nQualquer dúvida, estou à disposição!`;
+      // PASSO 3: Abrir WhatsApp com mensagem e link do PDF
+      window.open(whatsapp_url, '_blank');
       
-      const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
-      window.open(url, '_blank');
+      toast.success(`✅ WhatsApp aberto com link do PDF! Link válido por ${expires_in}.`);
       
-      toast.success('✅ PDF baixado! Anexe o arquivo no WhatsApp que foi aberto.');
+      // Mostrar informação adicional
+      setTimeout(() => {
+        toast.info('💡 O cliente receberá um link para visualizar o PDF diretamente no WhatsApp', {
+          duration: 5000
+        });
+      }, 1500);
+      
       fetchOrcamento();
     } catch (error) {
       console.error('Erro ao enviar por WhatsApp:', error);
-      toast.error('Erro ao enviar por WhatsApp');
+      toast.error('Erro ao preparar envio por WhatsApp');
     }
   };
 
