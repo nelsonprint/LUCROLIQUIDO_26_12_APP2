@@ -21,13 +21,32 @@
         <title>Emergent | Fullstack App</title>
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
         <script>
-            // Suprimir erros do ResizeObserver que são comuns com gráficos Recharts
+            // Suprimir erros do ResizeObserver que são comuns com componentes UI
             window.addEventListener('error', function(e) {
                 if (e.message && e.message.includes('ResizeObserver loop')) {
                     e.stopImmediatePropagation();
+                    e.preventDefault();
                     return false;
                 }
             });
+            
+            // Capturar também erros não tratados (unhandled rejections)
+            window.addEventListener('unhandledrejection', function(e) {
+                if (e.reason && e.reason.message && e.reason.message.includes('ResizeObserver loop')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // Sobrescrever console.error para filtrar ResizeObserver
+            const originalConsoleError = console.error;
+            console.error = function(...args) {
+                const message = args.join(' ');
+                if (message.includes('ResizeObserver loop')) {
+                    return; // Ignorar erro do ResizeObserver
+                }
+                originalConsoleError.apply(console, args);
+            };
         </script>
     </head>
     <body>
