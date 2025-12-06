@@ -710,8 +710,8 @@ const Dashboard = ({ user, onLogout }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-              <RechartsBarChart data={chartData} barSize={60}>
+            <ResponsiveContainer width="100%" height={400}>
+              <RechartsBarChart data={chartData} barSize={60} margin={{ top: 30, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis 
                   dataKey="month" 
