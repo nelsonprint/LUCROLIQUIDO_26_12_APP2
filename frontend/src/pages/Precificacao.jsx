@@ -1010,8 +1010,8 @@ const Precificacao = ({ user, onLogout }) => {
                             type="number"
                             step="0.5"
                             placeholder="Ex: 8"
-                            value={dadosServico.horas_estimadas || ''}
-                            onChange={(e) => setDadosServico({ ...dadosServico, horas_estimadas: parseFloat(e.target.value) || 0 })}
+                            value={formServico.horas_estimadas || ''}
+                            onChange={(e) => setFormServico({ ...formServico, horas_estimadas: parseFloat(e.target.value) || 0 })}
                             className="bg-zinc-800 border-zinc-700"
                           />
                           <p className="text-xs text-zinc-500 mt-1">Tempo total para executar o serviço</p>
@@ -1024,8 +1024,8 @@ const Precificacao = ({ user, onLogout }) => {
                             type="number"
                             step="0.01"
                             placeholder="Ex: 150.00"
-                            value={dadosServico.valor_hora || ''}
-                            onChange={(e) => setDadosServico({ ...dadosServico, valor_hora: parseFloat(e.target.value) || 0 })}
+                            value={formServico.valor_hora || ''}
+                            onChange={(e) => setFormServico({ ...formServico, valor_hora: parseFloat(e.target.value) || 0 })}
                             className="bg-zinc-800 border-zinc-700"
                           />
                           <p className="text-xs text-zinc-500 mt-1">Quanto você cobra por hora</p>
@@ -1039,8 +1039,8 @@ const Precificacao = ({ user, onLogout }) => {
                           type="number"
                           step="0.01"
                           placeholder="Ex: 500.00"
-                          value={dadosServico.custos_materiais || ''}
-                          onChange={(e) => setDadosServico({ ...dadosServico, custos_materiais: parseFloat(e.target.value) || 0 })}
+                          value={formServico.custos_materiais || ''}
+                          onChange={(e) => setFormServico({ ...formServico, custos_materiais: parseFloat(e.target.value) || 0 })}
                           className="bg-zinc-800 border-zinc-700"
                         />
                         <p className="text-xs text-zinc-500 mt-1">Custo total dos materiais necessários</p>
@@ -1053,8 +1053,8 @@ const Precificacao = ({ user, onLogout }) => {
                           type="number"
                           step="0.01"
                           placeholder="Ex: 200.00"
-                          value={dadosServico.outros_custos || ''}
-                          onChange={(e) => setDadosServico({ ...dadosServico, outros_custos: parseFloat(e.target.value) || 0 })}
+                          value={formServico.outros_custos || ''}
+                          onChange={(e) => setFormServico({ ...formServico, outros_custos: parseFloat(e.target.value) || 0 })}
                           className="bg-zinc-800 border-zinc-700"
                         />
                         <p className="text-xs text-zinc-500 mt-1">Despesas, deslocamento, equipamentos, etc.</p>
@@ -1069,14 +1069,14 @@ const Precificacao = ({ user, onLogout }) => {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {(() => {
-                        const horas = dadosServico.horas_estimadas || 0;
-                        const valorHora = dadosServico.valor_hora || 0;
-                        const custosMateriais = dadosServico.custos_materiais || 0;
-                        const outrosCustos = dadosServico.outros_custos || 0;
+                        const horas = formServico.horas_estimadas || 0;
+                        const valorHora = formServico.valor_hora || 0;
+                        const custosMateriais = formServico.custos_materiais || 0;
+                        const outrosCustos = formServico.outros_custos || 0;
 
                         const custoMaoDeObra = horas * valorHora;
                         const custoTotal = custoMaoDeObra + custosMateriais + outrosCustos;
-                        const margemDesejada = dadosServico.margem_desejada || 30;
+                        const margemDesejada = formServico.margem_desejada || 30;
                         const precoSugerido = custoTotal * (1 + margemDesejada / 100);
 
                         return (
@@ -1105,8 +1105,8 @@ const Precificacao = ({ user, onLogout }) => {
                                 type="number"
                                 step="1"
                                 placeholder="Ex: 30"
-                                value={dadosServico.margem_desejada || 30}
-                                onChange={(e) => setDadosServico({ ...dadosServico, margem_desejada: parseFloat(e.target.value) || 30 })}
+                                value={formServico.margem_desejada || 30}
+                                onChange={(e) => setFormServico({ ...formServico, margem_desejada: parseFloat(e.target.value) || 30 })}
                                 className="bg-zinc-800 border-zinc-700"
                               />
                             </div>
@@ -1162,8 +1162,8 @@ const Precificacao = ({ user, onLogout }) => {
                           type="number"
                           step="0.01"
                           placeholder="Ex: 2000.00"
-                          value={dadosServico.custo_mao_obra || ''}
-                          onChange={(e) => setDadosServico({ ...dadosServico, custo_mao_obra: parseFloat(e.target.value) || 0 })}
+                          value={formServico.custo_mao_obra || ''}
+                          onChange={(e) => setFormServico({ ...formServico, custo_mao_obra: parseFloat(e.target.value) || 0 })}
                           className="bg-zinc-800 border-zinc-700"
                         />
                         <p className="text-xs text-zinc-500 mt-1">Quanto vai custar a mão de obra total</p>
@@ -1176,8 +1176,8 @@ const Precificacao = ({ user, onLogout }) => {
                           type="number"
                           step="0.01"
                           placeholder="Ex: 1500.00"
-                          value={dadosServico.custos_materiais || ''}
-                          onChange={(e) => setDadosServico({ ...dadosServico, custos_materiais: parseFloat(e.target.value) || 0 })}
+                          value={formServico.custos_materiais || ''}
+                          onChange={(e) => setFormServico({ ...formServico, custos_materiais: parseFloat(e.target.value) || 0 })}
                           className="bg-zinc-800 border-zinc-700"
                         />
                         <p className="text-xs text-zinc-500 mt-1">Custo total dos materiais</p>
@@ -1190,8 +1190,8 @@ const Precificacao = ({ user, onLogout }) => {
                           type="number"
                           step="0.01"
                           placeholder="Ex: 500.00"
-                          value={dadosServico.despesas_operacionais || ''}
-                          onChange={(e) => setDadosServico({ ...dadosServico, despesas_operacionais: parseFloat(e.target.value) || 0 })}
+                          value={formServico.despesas_operacionais || ''}
+                          onChange={(e) => setFormServico({ ...formServico, despesas_operacionais: parseFloat(e.target.value) || 0 })}
                           className="bg-zinc-800 border-zinc-700"
                         />
                         <p className="text-xs text-zinc-500 mt-1">Deslocamento, aluguel de equipamentos, etc.</p>
@@ -1204,8 +1204,8 @@ const Precificacao = ({ user, onLogout }) => {
                           type="number"
                           step="0.01"
                           placeholder="Ex: 15 (para 15%)"
-                          value={dadosServico.impostos_taxas || ''}
-                          onChange={(e) => setDadosServico({ ...dadosServico, impostos_taxas: parseFloat(e.target.value) || 0 })}
+                          value={formServico.impostos_taxas || ''}
+                          onChange={(e) => setFormServico({ ...formServico, impostos_taxas: parseFloat(e.target.value) || 0 })}
                           className="bg-zinc-800 border-zinc-700"
                         />
                         <p className="text-xs text-zinc-500 mt-1">Percentual de impostos sobre o projeto</p>
@@ -1220,16 +1220,16 @@ const Precificacao = ({ user, onLogout }) => {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {(() => {
-                        const custoMaoObra = dadosServico.custo_mao_obra || 0;
-                        const custoMateriais = dadosServico.custos_materiais || 0;
-                        const despesasOp = dadosServico.despesas_operacionais || 0;
-                        const impostos = dadosServico.impostos_taxas || 0;
+                        const custoMaoObra = formServico.custo_mao_obra || 0;
+                        const custoMateriais = formServico.custos_materiais || 0;
+                        const despesasOp = formServico.despesas_operacionais || 0;
+                        const impostos = formServico.impostos_taxas || 0;
                         
                         const custoBase = custoMaoObra + custoMateriais + despesasOp;
                         const custoImpostos = custoBase * (impostos / 100);
                         const custoTotal = custoBase + custoImpostos;
                         
-                        const margemDesejada = dadosServico.margem_desejada || 30;
+                        const margemDesejada = formServico.margem_desejada || 30;
                         const valorFechado = custoTotal * (1 + margemDesejada / 100);
 
                         return (
@@ -1274,8 +1274,8 @@ const Precificacao = ({ user, onLogout }) => {
                                 type="number"
                                 step="1"
                                 placeholder="Ex: 30"
-                                value={dadosServico.margem_desejada || 30}
-                                onChange={(e) => setDadosServico({ ...dadosServico, margem_desejada: parseFloat(e.target.value) || 30 })}
+                                value={formServico.margem_desejada || 30}
+                                onChange={(e) => setFormServico({ ...formServico, margem_desejada: parseFloat(e.target.value) || 30 })}
                                 className="bg-zinc-800 border-zinc-700"
                               />
                             </div>
