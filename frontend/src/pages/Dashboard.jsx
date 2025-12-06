@@ -773,10 +773,10 @@ const Dashboard = ({ user, onLogout }) => {
           if (monthsWithRevenue.length === 0 && monthsWithProfit.length === 0) return null;
           
           return (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-              {/* Faturamento */}
+            <div className="grid grid-cols-1 gap-6 mt-6">
+              {/* Score Mensal */}
               {monthsWithRevenue.length > 0 && (
-                <Card className="glass border-white/10" data-testid="monthly-revenue-donut-card">
+                <Card className="glass border-white/10 border-l-4 border-l-purple-500" data-testid="monthly-score-card">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center">
                       <DollarSign className="mr-2" />
