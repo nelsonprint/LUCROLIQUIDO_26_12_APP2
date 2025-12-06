@@ -317,8 +317,137 @@ const LandingPage = ({ setUser }) => {
           <p className="mt-2">Gestão financeira inteligente para empresas que querem crescer com lucro real.</p>
         </div>
       </footer>
+
+      {/* Modal de Login */}
+      <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+        <DialogContent className="sm:max-w-md glass border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold gradient-text">Entrar no Lucro Líquido</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Entre com suas credenciais para acessar o sistema
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="login-email" className="text-white">Email</Label>
+              <Input
+                id="login-email"
+                type="email"
+                placeholder="seu@email.com"
+                value={loginData.email}
+                onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                required
+                className="bg-white/5 border-white/10 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="login-password" className="text-white">Senha</Label>
+              <Input
+                id="login-password"
+                type="password"
+                placeholder="••••••••"
+                value={loginData.password}
+                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                required
+                className="bg-white/5 border-white/10 text-white"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              disabled={loading}
+            >
+              {loading ? 'Entrando...' : 'Entrar'}
+            </Button>
+            <div className="text-center text-sm text-gray-400">
+              Não tem conta?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLoginModal(false);
+                  setShowRegisterModal(true);
+                }}
+                className="text-purple-400 hover:text-purple-300"
+              >
+                Cadastre-se grátis
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Registro */}
+      <Dialog open={showRegisterModal} onOpenChange={setShowRegisterModal}>
+        <DialogContent className="sm:max-w-md glass border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold gradient-text">Comece seu teste grátis</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              7 dias grátis • Sem cartão de crédito • Cancele quando quiser
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="register-name" className="text-white">Nome Completo</Label>
+              <Input
+                id="register-name"
+                type="text"
+                placeholder="Seu nome"
+                value={registerData.name}
+                onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
+                required
+                className="bg-white/5 border-white/10 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="register-email" className="text-white">Email</Label>
+              <Input
+                id="register-email"
+                type="email"
+                placeholder="seu@email.com"
+                value={registerData.email}
+                onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                required
+                className="bg-white/5 border-white/10 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="register-password" className="text-white">Senha</Label>
+              <Input
+                id="register-password"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={registerData.password}
+                onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                required
+                minLength={6}
+                className="bg-white/5 border-white/10 text-white"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              disabled={loading}
+            >
+              {loading ? 'Criando conta...' : 'Começar teste grátis agora'}
+            </Button>
+            <div className="text-center text-sm text-gray-400">
+              Já tem conta?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRegisterModal(false);
+                  setShowLoginModal(true);
+                }}
+                className="text-purple-400 hover:text-purple-300"
+              >
+                Faça login
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-export default LandingPageNew;
+export default LandingPage;
