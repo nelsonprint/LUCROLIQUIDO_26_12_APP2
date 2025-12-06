@@ -285,6 +285,49 @@ class OrcamentoStatusUpdate(BaseModel):
     status: str  # ENVIADO, APROVADO, NAO_APROVADO
     canal_envio: Optional[str] = None
 
+# ========== MODELS: MATERIAIS ==========
+
+class MaterialCreate(BaseModel):
+    nome_item: str
+    descricao: Optional[str] = None
+    unidade: str
+    preco_compra_base: float
+
+class Material(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome_item: str
+    descricao: Optional[str] = None
+    unidade: str
+    preco_compra_base: float
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class OrcamentoMaterialCreate(BaseModel):
+    id_orcamento: str
+    id_material: Optional[str] = None  # Se None, é um material novo
+    nome_item: str
+    descricao_customizada: Optional[str] = None
+    unidade: str
+    preco_compra_fornecedor: float
+    percentual_acrescimo: float
+    quantidade: float
+
+class OrcamentoMaterial(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    id_orcamento: str
+    id_material: Optional[str] = None
+    nome_item: str
+    descricao_customizada: Optional[str] = None
+    unidade: str
+    preco_compra_fornecedor: float
+    percentual_acrescimo: float
+    preco_unitario_final: float
+    quantidade: float
+    preco_total_item: float
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # ========== STARTUP: CRIAR PRIMEIRO ADMIN ==========
 
 @app.on_event("startup")
