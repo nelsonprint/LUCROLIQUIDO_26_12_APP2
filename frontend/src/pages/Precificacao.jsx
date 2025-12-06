@@ -990,14 +990,333 @@ const Precificacao = ({ user, onLogout }) => {
                 </div>
               )}
 
-              {/* ========== OUTROS TIPOS: POR HORA / VALOR FECHADO ========== */}
-              {tipoCobrancaServico !== 'por-m2' && (
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardContent className="py-12 text-center text-zinc-400">
-                    <p>Modo &quot;{tipoCobrancaServico === 'por-hora' ? 'Por Hora' : 'Valor Fechado'}&quot; em desenvolvimento.</p>
-                    <p className="text-sm mt-2">Por enquanto, utilize o modo &quot;Por m²&quot; para precificação detalhada.</p>
-                  </CardContent>
-                </Card>
+              {/* ========== MODO: POR HORA ========== */}
+              {tipoCobrancaServico === 'por-hora' && (
+                <div className="space-y-6">
+                  {/* Custos por Hora */}
+                  <Card className="bg-zinc-900 border-zinc-800">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Clock className="text-blue-400" size={20} />
+                        Custos por Hora
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="horas-estimadas">Horas Estimadas</Label>
+                          <Input
+                            id="horas-estimadas"
+                            type="number"
+                            step="0.5"
+                            placeholder="Ex: 8"
+                            value={dadosServico.horas_estimadas || ''}
+                            onChange={(e) => setDadosServico({ ...dadosServico, horas_estimadas: parseFloat(e.target.value) || 0 })}
+                            className="bg-zinc-800 border-zinc-700"
+                          />
+                          <p className="text-xs text-zinc-500 mt-1">Tempo total para executar o serviço</p>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="valor-hora">Valor da Hora (R$)</Label>
+                          <Input
+                            id="valor-hora"
+                            type="number"
+                            step="0.01"
+                            placeholder="Ex: 150.00"
+                            value={dadosServico.valor_hora || ''}
+                            onChange={(e) => setDadosServico({ ...dadosServico, valor_hora: parseFloat(e.target.value) || 0 })}
+                            className="bg-zinc-800 border-zinc-700"
+                          />
+                          <p className="text-xs text-zinc-500 mt-1">Quanto você cobra por hora</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="custos-materiais-hora">Custos com Materiais (R$)</Label>
+                        <Input
+                          id="custos-materiais-hora"
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 500.00"
+                          value={dadosServico.custos_materiais || ''}
+                          onChange={(e) => setDadosServico({ ...dadosServico, custos_materiais: parseFloat(e.target.value) || 0 })}
+                          className="bg-zinc-800 border-zinc-700"
+                        />
+                        <p className="text-xs text-zinc-500 mt-1">Custo total dos materiais necessários</p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="outros-custos-hora">Outros Custos (R$)</Label>
+                        <Input
+                          id="outros-custos-hora"
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 200.00"
+                          value={dadosServico.outros_custos || ''}
+                          onChange={(e) => setDadosServico({ ...dadosServico, outros_custos: parseFloat(e.target.value) || 0 })}
+                          className="bg-zinc-800 border-zinc-700"
+                        />
+                        <p className="text-xs text-zinc-500 mt-1">Despesas, deslocamento, equipamentos, etc.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Cálculo do Preço */}
+                  <Card className="bg-zinc-900 border-zinc-800">
+                    <CardHeader>
+                      <CardTitle>Cálculo do Preço</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {(() => {
+                        const horas = dadosServico.horas_estimadas || 0;
+                        const valorHora = dadosServico.valor_hora || 0;
+                        const custosMateriais = dadosServico.custos_materiais || 0;
+                        const outrosCustos = dadosServico.outros_custos || 0;
+
+                        const custoMaoDeObra = horas * valorHora;
+                        const custoTotal = custoMaoDeObra + custosMateriais + outrosCustos;
+                        const margemDesejada = dadosServico.margem_desejada || 30;
+                        const precoSugerido = custoTotal * (1 + margemDesejada / 100);
+
+                        return (
+                          <>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="p-3 bg-zinc-800 rounded-lg">
+                                <p className="text-sm text-zinc-400">Mão de Obra</p>
+                                <p className="text-lg font-bold text-white">
+                                  R$ {custoMaoDeObra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                                <p className="text-xs text-zinc-500">{horas}h × R$ {valorHora.toFixed(2)}</p>
+                              </div>
+
+                              <div className="p-3 bg-zinc-800 rounded-lg">
+                                <p className="text-sm text-zinc-400">Custo Total</p>
+                                <p className="text-lg font-bold text-yellow-400">
+                                  R$ {custoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor="margem-hora">Margem de Lucro Desejada (%)</Label>
+                              <Input
+                                id="margem-hora"
+                                type="number"
+                                step="1"
+                                placeholder="Ex: 30"
+                                value={dadosServico.margem_desejada || 30}
+                                onChange={(e) => setDadosServico({ ...dadosServico, margem_desejada: parseFloat(e.target.value) || 30 })}
+                                className="bg-zinc-800 border-zinc-700"
+                              />
+                            </div>
+
+                            <div className="p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg border border-purple-500/50">
+                              <p className="text-sm text-zinc-400 mb-1">Preço Sugerido para Cobrar</p>
+                              <p className="text-3xl font-bold text-white">
+                                R$ {precoSugerido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                              <p className="text-sm text-green-400 mt-1">
+                                Lucro: R$ {(precoSugerido - custoTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({margemDesejada}%)
+                              </p>
+                            </div>
+
+                            <Button
+                              onClick={() => handleGerarOrcamento({
+                                tipo: 'servico_hora',
+                                horas_estimadas: horas,
+                                valor_hora: valorHora,
+                                custo_total: custoTotal,
+                                preco_sugerido: precoSugerido,
+                              })}
+                              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                              disabled={!horas || !valorHora}
+                            >
+                              <FileText size={16} className="mr-2" />
+                              Gerar Orçamento (Por Hora)
+                            </Button>
+                          </>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* ========== MODO: VALOR FECHADO ========== */}
+              {tipoCobrancaServico === 'valor-fechado' && (
+                <div className="space-y-6">
+                  {/* Custos do Projeto */}
+                  <Card className="bg-zinc-900 border-zinc-800">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <DollarSign className="text-green-400" size={20} />
+                        Custos do Projeto
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor="custo-mao-obra-fechado">Custo de Mão de Obra (R$)</Label>
+                        <Input
+                          id="custo-mao-obra-fechado"
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 2000.00"
+                          value={dadosServico.custo_mao_obra || ''}
+                          onChange={(e) => setDadosServico({ ...dadosServico, custo_mao_obra: parseFloat(e.target.value) || 0 })}
+                          className="bg-zinc-800 border-zinc-700"
+                        />
+                        <p className="text-xs text-zinc-500 mt-1">Quanto vai custar a mão de obra total</p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="custo-materiais-fechado">Custo de Materiais (R$)</Label>
+                        <Input
+                          id="custo-materiais-fechado"
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 1500.00"
+                          value={dadosServico.custos_materiais || ''}
+                          onChange={(e) => setDadosServico({ ...dadosServico, custos_materiais: parseFloat(e.target.value) || 0 })}
+                          className="bg-zinc-800 border-zinc-700"
+                        />
+                        <p className="text-xs text-zinc-500 mt-1">Custo total dos materiais</p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="despesas-operacionais">Despesas Operacionais (R$)</Label>
+                        <Input
+                          id="despesas-operacionais"
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 500.00"
+                          value={dadosServico.despesas_operacionais || ''}
+                          onChange={(e) => setDadosServico({ ...dadosServico, despesas_operacionais: parseFloat(e.target.value) || 0 })}
+                          className="bg-zinc-800 border-zinc-700"
+                        />
+                        <p className="text-xs text-zinc-500 mt-1">Deslocamento, aluguel de equipamentos, etc.</p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="impostos-taxas">Impostos e Taxas (R$ ou %)</Label>
+                        <Input
+                          id="impostos-taxas"
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 15 (para 15%)"
+                          value={dadosServico.impostos_taxas || ''}
+                          onChange={(e) => setDadosServico({ ...dadosServico, impostos_taxas: parseFloat(e.target.value) || 0 })}
+                          className="bg-zinc-800 border-zinc-700"
+                        />
+                        <p className="text-xs text-zinc-500 mt-1">Percentual de impostos sobre o projeto</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Cálculo do Preço Fechado */}
+                  <Card className="bg-zinc-900 border-zinc-800">
+                    <CardHeader>
+                      <CardTitle>Cálculo do Preço Fechado</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {(() => {
+                        const custoMaoObra = dadosServico.custo_mao_obra || 0;
+                        const custoMateriais = dadosServico.custos_materiais || 0;
+                        const despesasOp = dadosServico.despesas_operacionais || 0;
+                        const impostos = dadosServico.impostos_taxas || 0;
+                        
+                        const custoBase = custoMaoObra + custoMateriais + despesasOp;
+                        const custoImpostos = custoBase * (impostos / 100);
+                        const custoTotal = custoBase + custoImpostos;
+                        
+                        const margemDesejada = dadosServico.margem_desejada || 30;
+                        const valorFechado = custoTotal * (1 + margemDesejada / 100);
+
+                        return (
+                          <>
+                            <div className="space-y-2">
+                              <div className="flex justify-between p-3 bg-zinc-800 rounded-lg">
+                                <span className="text-zinc-400">Mão de Obra</span>
+                                <span className="font-semibold text-white">
+                                  R$ {custoMaoObra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                              <div className="flex justify-between p-3 bg-zinc-800 rounded-lg">
+                                <span className="text-zinc-400">Materiais</span>
+                                <span className="font-semibold text-white">
+                                  R$ {custoMateriais.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                              <div className="flex justify-between p-3 bg-zinc-800 rounded-lg">
+                                <span className="text-zinc-400">Despesas Operacionais</span>
+                                <span className="font-semibold text-white">
+                                  R$ {despesasOp.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                              <div className="flex justify-between p-3 bg-zinc-800 rounded-lg">
+                                <span className="text-zinc-400">Impostos ({impostos}%)</span>
+                                <span className="font-semibold text-yellow-400">
+                                  R$ {custoImpostos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                              <div className="flex justify-between p-3 bg-yellow-600/20 border border-yellow-600/50 rounded-lg">
+                                <span className="font-semibold text-white">Custo Total</span>
+                                <span className="font-bold text-yellow-400">
+                                  R$ {custoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor="margem-fechado">Margem de Lucro Desejada (%)</Label>
+                              <Input
+                                id="margem-fechado"
+                                type="number"
+                                step="1"
+                                placeholder="Ex: 30"
+                                value={dadosServico.margem_desejada || 30}
+                                onChange={(e) => setDadosServico({ ...dadosServico, margem_desejada: parseFloat(e.target.value) || 30 })}
+                                className="bg-zinc-800 border-zinc-700"
+                              />
+                            </div>
+
+                            <div className="p-6 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-lg border-2 border-green-500/50">
+                              <p className="text-sm text-zinc-400 mb-2">Valor Fechado do Projeto</p>
+                              <p className="text-4xl font-bold text-white mb-2">
+                                R$ {valorFechado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-zinc-400">Custo Total</span>
+                                <span className="text-zinc-300">
+                                  R$ {custoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-green-400 font-semibold">Lucro Líquido ({margemDesejada}%)</span>
+                                <span className="text-green-400 font-semibold">
+                                  R$ {(valorFechado - custoTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </div>
+
+                            <Button
+                              onClick={() => handleGerarOrcamento({
+                                tipo: 'valor_fechado',
+                                custo_total: custoTotal,
+                                preco_praticado: valorFechado,
+                              })}
+                              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                              disabled={!custoMaoObra && !custoMateriais}
+                            >
+                              <FileText size={16} className="mr-2" />
+                              Gerar Orçamento (Valor Fechado)
+                            </Button>
+                          </>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+                </div>
               )}
             </TabsContent>
           </Tabs>
