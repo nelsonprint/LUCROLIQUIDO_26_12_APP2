@@ -263,6 +263,34 @@ test_plan:
   test_all: true
   test_priority: "high_first"
 
+frontend:
+  - task: "Criação de Lançamento de Despesa"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Lancamentos.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ TESTE COMPLETO DE CRIAÇÃO DE DESPESA REALIZADO COM SUCESSO. Fluxo completo funcionando: 1) Login com admin@lucroliquido.com/admin123 ✅ 2) Navegação para /lancamentos ✅ 3) Abertura do modal 'Novo Lançamento' ✅ 4) Seleção do tipo 'Despesa' ✅ 5) Campo categoria habilitado automaticamente ✅ 6) Seleção da categoria 'Aluguel e condomínio' ✅ 7) Preenchimento da descrição 'Teste de despesa' ✅ 8) Preenchimento do valor 1000 ✅ 9) Data atual pré-preenchida ✅ 10) Status 'Realizado' pré-selecionado ✅ 11) Salvamento com API POST /api/transactions retornando 200 ✅ 12) Toast de sucesso 'Lançamento criado!' exibido ✅ 13) Lançamento aparecendo na listagem com todos os dados corretos ✅. Sistema funcionando perfeitamente para criação de despesas."
+
+backend:
+  - task: "API de Criação de Lançamentos"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ API POST /api/transactions funcionando corretamente. Endpoint recebendo dados do frontend, validando campos obrigatórios (company_id, user_id, type, description, amount, category, date, status) e salvando no MongoDB com sucesso. Resposta HTTP 200 confirmada. Integração frontend-backend funcionando perfeitamente."
+
 agent_communication:
     - agent: "testing"
       message: "TESTE COMPLETO DO MÓDULO DE ORÇAMENTOS FINALIZADO COM SUCESSO. Todas as funcionalidades principais testadas e funcionando: login, listagem, visualização de detalhes, download PDF, envio WhatsApp, mudança de status, filtros e ações rápidas. Sistema pronto para produção. Layout responsivo com componentes Shadcn/UI renderizados corretamente. APIs backend funcionando perfeitamente conforme logs."
+    - agent: "testing"
+      message: "TESTE COMPLETO DE CRIAÇÃO DE LANÇAMENTO DE DESPESA FINALIZADO COM SUCESSO. Fluxo completo validado: login, navegação, abertura de modal, seleção de tipo/categoria, preenchimento de campos, salvamento via API, toast de sucesso e exibição na listagem. Sistema de lançamentos funcionando perfeitamente para despesas. Componentes Shadcn/UI renderizados corretamente, validações funcionando, integração frontend-backend operacional."
