@@ -460,8 +460,8 @@ const Precificacao = ({ user, onLogout }) => {
                 </CardContent>
               </Card>
 
-              {/* ========== MODO: POR M² ========== */}
-              {tipoCobrancaServico === 'por-m2' && (
+              {/* ========== FORMULÁRIO DE SERVIÇO ========== */}
+              {(
                 <form onSubmit={calcularServicoPorM2} className="space-y-6">
                   {/* Bloco A - Escopo do Serviço */}
                   <Card className="bg-zinc-900 border-zinc-800">
