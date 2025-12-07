@@ -295,10 +295,9 @@ const Precificacao = ({ user, onLogout }) => {
             <p className="text-zinc-400">Calculadora profissional de preço de venda</p>
           </div>
 
-          {/* Tabs: Produto vs Serviço */}
-          <Tabs value={tipoPrecificacao} onValueChange={setTipoPrecificacao} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2 bg-zinc-900">
-              <TabsTrigger value="produto">Produto</TabsTrigger>
+          {/* Apenas Serviço */}
+          <Tabs value="servico" onValueChange={setTipoPrecificacao} className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-1 bg-zinc-900">
               <TabsTrigger value="servico">Serviço</TabsTrigger>
             </TabsList>
 
