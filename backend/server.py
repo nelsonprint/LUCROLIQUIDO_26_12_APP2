@@ -1850,9 +1850,14 @@ async def get_system_config():
     
     return config
 
+class PriceUpdate(BaseModel):
+    price: float
+
 @api_router.put("/system-config/price")
-async def update_subscription_price(new_price: float):
+async def update_subscription_price(price_data: PriceUpdate):
     """Atualizar preço da assinatura"""
+    new_price = price_data.price
+    
     if new_price <= 0:
         raise HTTPException(status_code=400, detail="Preço deve ser maior que zero")
     
