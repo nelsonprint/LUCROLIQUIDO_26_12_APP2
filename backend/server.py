@@ -1461,6 +1461,11 @@ async def generate_orcamento_pdf(orcamento_id: str):
             'condicoes_pagamento': orcamento.get('condicoes_pagamento', ''),
             'prazo_execucao': orcamento.get('prazo_execucao', ''),
             'observacoes': orcamento.get('observacoes'),
+            'cor_primaria': cor_primaria,
+            'cor_secundaria': cor_secundaria,
+            'texto_ciencia': texto_ciencia,
+            'texto_garantia': texto_garantia,
+            'logo_url': logo_url,
         }
         
         # Carregar template
