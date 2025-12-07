@@ -1401,6 +1401,14 @@ async def generate_orcamento_pdf(orcamento_id: str):
         {"id_orcamento": orcamento_id},
         {"_id": 0}
     ).to_list(1000)
+
+    # Buscar configurações de orçamento (cores, textos, logo)
+    config = await db.orcamento_config.find_one({"company_id": empresa.get('id')}, {"_id": 0}) or {}
+    cor_primaria = config.get('cor_primaria', '#7C3AED')
+    cor_secundaria = config.get('cor_secundaria', '#3B82F6')
+    texto_ciencia = config.get('texto_ciencia', 'Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas.')
+    texto_garantia = config.get('texto_garantia', 'Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes.')
+    logo_url = config.get('logo_url')
     
     # Tentar usar WeasyPrint primeiro (template profissional)
     try:
