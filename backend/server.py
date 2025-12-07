@@ -932,6 +932,22 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     text_color = HexColor('#000000')  # Texto sempre preto
     bg_light = HexColor('#F9FAFB')  # Fundo claro para cards
     
+    # Função auxiliar para desenhar card com borda colorida
+    def draw_card_box(y_top, height_mm, border_color, border_width=3):
+        """Desenha um card com borda lateral esquerda colorida"""
+        # Fundo claro do card
+        c.setFillColor(bg_light)
+        c.rect(12*mm, y_top - height_mm, width - 24*mm, height_mm, fill=True, stroke=False)
+        
+        # Borda lateral esquerda colorida (degradê simulado com retângulos)
+        c.setFillColor(border_color)
+        c.rect(12*mm, y_top - height_mm, border_width*mm, height_mm, fill=True, stroke=False)
+        
+        # Borda fina ao redor
+        c.setStrokeColor(HexColor('#E5E7EB'))
+        c.setLineWidth(0.5)
+        c.rect(12*mm, y_top - height_mm, width - 24*mm, height_mm, fill=False, stroke=True)
+    
     # (1) CABEÇALHO - Logo + Dados da Empresa
     y_pos = height - 20*mm
     
