@@ -328,6 +328,25 @@ class OrcamentoMaterial(BaseModel):
     preco_total_item: float
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class OrcamentoConfigCreate(BaseModel):
+    logo_url: Optional[str] = None
+    cor_primaria: str = "#7C3AED"
+    cor_secundaria: str = "#3B82F6"
+    texto_ciencia: str = "Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas."
+    texto_garantia: str = "Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes."
+
+class OrcamentoConfig(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    logo_url: Optional[str] = None
+    cor_primaria: str = "#7C3AED"
+    cor_secundaria: str = "#3B82F6"
+    texto_ciencia: str = "Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas."
+    texto_garantia: str = "Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes."
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # ========== STARTUP: CRIAR PRIMEIRO ADMIN ==========
 
 @app.on_event("startup")
