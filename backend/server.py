@@ -1089,27 +1089,27 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     c.drawString(20*mm, y_pos - 5*mm, "DADOS DO CLIENTE")
     
     c.setFont("Helvetica", 9)
-    c.drawString(18*mm, y_pos - 10*mm, f"Cliente: {orcamento.get('cliente_nome', '')}")
+    c.drawString(20*mm, y_pos - 10*mm, f"Cliente: {orcamento.get('cliente_nome', '')}")
     
     if orcamento.get('cliente_documento'):
-        c.drawString(18*mm, y_pos - 14*mm, f"CPF/CNPJ: {orcamento.get('cliente_documento')}")
+        c.drawString(20*mm, y_pos - 14*mm, f"CPF/CNPJ: {orcamento.get('cliente_documento')}")
     
     if orcamento.get('cliente_endereco'):
-        c.drawString(18*mm, y_pos - 18*mm, f"Endereço: {orcamento.get('cliente_endereco')}")
+        c.drawString(20*mm, y_pos - 18*mm, f"Endereço: {orcamento.get('cliente_endereco')}")
     
-    c.drawString(18*mm, y_pos - 22*mm, f"Data da Emissão: {data_emissao}")
+    c.drawString(20*mm, y_pos - 22*mm, f"Data da Emissão: {data_emissao}")
     
     y_pos -= (card_height + 8*mm)
     
     # (3) APRESENTAÇÃO
     c.setFont("Helvetica-Bold", 11)
-    c.drawString(15*mm, y_pos, "Proposta comercial para prestação de serviços")
+    c.drawString(20*mm, y_pos, "Proposta comercial para prestação de serviços")
     y_pos -= 6*mm
     
     c.setFont("Helvetica", 9)
-    c.drawString(15*mm, y_pos, f"Prezado(a) Senhor(a) {orcamento.get('cliente_nome', '').split()[0] if orcamento.get('cliente_nome') else ''},")
+    c.drawString(20*mm, y_pos, f"Prezado(a) Senhor(a) {orcamento.get('cliente_nome', '').split()[0] if orcamento.get('cliente_nome') else ''},")
     y_pos -= 4*mm
-    c.drawString(15*mm, y_pos, "apresentamos-lhe nossa proposta comercial para a prestação do(s) serviço(s) abaixo discriminado(s):")
+    c.drawString(20*mm, y_pos, "apresentamos-lhe nossa proposta comercial para a prestação do(s) serviço(s) abaixo discriminado(s):")
     y_pos -= 8*mm
     
     # (4) DADOS DO ORÇAMENTO - DESCRIÇÃO DO SERVIÇO - Com card
