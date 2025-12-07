@@ -1217,7 +1217,7 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
         c.line(15*mm, y_pos, width - 15*mm, y_pos)
         y_pos -= 5*mm
         
-        # Total de materiais
+        # Total de materiais (apenas exibido, mas também será usado no quadro VALORES)
         c.setFont("Helvetica-Bold", 9)
         total_mat_fmt = f"R$ {total_materiais:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
         c.drawRightString(width - 15*mm, y_pos, f"Total de Materiais: {total_mat_fmt}")
