@@ -1370,27 +1370,8 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     c.drawString(15*mm, y_pos, "Assinatura")
     
     # (12) RODAPÉ DO PDF
-    c.setFont("Helvetica", 8)
-    c.setFillColor(HexColor('#666666'))
-    
-    # Montar rodapé com campos corretos
-    rodape_parts = []
-    rodape_parts.append(empresa.get('razao_social') or empresa.get('name', ''))
-    
-    # Endereço resumido para rodapé
-    if empresa.get('cidade') and empresa.get('estado'):
-        rodape_parts.append(f"{empresa.get('cidade')} - {empresa.get('estado')}")
-    
-    # Telefone
-    if empresa.get('celular_whatsapp'):
-        rodape_parts.append(empresa.get('celular_whatsapp'))
-    elif empresa.get('telefone_fixo'):
-        rodape_parts.append(empresa.get('telefone_fixo'))
-    
-    rodape_texto = ' | '.join(rodape_parts)
-    rodape_width = c.stringWidth(rodape_texto, "Helvetica", 8)
-    c.drawString((width - rodape_width) / 2, 20*mm, rodape_texto)
-    
+    # A pedido do usuário, não exibimos mais dados da empresa no rodapé
+    # Mantemos apenas a criação da nova página para finalizar o documento
     
     c.showPage()
     c.save()
