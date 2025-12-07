@@ -437,10 +437,7 @@ const Precificacao = ({ user, onLogout }) => {
                   </Card>
                 )}
               </div>
-            </TabsContent>
-
-            {/* ========== TAB: SERVIÇO ========== */}
-            <TabsContent value="servico" className="space-y-6 mt-6">
+            {/* Conteúdo de Serviço continua aqui */}
               {/* Tipo de Cobrança do Serviço */}
               <Card className="bg-zinc-900 border-zinc-800">
                 <CardHeader>
