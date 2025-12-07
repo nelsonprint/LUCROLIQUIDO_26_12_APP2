@@ -237,6 +237,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ Geração de PDF funcionando perfeitamente. Endpoint /api/orcamento/{id}/pdf retornando arquivo PDF com nome correto. Template HTML sendo processado adequadamente."
+        - working: true
+          agent: "testing"
+          comment: "✅ TESTE COMPLETO DE GERAÇÃO DE PDF APÓS AJUSTES DE LAYOUT REALIZADO COM SUCESSO. Validações: 1) GET /api/orcamento/{id}/pdf retorna HTTP 200 ✅ 2) Content-Type application/pdf correto ✅ 3) Content-Disposition com filename correto ✅ 4) Template HTML orcamento.html usando variáveis cor_primaria e cor_secundaria do orcamento_config ✅ 5) WeasyPrint funcionando (PDF ~22KB) quando dependências disponíveis ✅ 6) Fallback ReportLab estável (PDF ~3KB) sem rodapé de dados da empresa ✅ 7) Configurações personalizadas de cores aplicadas corretamente ✅ 8) Múltiplas gerações consistentes ✅. Sistema de PDF robusto com template profissional e fallback confiável."
 
   - task: "Atualização de Status"
     implemented: true
