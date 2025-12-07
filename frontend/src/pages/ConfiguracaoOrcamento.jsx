@@ -42,6 +42,43 @@ const ConfiguracaoOrcamento = ({ user, onLogout }) => {
     }
   };
 
+  const handleLogoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      toast.error('Apenas imagens são permitidas');
+      return;
+    }
+
+    // Validar tamanho (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Imagem muito grande. Máximo: 5MB');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await axiosInstance.post('/upload-logo', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setConfig({ ...config, logo_url: response.data.logo_url });
+      toast.success('Logo enviada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao enviar logo:', error);
+      toast.error('Erro ao enviar logo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!company.id) {
       toast.error('Empresa não encontrada');
@@ -103,18 +140,36 @@ const ConfiguracaoOrcamento = ({ user, onLogout }) => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <Label className="text-gray-300">URL da Logo</Label>
-                  <Input
-                    type="url"
-                    placeholder="https://exemplo.com/logo.png"
-                    value={config.logo_url || ''}
-                    onChange={(e) => setConfig({ ...config, logo_url: e.target.value })}
-                    className="bg-white/5 border-white/10 text-white"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Cole a URL de uma imagem hospedada online. Recomendado: formato PNG com fundo transparente.
-                  </p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Upload de Logo</Label>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="bg-white/5 border-white/10 text-white file:bg-purple-600 file:text-white file:border-0 file:px-4 file:py-2 file:rounded-md file:mr-4 cursor-pointer"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Escolha uma imagem (PNG, JPG, SVG). Máximo: 5MB. Recomendado: fundo transparente.
+                    </p>
+                  </div>
+
+                  {/* Preview da logo */}
+                  {config.logo_url && (
+                    <div className="mt-4 p-4 bg-gray-800 rounded-lg">
+                      <p className="text-sm text-gray-400 mb-3">Preview da logo:</p>
+                      <div className="flex items-center justify-center bg-white/10 rounded-lg p-4">
+                        <img 
+                          src={`${process.env.REACT_APP_BACKEND_URL}${config.logo_url}`}
+                          alt="Logo preview" 
+                          className="max-h-32 object-contain"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
