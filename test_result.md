@@ -261,9 +261,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Módulo completo de Orçamentos testado"
+    - "Teste de geração de PDF de orçamento após ajustes de layout"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 frontend:
