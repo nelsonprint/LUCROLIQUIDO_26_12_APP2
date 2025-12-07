@@ -303,9 +303,9 @@ const Precificacao = ({ user, onLogout }) => {
 
             {/* ========== SERVIÇO (ÚNICA OPÇÃO) ========== */}
             <div className="space-y-6 mt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Formulário Produto */}
-                <Card className="bg-zinc-900 border-zinc-800">
+              {/* SERVIÇO - Conteúdo único */}
+              {/* Tipo de Cobrança do Serviço */}
+              <Card className="bg-zinc-900 border-zinc-800">
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Calculator className="mr-2" />
