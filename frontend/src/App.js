@@ -18,6 +18,7 @@ import Orcamentos from './pages/Orcamentos';
 import OrcamentoDetalhe from './pages/OrcamentoDetalhe';
 import EditarOrcamento from './pages/EditarOrcamento';
 import Materiais from './pages/Materiais';
+import ConfiguracaoOrcamento from './pages/ConfiguracaoOrcamento';
 import Assinatura from './pages/Assinatura';
 import AdminPanel from './pages/AdminPanel';
 
@@ -184,6 +185,16 @@ function App() {
           element={
             user ? (
               <Materiais user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="/config-orcamento"
+          element={
+            user ? (
+              <ConfiguracaoOrcamento user={user} onLogout={handleLogout} />
             ) : (
               <Navigate to="/" replace />
             )
