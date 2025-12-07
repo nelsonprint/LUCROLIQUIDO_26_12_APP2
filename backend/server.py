@@ -1546,6 +1546,36 @@ async def remove_material_from_orcamento(orcamento_id: str, orcamento_material_i
 
 # ========== ENDPOINTS: CONFIGURAÇÃO DE ORÇAMENTO ==========
 
+@api_router.post("/upload-logo")
+async def upload_logo(file: UploadFile = File(...)):
+    """Upload de logo para orçamento"""
+    try:
+        # Validar tipo de arquivo
+        if not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="Apenas imagens são permitidas")
+        
+        # Gerar nome único para o arquivo
+        file_extension = file.filename.split('.')[-1]
+        unique_filename = f"logo_{uuid.uuid4()}.{file_extension}"
+        file_path = Path(ROOT_DIR) / "uploads" / unique_filename
+        
+        # Criar diretório se não existir
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Salvar arquivo
+        async with aiofiles.open(file_path, 'wb') as f:
+            content = await file.read()
+            await f.write(content)
+        
+        # Retornar URL do arquivo
+        logo_url = f"/uploads/{unique_filename}"
+        
+        return {"logo_url": logo_url, "message": "Logo enviada com sucesso!"}
+    
+    except Exception as e:
+        logger.error(f"Erro no upload: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao fazer upload: {str(e)}")
+
 @api_router.get("/orcamento-config/{company_id}")
 async def get_orcamento_config(company_id: str):
     """Buscar configuração de orçamento da empresa"""
