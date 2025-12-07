@@ -1316,8 +1316,7 @@ const Precificacao = ({ user, onLogout }) => {
                   </Card>
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
+            </div>
 
           {/* Dicas */}
           <Card className="bg-zinc-900 border-zinc-800">
