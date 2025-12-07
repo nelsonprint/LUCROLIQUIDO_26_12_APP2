@@ -1368,7 +1368,22 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     # (12) RODAPÉ DO PDF
     c.setFont("Helvetica", 8)
     c.setFillColor(HexColor('#666666'))
-    rodape_texto = f"{empresa.get('razao_social') or empresa.get('name', '')} | {empresa.get('endereco', '')} | {empresa.get('telefone', '')}"
+    
+    # Montar rodapé com campos corretos
+    rodape_parts = []
+    rodape_parts.append(empresa.get('razao_social') or empresa.get('name', ''))
+    
+    # Endereço resumido para rodapé
+    if empresa.get('cidade') and empresa.get('estado'):
+        rodape_parts.append(f"{empresa.get('cidade')} - {empresa.get('estado')}")
+    
+    # Telefone
+    if empresa.get('celular_whatsapp'):
+        rodape_parts.append(empresa.get('celular_whatsapp'))
+    elif empresa.get('telefone_fixo'):
+        rodape_parts.append(empresa.get('telefone_fixo'))
+    
+    rodape_texto = ' | '.join(rodape_parts)
     rodape_width = c.stringWidth(rodape_texto, "Helvetica", 8)
     c.drawString((width - rodape_width) / 2, 15*mm, rodape_texto)
     
