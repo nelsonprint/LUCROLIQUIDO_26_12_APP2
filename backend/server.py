@@ -932,21 +932,28 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     text_color = HexColor('#000000')  # Texto sempre preto
     bg_light = HexColor('#F9FAFB')  # Fundo claro para cards
     
-    # Função auxiliar para desenhar card com borda colorida
+    # Função auxiliar para desenhar card com bordas coloridas nos dois lados
     def draw_card_box(y_top, height_mm, border_color, border_width=3):
-        """Desenha um card com borda lateral esquerda colorida"""
-        # Fundo claro do card
+        """Desenha um card com bordas laterais coloridas e cantos arredondados"""
+        # Fundo claro do card com cantos arredondados
         c.setFillColor(bg_light)
-        c.rect(12*mm, y_top - height_mm, width - 24*mm, height_mm, fill=True, stroke=False)
+        c.roundRect(12*mm, y_top - height_mm, width - 24*mm, height_mm, 3*mm, fill=True, stroke=False)
         
-        # Borda lateral esquerda colorida (degradê simulado com retângulos)
+        # Borda lateral ESQUERDA colorida
         c.setFillColor(border_color)
-        c.rect(12*mm, y_top - height_mm, border_width*mm, height_mm, fill=True, stroke=False)
+        c.rect(12*mm, y_top - height_mm + 3*mm, border_width*mm, height_mm - 6*mm, fill=True, stroke=False)
+        # Cantos arredondados da borda esquerda
+        c.roundRect(12*mm, y_top - height_mm, border_width*mm, height_mm, 3*mm, fill=True, stroke=False)
         
-        # Borda fina ao redor
+        # Borda lateral DIREITA colorida
+        c.rect(width - 12*mm - border_width*mm, y_top - height_mm + 3*mm, border_width*mm, height_mm - 6*mm, fill=True, stroke=False)
+        # Cantos arredondados da borda direita
+        c.roundRect(width - 12*mm - border_width*mm, y_top - height_mm, border_width*mm, height_mm, 3*mm, fill=True, stroke=False)
+        
+        # Borda fina ao redor com cantos arredondados
         c.setStrokeColor(HexColor('#E5E7EB'))
         c.setLineWidth(0.5)
-        c.rect(12*mm, y_top - height_mm, width - 24*mm, height_mm, fill=False, stroke=True)
+        c.roundRect(12*mm, y_top - height_mm, width - 24*mm, height_mm, 3*mm, fill=False, stroke=True)
     
     # (1) CABEÇALHO - Logo + Dados da Empresa
     y_pos = height - 20*mm
