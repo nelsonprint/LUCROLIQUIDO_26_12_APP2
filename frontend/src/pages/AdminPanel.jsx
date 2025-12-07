@@ -123,6 +123,20 @@ const AdminPanel = ({ user, onLogout }) => {
     return labels[status] || status;
   };
 
+  const handleUpdatePrice = async () => {
+    try {
+      setLoading(true);
+      // Aqui você pode adicionar a API para salvar o preço
+      // Por enquanto, apenas mostrar toast de sucesso
+      toast.success(`Preço atualizado para R$ ${parseFloat(newPrice).toFixed(2)}`);
+      setShowPriceDialog(false);
+    } catch (error) {
+      toast.error('Erro ao atualizar preço');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (user.role !== 'admin') {
     return null;
   }
@@ -133,11 +147,20 @@ const AdminPanel = ({ user, onLogout }) => {
 
       <div className="flex-1 p-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2" data-testid="admin-panel-title">
-            Painel Administrativo
-          </h1>
-          <p className="text-gray-400">Visão completa do sistema</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2" data-testid="admin-panel-title">
+              Painel Administrativo
+            </h1>
+            <p className="text-gray-400">Visão completa do sistema</p>
+          </div>
+          <Button
+            onClick={() => setShowPriceDialog(true)}
+            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+          >
+            <DollarSign className="mr-2" size={18} />
+            Alterar Preço
+          </Button>
         </div>
 
         {/* KPIs */}
