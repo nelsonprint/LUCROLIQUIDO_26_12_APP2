@@ -839,8 +839,8 @@ const Precificacao = ({ user, onLogout }) => {
                 </form>
               )}
 
-              {/* ========== RESULTADO: SERVIÇO POR M² ========== */}
-              {resultadoServico && tipoCobrancaServico === 'por-m2' && (
+              {/* ========== RESULTADO: SERVIÇO ========== */}
+              {resultadoServico && (
                 <div className="space-y-6">
                   {/* Card Principal de Resultado */}
                   <Card className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-purple-500/30">
