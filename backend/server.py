@@ -1539,6 +1539,58 @@ async def remove_material_from_orcamento(orcamento_id: str, orcamento_material_i
     
     return {"message": "Material removido do orçamento com sucesso!"}
 
+# ========== ENDPOINTS: CONFIGURAÇÃO DE ORÇAMENTO ==========
+
+@api_router.get("/orcamento-config/{company_id}")
+async def get_orcamento_config(company_id: str):
+    """Buscar configuração de orçamento da empresa"""
+    config = await db.orcamento_config.find_one({"company_id": company_id}, {"_id": 0})
+    
+    if not config:
+        # Retornar configuração padrão se não existir
+        return {
+            "company_id": company_id,
+            "logo_url": None,
+            "cor_primaria": "#7C3AED",
+            "cor_secundaria": "#3B82F6",
+            "texto_ciencia": "Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas.",
+            "texto_garantia": "Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes."
+        }
+    
+    return config
+
+@api_router.post("/orcamento-config")
+async def create_or_update_orcamento_config(config_data: OrcamentoConfigCreate, company_id: str):
+    """Criar ou atualizar configuração de orçamento"""
+    # Verificar se já existe
+    existing = await db.orcamento_config.find_one({"company_id": company_id})
+    
+    if existing:
+        # Atualizar
+        update_doc = config_data.model_dump()
+        update_doc['updated_at'] = datetime.now(timezone.utc).isoformat()
+        
+        await db.orcamento_config.update_one(
+            {"company_id": company_id},
+            {"$set": update_doc}
+        )
+        
+        return {"message": "Configuração atualizada com sucesso!"}
+    else:
+        # Criar novo
+        config = OrcamentoConfig(
+            company_id=company_id,
+            **config_data.model_dump()
+        )
+        
+        doc = config.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        doc['updated_at'] = doc['updated_at'].isoformat()
+        
+        await db.orcamento_config.insert_one(doc)
+        
+        return {"message": "Configuração criada com sucesso!"}
+
 @api_router.post("/ai-analysis")
 async def ai_analysis(data: dict):
     try:
