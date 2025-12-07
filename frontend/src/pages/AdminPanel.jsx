@@ -141,18 +141,15 @@ const AdminPanel = ({ user, onLogout }) => {
       setLoading(true);
       const price = parseFloat(newPrice);
       
-      if (price <= 0) {
+      if (price <= 0 || isNaN(price)) {
         toast.error('Preço deve ser maior que zero');
         return;
       }
       
-      await axiosInstance.put('/system-config/price', price, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      await axiosInstance.put('/system-config/price', { price });
       
       toast.success(`Preço atualizado para R$ ${price.toFixed(2)}`);
+      setCurrentPrice(price);
       setShowPriceDialog(false);
     } catch (error) {
       console.error('Erro ao atualizar preço:', error);
