@@ -402,6 +402,7 @@ const AdminPanel = ({ user, onLogout }) => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
+              <Label className="text-gray-300">Preço Atual: R$ {currentPrice.toFixed(2)}</Label>
               <Label className="text-gray-300">Novo Preço Mensal (R$)</Label>
               <Input
                 type="number"
@@ -413,7 +414,7 @@ const AdminPanel = ({ user, onLogout }) => {
                 placeholder="49.90"
               />
               <p className="text-xs text-gray-500">
-                Este será o novo valor da assinatura mensal para novos usuários.
+                Este será o novo valor da assinatura mensal para todos os usuários.
               </p>
             </div>
           </div>
