@@ -991,26 +991,52 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
         c.drawString(x_empresa, y_empresa, f"CNPJ: {empresa.get('cnpj')}")
         y_empresa -= 4*mm
     
-    # Endereço completo
-    if empresa.get('endereco'):
-        endereco_completo = empresa.get('endereco', '')
-        if empresa.get('cidade'):
-            endereco_completo += f", {empresa.get('cidade')}"
+    # Endereço completo - CAMPOS CORRETOS
+    endereco_parts = []
+    if empresa.get('logradouro'):
+        endereco_parts.append(empresa.get('logradouro'))
+        if empresa.get('numero'):
+            endereco_parts[-1] += f", {empresa.get('numero')}"
+        if empresa.get('complemento'):
+            endereco_parts[-1] += f", {empresa.get('complemento')}"
+    if empresa.get('bairro'):
+        endereco_parts.append(empresa.get('bairro'))
+    if empresa.get('cidade'):
+        cidade_estado = empresa.get('cidade')
         if empresa.get('estado'):
-            endereco_completo += f" - {empresa.get('estado')}"
-        if empresa.get('cep'):
-            endereco_completo += f", CEP: {empresa.get('cep')}"
-        c.drawString(x_empresa, y_empresa, f"Endereço: {endereco_completo}")
+            cidade_estado += f" - {empresa.get('estado')}"
+        endereco_parts.append(cidade_estado)
+    if empresa.get('cep'):
+        endereco_parts.append(f"CEP: {empresa.get('cep')}")
+    
+    if endereco_parts:
+        endereco_completo = ', '.join(endereco_parts)
+        # Quebrar endereço se muito longo
+        if len(endereco_completo) > 80:
+            # Primeira linha
+            c.drawString(x_empresa, y_empresa, f"Endereço: {endereco_completo[:80]}")
+            y_empresa -= 4*mm
+            # Segunda linha
+            c.drawString(x_empresa + 15*mm, y_empresa, endereco_completo[80:])
+            y_empresa -= 4*mm
+        else:
+            c.drawString(x_empresa, y_empresa, f"Endereço: {endereco_completo}")
+            y_empresa -= 4*mm
+    
+    # Telefones - CAMPOS CORRETOS
+    telefones = []
+    if empresa.get('telefone_fixo'):
+        telefones.append(f"Tel: {empresa.get('telefone_fixo')}")
+    if empresa.get('celular_whatsapp'):
+        telefones.append(f"WhatsApp: {empresa.get('celular_whatsapp')}")
+    
+    if telefones:
+        c.drawString(x_empresa, y_empresa, ' | '.join(telefones))
         y_empresa -= 4*mm
     
-    # Telefone
-    if empresa.get('telefone'):
-        c.drawString(x_empresa, y_empresa, f"Telefone: {empresa.get('telefone')}")
-        y_empresa -= 4*mm
-    
-    # E-mail
-    if empresa.get('email'):
-        c.drawString(x_empresa, y_empresa, f"E-mail: {empresa.get('email')}")
+    # E-mail - CAMPO CORRETO
+    if empresa.get('email_empresa'):
+        c.drawString(x_empresa, y_empresa, f"E-mail: {empresa.get('email_empresa')}")
         y_empresa -= 4*mm
     
     # Site
