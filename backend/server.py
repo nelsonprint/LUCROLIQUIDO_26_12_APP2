@@ -938,28 +938,21 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     text_color = HexColor('#000000')  # Texto sempre preto
     bg_light = HexColor('#F9FAFB')  # Fundo claro para cards
     
-    # Função auxiliar para desenhar card com bordas coloridas nos dois lados
-    def draw_card_box(y_top, height_mm, border_color, border_width=3):
-        """Desenha um card com bordas laterais coloridas e cantos arredondados"""
+    # Função auxiliar para desenhar card com borda colorida no estilo da imagem
+    def draw_card_box(y_top, height_mm, border_color, border_width=4):
+        """Desenha um card com borda lateral esquerda colorida e grossa"""
         # Fundo claro do card com cantos arredondados
         c.setFillColor(bg_light)
-        c.roundRect(12*mm, y_top - height_mm, width - 24*mm, height_mm, 3*mm, fill=True, stroke=False)
+        c.roundRect(15*mm, y_top - height_mm, width - 30*mm, height_mm, 2*mm, fill=True, stroke=False)
         
-        # Borda lateral ESQUERDA colorida
+        # Borda lateral ESQUERDA colorida (grossa)
         c.setFillColor(border_color)
-        c.rect(12*mm, y_top - height_mm + 3*mm, border_width*mm, height_mm - 6*mm, fill=True, stroke=False)
-        # Cantos arredondados da borda esquerda
-        c.roundRect(12*mm, y_top - height_mm, border_width*mm, height_mm, 3*mm, fill=True, stroke=False)
+        c.roundRect(15*mm, y_top - height_mm, border_width*mm, height_mm, 2*mm, fill=True, stroke=False)
         
-        # Borda lateral DIREITA colorida
-        c.rect(width - 12*mm - border_width*mm, y_top - height_mm + 3*mm, border_width*mm, height_mm - 6*mm, fill=True, stroke=False)
-        # Cantos arredondados da borda direita
-        c.roundRect(width - 12*mm - border_width*mm, y_top - height_mm, border_width*mm, height_mm, 3*mm, fill=True, stroke=False)
-        
-        # Borda fina ao redor com cantos arredondados
-        c.setStrokeColor(HexColor('#E5E7EB'))
+        # Borda fina cinza ao redor
+        c.setStrokeColor(HexColor('#D1D5DB'))
         c.setLineWidth(0.5)
-        c.roundRect(12*mm, y_top - height_mm, width - 24*mm, height_mm, 3*mm, fill=False, stroke=True)
+        c.roundRect(15*mm, y_top - height_mm, width - 30*mm, height_mm, 2*mm, fill=False, stroke=True)
     
     # (1) CABEÇALHO - Logo + Dados da Empresa
     y_pos = height - 15*mm
