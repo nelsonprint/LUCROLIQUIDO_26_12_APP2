@@ -1157,7 +1157,7 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     
     # (5) MATERIAIS NECESSÁRIOS (fornecidos e pagos pelo cliente)
     if materiais and len(materiais) > 0:
-        if y_pos < 80*mm:
+        if y_pos < 90*mm:
             c.showPage()
             y_pos = height - 20*mm
         
