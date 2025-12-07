@@ -901,23 +901,34 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
     
     return {"message": f"Status atualizado para {status_data.status}!"}
 
-def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list = None) -> bytes:
-    """Fallback: Gerar PDF usando ReportLab (sem dependências do sistema)"""
+def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list = None, config: dict = None) -> bytes:
+    """Gerar PDF usando ReportLab com configurações personalizadas"""
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import mm
     from reportlab.pdfgen import canvas as pdf_canvas
     from reportlab.lib.colors import HexColor
     from datetime import datetime as dt
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
     
     if materiais is None:
         materiais = []
+    
+    if config is None:
+        config = {
+            'cor_primaria': '#7C3AED',
+            'cor_secundaria': '#3B82F6',
+            'texto_ciencia': 'Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas.',
+            'texto_garantia': 'Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes.',
+            'logo_url': None
+        }
     
     buffer = BytesIO()
     c = pdf_canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
     
-    # Cores
-    primary_color = HexColor('#7C3AED')
+    # Cores personalizadas do CONFIG
+    primary_color = HexColor(config.get('cor_primaria', '#7C3AED'))
+    secondary_color = HexColor(config.get('cor_secundaria', '#3B82F6'))
     text_color = HexColor('#444444')
     
     # Header com gradiente (simulado com retângulo)
