@@ -1182,7 +1182,6 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
         
         # Listar materiais
         c.setFont("Helvetica", 8)
-        total_materiais = 0
         for material in materiais:
             # Verificar se precisa de nova página
             if y_pos < 40*mm:
