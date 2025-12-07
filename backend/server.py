@@ -352,6 +352,12 @@ class OrcamentoConfig(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class SystemConfig(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = "system_config"  # ID fixo para ter sempre um único registro
+    subscription_price: float = 49.90
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # ========== STARTUP: CRIAR PRIMEIRO ADMIN ==========
 
 @app.on_event("startup")
