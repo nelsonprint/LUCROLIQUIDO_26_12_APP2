@@ -166,7 +166,7 @@ const Assinatura = ({ user, onLogout }) => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center py-6">
-                <p className="text-5xl font-bold text-white mb-2">R$ 49,90</p>
+                <p className="text-5xl font-bold text-white mb-2">R$ {subscriptionPrice.toFixed(2).replace('.', ',')}</p>
                 <p className="text-gray-400">por mês</p>
               </div>
 
