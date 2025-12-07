@@ -25,6 +25,7 @@ const AdminPanel = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [showPriceDialog, setShowPriceDialog] = useState(false);
   const [newPrice, setNewPrice] = useState('49.90');
+  const [currentPrice, setCurrentPrice] = useState(49.90);
 
   useEffect(() => {
     // Verificar se é admin
