@@ -1223,7 +1223,11 @@ async def generate_orcamento_pdf(orcamento_id: str):
     except (OSError, ImportError) as e:
         # Fallback: usar ReportLab se WeasyPrint não estiver disponível
         logger.warning(f"WeasyPrint não disponível, usando ReportLab como fallback: {str(e)}")
-        pdf_bytes = generate_pdf_with_reportlab(orcamento, empresa, materiais)
+        
+        # Buscar configuração de orçamento
+        config = await db.orcamento_config.find_one({"company_id": empresa.get('id')}, {"_id": 0})
+        
+        pdf_bytes = generate_pdf_with_reportlab(orcamento, empresa, materiais, config)
         
         return StreamingResponse(
             BytesIO(pdf_bytes),
