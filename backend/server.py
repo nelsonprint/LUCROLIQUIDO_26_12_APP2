@@ -1257,10 +1257,19 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     c.drawString(18*mm, y_pos - 5*mm, "VALORES")
     
     c.setFont("Helvetica", 9)
-    # Valor total da proposta = valor praticado (serviço) já inclui materiais associados ao orçamento
-    valor_total = orcamento.get('preco_praticado', 0)
+    # Valor do serviço (preço praticado)
+    valor_servico = orcamento.get('preco_praticado', 0)
+    valor_servico_fmt = f"R$ {valor_servico:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    c.drawString(18*mm, y_pos - 11*mm, f"Valor do Serviço: {valor_servico_fmt}")
+    
+    # Valor dos materiais (total calculado na seção de materiais)
+    valor_materiais_fmt = f"R$ {total_materiais:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    c.drawString(18*mm, y_pos - 15*mm, f"Valor dos Materiais: {valor_materiais_fmt}")
+    
+    # Valor total = serviço + materiais
+    valor_total = valor_servico + total_materiais
     valor_total_fmt = f"R$ {valor_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-    c.drawString(18*mm, y_pos - 11*mm, f"VALOR TOTAL DA PROPOSTA: {valor_total_fmt}")
+    c.drawString(18*mm, y_pos - 19*mm, f"Valor Total: {valor_total_fmt}")
     
     # Condições de pagamento
     c.setFillColor(text_color)
