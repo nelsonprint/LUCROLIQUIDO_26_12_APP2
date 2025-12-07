@@ -1837,6 +1837,46 @@ async def remove_material_from_orcamento(orcamento_id: str, orcamento_material_i
     
     return {"message": "Material removido do orçamento com sucesso!"}
 
+# ========== ENDPOINTS: CONFIGURAÇÃO DO SISTEMA ==========
+
+@api_router.get("/system-config")
+async def get_system_config():
+    """Buscar configuração do sistema (preço da assinatura)"""
+    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    
+    if not config:
+        # Retornar configuração padrão
+        return {"id": "system_config", "subscription_price": 49.90}
+    
+    return config
+
+@api_router.put("/system-config/price")
+async def update_subscription_price(new_price: float):
+    """Atualizar preço da assinatura"""
+    if new_price <= 0:
+        raise HTTPException(status_code=400, detail="Preço deve ser maior que zero")
+    
+    # Verificar se já existe
+    existing = await db.system_config.find_one({"id": "system_config"})
+    
+    if existing:
+        # Atualizar
+        await db.system_config.update_one(
+            {"id": "system_config"},
+            {"$set": {
+                "subscription_price": new_price,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+    else:
+        # Criar novo
+        config = SystemConfig(subscription_price=new_price)
+        doc = config.model_dump()
+        doc['updated_at'] = doc['updated_at'].isoformat()
+        await db.system_config.insert_one(doc)
+    
+    return {"message": "Preço atualizado com sucesso!", "new_price": new_price}
+
 # ========== ENDPOINTS: CONFIGURAÇÃO DE ORÇAMENTO ==========
 
 @api_router.post("/upload-logo")
