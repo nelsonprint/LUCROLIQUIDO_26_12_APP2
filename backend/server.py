@@ -1031,26 +1031,26 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     c.drawCentredString(width / 2, y_pos, f"{numero_orcamento} | Data: {data_emissao}")
     y_pos -= 10*mm
     
-    # (2) DADOS DO CLIENTE
+    # (2) DADOS DO CLIENTE - Com card
+    card_height = 25*mm
+    draw_card_box(y_pos, card_height, primary_color)
+    
     c.setFillColor(text_color)
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(15*mm, y_pos, "DADOS DO CLIENTE")
-    y_pos -= 6*mm
+    c.drawString(18*mm, y_pos - 5*mm, "DADOS DO CLIENTE")
     
     c.setFont("Helvetica", 9)
-    c.drawString(15*mm, y_pos, f"Cliente: {orcamento.get('cliente_nome', '')}")
-    y_pos -= 4*mm
+    c.drawString(18*mm, y_pos - 10*mm, f"Cliente: {orcamento.get('cliente_nome', '')}")
     
     if orcamento.get('cliente_documento'):
-        c.drawString(15*mm, y_pos, f"CPF/CNPJ: {orcamento.get('cliente_documento')}")
-        y_pos -= 4*mm
+        c.drawString(18*mm, y_pos - 14*mm, f"CPF/CNPJ: {orcamento.get('cliente_documento')}")
     
     if orcamento.get('cliente_endereco'):
-        c.drawString(15*mm, y_pos, f"Endereço: {orcamento.get('cliente_endereco')}")
-        y_pos -= 4*mm
+        c.drawString(18*mm, y_pos - 18*mm, f"Endereço: {orcamento.get('cliente_endereco')}")
     
-    c.drawString(15*mm, y_pos, f"Data da Emissão: {data_emissao}")
-    y_pos -= 8*mm
+    c.drawString(18*mm, y_pos - 22*mm, f"Data da Emissão: {data_emissao}")
+    
+    y_pos -= (card_height + 8*mm)
     
     # (3) APRESENTAÇÃO
     c.setFont("Helvetica-Bold", 11)
