@@ -1249,7 +1249,7 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
         c.showPage()
         y_pos = height - 20*mm
     
-    draw_card_box(y_pos, valores_card_height, primary_color, border_width=4)
+    draw_card_box(y_pos, valores_card_height, primary_color, border_width=1)
     
     c.setFillColor(text_color)
     c.setFont("Helvetica-Bold", 12)
