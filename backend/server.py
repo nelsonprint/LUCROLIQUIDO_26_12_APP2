@@ -1107,7 +1107,8 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     y_pos -= 6*mm
     
     c.setFont("Helvetica", 9)
-    c.drawString(20*mm, y_pos, f"Prezado(a) Senhor(a) {orcamento.get('cliente_nome', '').split()[0] if orcamento.get('cliente_nome') else ''},")
+    # A pedido do usuário, não exibir mais o nome do cliente nesta saudação
+    c.drawString(20*mm, y_pos, "Prezado(a) Senhor(a),")
     y_pos -= 4*mm
     c.drawString(20*mm, y_pos, "apresentamos-lhe nossa proposta comercial para a prestação do(s) serviço(s) abaixo discriminado(s):")
     y_pos -= 8*mm
