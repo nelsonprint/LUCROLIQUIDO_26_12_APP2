@@ -1014,25 +1014,37 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     c.drawCentredString(width / 2, y_pos, f"{numero_orcamento} | Data: {data_emissao}")
     y_pos -= 10*mm
     
-    # Dados do Cliente
-    y = height - 100*mm
+    # (2) DADOS DO CLIENTE
     c.setFillColor(text_color)
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(20*mm, y, "DADOS DO CLIENTE")
-    y -= 10*mm
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(15*mm, y_pos, "DADOS DO CLIENTE")
+    y_pos -= 6*mm
     
-    c.setFont("Helvetica", 10)
-    c.drawString(20*mm, y, f"Nome: {orcamento.get('cliente_nome', '')}")
-    y -= 5*mm
+    c.setFont("Helvetica", 9)
+    c.drawString(15*mm, y_pos, f"Cliente: {orcamento.get('cliente_nome', '')}")
+    y_pos -= 4*mm
+    
     if orcamento.get('cliente_documento'):
-        c.drawString(20*mm, y, f"CPF/CNPJ: {orcamento.get('cliente_documento')}")
-        y -= 5*mm
-    if orcamento.get('cliente_whatsapp'):
-        c.drawString(20*mm, y, f"WhatsApp: {orcamento.get('cliente_whatsapp')}")
-        y -= 5*mm
-    if orcamento.get('cliente_email'):
-        c.drawString(20*mm, y, f"E-mail: {orcamento.get('cliente_email')}")
-        y -= 5*mm
+        c.drawString(15*mm, y_pos, f"CPF/CNPJ: {orcamento.get('cliente_documento')}")
+        y_pos -= 4*mm
+    
+    if orcamento.get('cliente_endereco'):
+        c.drawString(15*mm, y_pos, f"Endereço: {orcamento.get('cliente_endereco')}")
+        y_pos -= 4*mm
+    
+    c.drawString(15*mm, y_pos, f"Data da Emissão: {data_emissao}")
+    y_pos -= 8*mm
+    
+    # (3) APRESENTAÇÃO
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(15*mm, y_pos, "Proposta comercial para prestação de serviços")
+    y_pos -= 6*mm
+    
+    c.setFont("Helvetica", 9)
+    c.drawString(15*mm, y_pos, f"Prezado(a) Senhor(a) {orcamento.get('cliente_nome', '').split()[0] if orcamento.get('cliente_nome') else ''},")
+    y_pos -= 4*mm
+    c.drawString(15*mm, y_pos, "apresentamos-lhe nossa proposta comercial para a prestação do(s) serviço(s) abaixo discriminado(s):")
+    y_pos -= 8*mm
     
     # Descrição do Serviço
     y -= 10*mm
