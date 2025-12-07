@@ -1381,9 +1381,7 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
 
 @api_router.get("/orcamento/{orcamento_id}/pdf")
 async def generate_orcamento_pdf(orcamento_id: str):
-    """Gerar PDF do orçamento - usa WeasyPrint se disponível, senão usa ReportLab"""
-    from datetime import datetime as dt
-    
+    """Gerar PDF do orçamento usando apenas o modelo clássico em ReportLab (modelo antigo)."""
     # Buscar orçamento
     orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
     
@@ -1401,104 +1399,18 @@ async def generate_orcamento_pdf(orcamento_id: str):
         {"id_orcamento": orcamento_id},
         {"_id": 0}
     ).to_list(1000)
-
-    # Buscar configurações de orçamento (cores, textos, logo)
-    config = await db.orcamento_config.find_one({"company_id": empresa.get('id')}, {"_id": 0}) or {}
-    cor_primaria = config.get('cor_primaria', '#7C3AED')
-    cor_secundaria = config.get('cor_secundaria', '#3B82F6')
-    texto_ciencia = config.get('texto_ciencia', 'Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas.')
-    texto_garantia = config.get('texto_garantia', 'Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes.')
-    logo_url = config.get('logo_url')
     
-    # Tentar usar WeasyPrint primeiro (template profissional)
-    try:
-        from weasyprint import HTML
-        from jinja2 import Environment, FileSystemLoader
-        import os
-        
-        # Preparar dados para o template
-        data_emissao = orcamento.get('created_at', '')
-        if isinstance(data_emissao, str) and len(data_emissao) >= 10:
-            try:
-                data_emissao = dt.fromisoformat(data_emissao.replace('Z', '+00:00'))
-                data_emissao = data_emissao.strftime("%d/%m/%Y")
-            except:
-                data_emissao = data_emissao[:10]
-        
-        data_geracao = dt.now().strftime("%d/%m/%Y %H:%M")
-        
-        # Formatar status
-        status = orcamento.get('status', 'RASCUNHO')
-        status_label_map = {
-            'RASCUNHO': 'Rascunho',
-            'ENVIADO': 'Enviado',
-            'APROVADO': 'Aprovado',
-            'NAO_APROVADO': 'Não Aprovado'
-        }
-        status_label = status_label_map.get(status, status)
-        
-        context = {
-            'numero_orcamento': orcamento.get('numero_orcamento', 'N/A'),
-            'data_emissao': data_emissao,
-            'data_geracao': data_geracao,
-            'status': status_label,
-            'empresa': empresa,
-            'cliente_nome': orcamento.get('cliente_nome', ''),
-            'cliente_documento': orcamento.get('cliente_documento'),
-            'cliente_whatsapp': orcamento.get('cliente_whatsapp'),
-            'cliente_telefone': orcamento.get('cliente_telefone'),
-            'cliente_email': orcamento.get('cliente_email'),
-            'cliente_endereco': orcamento.get('cliente_endereco'),
-            'tipo': orcamento.get('tipo', ''),
-            'descricao_servico_ou_produto': orcamento.get('descricao_servico_ou_produto', ''),
-            'area_m2': orcamento.get('area_m2'),
-            'quantidade': orcamento.get('quantidade'),
-            'custo_total': orcamento.get('custo_total', 0),
-            'preco_minimo': orcamento.get('preco_minimo', 0),
-            'preco_sugerido': orcamento.get('preco_sugerido', 0),
-            'preco_praticado': orcamento.get('preco_praticado', 0),
-            'validade_proposta': orcamento.get('validade_proposta', ''),
-            'condicoes_pagamento': orcamento.get('condicoes_pagamento', ''),
-            'prazo_execucao': orcamento.get('prazo_execucao', ''),
-            'observacoes': orcamento.get('observacoes'),
-            'cor_primaria': cor_primaria,
-            'cor_secundaria': cor_secundaria,
-            'texto_ciencia': texto_ciencia,
-            'texto_garantia': texto_garantia,
-            'logo_url': logo_url,
-        }
-        
-        # Carregar template
-        template_dir = os.path.join(os.path.dirname(__file__), 'templates')
-        env = Environment(loader=FileSystemLoader(template_dir))
-        template = env.get_template('orcamento.html')
-        
-        # Renderizar HTML
-        html_content = template.render(**context)
-        
-        # Converter para PDF
-        pdf_file = HTML(string=html_content).write_pdf()
-        
-        return StreamingResponse(
-            BytesIO(pdf_file),
-            media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento.get('numero_orcamento', orcamento_id)}.pdf"}
-        )
-        
-    except (OSError, ImportError) as e:
-        # Fallback: usar ReportLab se WeasyPrint não estiver disponível
-        logger.warning(f"WeasyPrint não disponível, usando ReportLab como fallback: {str(e)}")
-        
-        # Buscar configuração de orçamento
-        config = await db.orcamento_config.find_one({"company_id": empresa.get('id')}, {"_id": 0})
-        
-        pdf_bytes = generate_pdf_with_reportlab(orcamento, empresa, materiais, config)
-        
-        return StreamingResponse(
-            BytesIO(pdf_bytes),
-            media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento.get('numero_orcamento', orcamento_id)}.pdf"}
-        )
+    # Buscar configuração de orçamento (cores, textos, logo)
+    config = await db.orcamento_config.find_one({"company_id": empresa.get('id')}, {"_id": 0})
+    
+    # Gerar PDF usando o modelo clássico em ReportLab
+    pdf_bytes = generate_pdf_with_reportlab(orcamento, empresa, materiais, config)
+    
+    return StreamingResponse(
+        BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento.get('numero_orcamento', orcamento_id)}.pdf"}
+    )
 
 # ========== ANÁLISE IA (CHATGPT) ==========
 
