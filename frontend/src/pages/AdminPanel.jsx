@@ -101,8 +101,20 @@ const AdminPanel = ({ user, onLogout }) => {
   useEffect(() => {
     if (user.role === 'admin') {
       fetchSubscriptions();
+      fetchCurrentPrice();
     }
   }, [filterStatus]);
+  
+  const fetchCurrentPrice = async () => {
+    try {
+      const response = await axiosInstance.get('/system-config');
+      const price = response.data.subscription_price || 49.90;
+      setCurrentPrice(price);
+      setNewPrice(price.toString());
+    } catch (error) {
+      console.error('Erro ao buscar preço:', error);
+    }
+  };
 
   const getStatusBadgeColor = (status) => {
     const colors = {
