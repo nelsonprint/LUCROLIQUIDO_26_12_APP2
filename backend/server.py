@@ -1288,17 +1288,6 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     rodape_width = c.stringWidth(rodape_texto, "Helvetica", 8)
     c.drawString((width - rodape_width) / 2, 15*mm, rodape_texto)
     
-    # Linha para assinatura
-    assinatura_y = 50*mm
-    c.line(20*mm, assinatura_y, 90*mm, assinatura_y)
-    
-    # Nome da empresa abaixo da linha
-    c.drawString(20*mm, assinatura_y - 5*mm, empresa.get('razao_social') or empresa.get('name', 'EMPRESA'))
-    
-    # Footer
-    c.setFont("Helvetica", 8)
-    c.setFillColorRGB(0.5, 0.5, 0.5)
-    c.drawCentredString(width/2, 20*mm, f"Gerado automaticamente pelo sistema Lucro Líquido em {dt.now().strftime('%d/%m/%Y %H:%M')}")
     
     c.showPage()
     c.save()
