@@ -11,10 +11,21 @@ export const SubscriptionCard = ({ user }) => {
   const navigate = useNavigate();
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [subscriptionPrice, setSubscriptionPrice] = useState(49.90);
 
   useEffect(() => {
     fetchSubscription();
+    fetchSubscriptionPrice();
   }, [user]);
+
+  const fetchSubscriptionPrice = async () => {
+    try {
+      const response = await axiosInstance.get('/system-config');
+      setSubscriptionPrice(response.data.subscription_price || 49.90);
+    } catch (error) {
+      console.error('Erro ao buscar preço:', error);
+    }
+  };
 
   const fetchSubscription = async () => {
     try {
@@ -94,7 +105,7 @@ export const SubscriptionCard = ({ user }) => {
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               data-testid="subscribe-now-button"
             >
-              Assinar Agora - R$ 49,90/mês
+              Assinar Agora - R$ {subscriptionPrice.toFixed(2).replace('.', ',')}/mês
             </Button>
           )}
         </div>
