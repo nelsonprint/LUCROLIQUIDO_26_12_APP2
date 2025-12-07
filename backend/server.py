@@ -1063,34 +1063,48 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     c.drawString(15*mm, y_pos, "apresentamos-lhe nossa proposta comercial para a prestação do(s) serviço(s) abaixo discriminado(s):")
     y_pos -= 8*mm
     
-    # (4) DADOS DO ORÇAMENTO - DESCRIÇÃO DO SERVIÇO
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(15*mm, y_pos, "DESCRIÇÃO DO SERVIÇO")
-    y_pos -= 6*mm
-    
-    c.setFont("Helvetica", 9)
+    # (4) DADOS DO ORÇAMENTO - DESCRIÇÃO DO SERVIÇO - Com card
+    # Calcular altura necessária para o card
     descricao = orcamento.get('descricao_servico_ou_produto', '')
-    # Quebrar texto longo em múltiplas linhas
-    max_width = width - 30*mm
+    max_width = width - 40*mm
     words = descricao.split()
+    line = ""
+    num_lines = 1
+    for word in words:
+        test_line = line + word + " "
+        if c.stringWidth(test_line, "Helvetica", 9) < max_width:
+            line = test_line
+        else:
+            num_lines += 1
+            line = word + " "
+    
+    desc_card_height = (10 + num_lines * 4)*mm
+    if y_pos - desc_card_height < 30*mm:
+        c.showPage()
+        y_pos = height - 20*mm
+    
+    draw_card_box(y_pos, desc_card_height, secondary_color)
+    
+    c.setFillColor(text_color)
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(18*mm, y_pos - 5*mm, "DESCRIÇÃO DO SERVIÇO")
+    
+    # Desenhar texto da descrição
+    c.setFont("Helvetica", 9)
+    y_text = y_pos - 10*mm
     line = ""
     for word in words:
         test_line = line + word + " "
         if c.stringWidth(test_line, "Helvetica", 9) < max_width:
             line = test_line
         else:
-            if y_pos < 30*mm:
-                c.showPage()
-                y_pos = height - 20*mm
-            c.drawString(15*mm, y_pos, line.strip())
-            y_pos -= 4*mm
+            c.drawString(18*mm, y_text, line.strip())
+            y_text -= 4*mm
             line = word + " "
     if line:
-        if y_pos < 30*mm:
-            c.showPage()
-            y_pos = height - 20*mm
-        c.drawString(15*mm, y_pos, line.strip())
-        y_pos -= 8*mm
+        c.drawString(18*mm, y_text, line.strip())
+    
+    y_pos -= (desc_card_height + 8*mm)
     
     # (5) MATERIAIS NECESSÁRIOS (fornecidos e pagos pelo cliente)
     if materiais and len(materiais) > 0:
