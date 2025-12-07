@@ -295,12 +295,11 @@ const Precificacao = ({ user, onLogout }) => {
             <p className="text-zinc-400">Calculadora profissional de preço de venda</p>
           </div>
 
-          {/* Tabs: Produto vs Serviço */}
-          <Tabs value={tipoPrecificacao} onValueChange={setTipoPrecificacao} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2 bg-zinc-900">
-              <TabsTrigger value="produto">Produto</TabsTrigger>
-              <TabsTrigger value="servico">Serviço</TabsTrigger>
-            </TabsList>
+          {/* Título - Apenas Serviço */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white">Precificação de Serviços</h2>
+            <p className="text-gray-400 mt-2">Calcule o preço ideal para seus serviços</p>
+          </div>
 
             {/* ========== TAB: PRODUTO ========== */}
             <TabsContent value="produto" className="space-y-6 mt-6">
