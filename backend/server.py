@@ -1194,30 +1194,38 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     c.drawString(15*mm, y_pos, f"O serviço será concluído em aproximadamente {prazo}.")
     y_pos -= 8*mm
     
-    # (7) VALORES
+    # (7) VALORES - Com card destacado
+    valores_card_height = 35*mm
+    if y_pos - valores_card_height < 30*mm:
+        c.showPage()
+        y_pos = height - 20*mm
+    
+    draw_card_box(y_pos, valores_card_height, primary_color, border_width=4)
+    
+    c.setFillColor(text_color)
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(15*mm, y_pos, "VALORES")
-    y_pos -= 6*mm
+    c.drawString(18*mm, y_pos - 5*mm, "VALORES")
     
     c.setFont("Helvetica", 9)
-    c.drawString(15*mm, y_pos, f"Custo Total: R$ {orcamento.get('custo_total', 0):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'))
-    y_pos -= 4*mm
-    c.drawString(15*mm, y_pos, f"Preço Mínimo: R$ {orcamento.get('preco_minimo', 0):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'))
-    y_pos -= 6*mm
+    c.drawString(18*mm, y_pos - 11*mm, f"Custo Total: R$ {orcamento.get('custo_total', 0):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'))
+    c.drawString(18*mm, y_pos - 15*mm, f"Preço Mínimo: R$ {orcamento.get('preco_minimo', 0):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'))
     
-    # Valor da Proposta em destaque
+    # Valor da Proposta em destaque com fundo colorido
     c.setFillColor(primary_color)
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(15*mm, y_pos, f"VALOR DA PROPOSTA: R$ {orcamento.get('preco_praticado', 0):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'))
-    y_pos -= 8*mm
+    c.roundRect(18*mm, y_pos - 22*mm, width - 42*mm, 6*mm, 2*mm, fill=True, stroke=False)
+    
+    c.setFillColorRGB(1, 1, 1)  # Texto branco no fundo colorido
+    c.setFont("Helvetica-Bold", 12)
+    valor_proposta_text = f"VALOR DA PROPOSTA: R$ {orcamento.get('preco_praticado', 0):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    c.drawString(20*mm, y_pos - 20*mm, valor_proposta_text)
     
     # Condições de pagamento
     c.setFillColor(text_color)
     c.setFont("Helvetica", 9)
-    c.drawString(15*mm, y_pos, f"Validade da Proposta: {orcamento.get('validade_proposta', '')}")
-    y_pos -= 4*mm
-    c.drawString(15*mm, y_pos, f"Condições de Pagamento: {orcamento.get('condicoes_pagamento', '')}")
-    y_pos -= 10*mm
+    c.drawString(18*mm, y_pos - 27*mm, f"Validade da Proposta: {orcamento.get('validade_proposta', '')}")
+    c.drawString(18*mm, y_pos - 31*mm, f"Condições de Pagamento: {orcamento.get('condicoes_pagamento', '')}")
+    
+    y_pos -= (valores_card_height + 10*mm)
     
     # (8) CIÊNCIA E ACEITAÇÃO DO CLIENTE
     if y_pos < 60*mm:
