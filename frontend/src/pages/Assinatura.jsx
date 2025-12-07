@@ -14,10 +14,21 @@ const Assinatura = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
+  const [subscriptionPrice, setSubscriptionPrice] = useState(49.90);
 
   useEffect(() => {
     fetchSubscription();
+    fetchSubscriptionPrice();
   }, []);
+
+  const fetchSubscriptionPrice = async () => {
+    try {
+      const response = await axiosInstance.get('/system-config');
+      setSubscriptionPrice(response.data.subscription_price || 49.90);
+    } catch (error) {
+      console.error('Erro ao buscar preço:', error);
+    }
+  };
 
   const fetchSubscription = async () => {
     try {
