@@ -981,9 +981,10 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     y_empresa = y_pos
     
     c.setFillColor(text_color)
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(x_empresa, y_empresa, f"Empresa: {empresa.get('razao_social') or empresa.get('name', '')}")
-    y_empresa -= 4.5*mm
+    c.setFont("Helvetica-Bold", 11)
+    # Apenas o nome da empresa sem prefixo
+    c.drawString(x_empresa, y_empresa, empresa.get('razao_social') or empresa.get('name', ''))
+    y_empresa -= 5*mm
     
     c.setFont("Helvetica", 8)
     # CNPJ
