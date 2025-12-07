@@ -1077,12 +1077,16 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     y_pos -= 10*mm
     
     # (2) DADOS DO CLIENTE - Com card
+    if y_pos < 50*mm:
+        c.showPage()
+        y_pos = height - 20*mm
+    
     card_height = 25*mm
     draw_card_box(y_pos, card_height, primary_color)
     
     c.setFillColor(text_color)
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(18*mm, y_pos - 5*mm, "DADOS DO CLIENTE")
+    c.drawString(20*mm, y_pos - 5*mm, "DADOS DO CLIENTE")
     
     c.setFont("Helvetica", 9)
     c.drawString(18*mm, y_pos - 10*mm, f"Cliente: {orcamento.get('cliente_nome', '')}")
