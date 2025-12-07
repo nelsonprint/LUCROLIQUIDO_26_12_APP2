@@ -1156,6 +1156,8 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     y_pos -= (desc_card_height + 8*mm)
     
     # (5) MATERIAIS NECESSÁRIOS (fornecidos e pagos pelo cliente)
+    # Vamos calcular o total de materiais para usar depois no quadro de VALORES
+    total_materiais = 0
     if materiais and len(materiais) > 0:
         if y_pos < 90*mm:
             c.showPage()
