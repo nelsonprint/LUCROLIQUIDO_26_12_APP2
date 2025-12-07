@@ -1046,29 +1046,34 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     c.drawString(15*mm, y_pos, "apresentamos-lhe nossa proposta comercial para a prestação do(s) serviço(s) abaixo discriminado(s):")
     y_pos -= 8*mm
     
-    # Descrição do Serviço
-    y -= 10*mm
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(20*mm, y, "DESCRIÇÃO DO SERVIÇO")
-    y -= 10*mm
+    # (4) DADOS DO ORÇAMENTO - DESCRIÇÃO DO SERVIÇO
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(15*mm, y_pos, "DESCRIÇÃO DO SERVIÇO")
+    y_pos -= 6*mm
     
-    c.setFont("Helvetica", 10)
+    c.setFont("Helvetica", 9)
     descricao = orcamento.get('descricao_servico_ou_produto', '')
     # Quebrar texto longo em múltiplas linhas
-    max_width = width - 40*mm
+    max_width = width - 30*mm
     words = descricao.split()
     line = ""
     for word in words:
         test_line = line + word + " "
-        if c.stringWidth(test_line, "Helvetica", 10) < max_width:
+        if c.stringWidth(test_line, "Helvetica", 9) < max_width:
             line = test_line
         else:
-            c.drawString(20*mm, y, line)
-            y -= 5*mm
+            if y_pos < 30*mm:
+                c.showPage()
+                y_pos = height - 20*mm
+            c.drawString(15*mm, y_pos, line.strip())
+            y_pos -= 4*mm
             line = word + " "
     if line:
-        c.drawString(20*mm, y, line)
-        y -= 5*mm
+        if y_pos < 30*mm:
+            c.showPage()
+            y_pos = height - 20*mm
+        c.drawString(15*mm, y_pos, line.strip())
+        y_pos -= 8*mm
     
     # Materiais (se houver)
     if materiais and len(materiais) > 0:
