@@ -1256,17 +1256,10 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     c.drawString(18*mm, y_pos - 5*mm, "VALORES")
     
     c.setFont("Helvetica", 9)
-    c.drawString(18*mm, y_pos - 11*mm, f"Custo Total: R$ {orcamento.get('custo_total', 0):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'))
-    c.drawString(18*mm, y_pos - 15*mm, f"Preço Mínimo: R$ {orcamento.get('preco_minimo', 0):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'))
-    
-    # Valor da Proposta em destaque com fundo colorido
-    c.setFillColor(primary_color)
-    c.roundRect(18*mm, y_pos - 22*mm, width - 42*mm, 6*mm, 2*mm, fill=True, stroke=False)
-    
-    c.setFillColorRGB(1, 1, 1)  # Texto branco no fundo colorido
-    c.setFont("Helvetica-Bold", 12)
-    valor_proposta_text = f"VALOR DA PROPOSTA: R$ {orcamento.get('preco_praticado', 0):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-    c.drawString(20*mm, y_pos - 20*mm, valor_proposta_text)
+    # Valor total da proposta = valor praticado (serviço) já inclui materiais associados ao orçamento
+    valor_total = orcamento.get('preco_praticado', 0)
+    valor_total_fmt = f"R$ {valor_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    c.drawString(18*mm, y_pos - 11*mm, f"VALOR TOTAL DA PROPOSTA: {valor_total_fmt}")
     
     # Condições de pagamento
     c.setFillColor(text_color)
