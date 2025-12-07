@@ -929,7 +929,8 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     # Cores personalizadas do CONFIG
     primary_color = HexColor(config.get('cor_primaria', '#7C3AED'))
     secondary_color = HexColor(config.get('cor_secundaria', '#3B82F6'))
-    text_color = HexColor('#444444')
+    text_color = HexColor('#000000')  # Texto sempre preto
+    bg_light = HexColor('#F9FAFB')  # Fundo claro para cards
     
     # (1) CABEÇALHO - Logo + Dados da Empresa
     y_pos = height - 20*mm
