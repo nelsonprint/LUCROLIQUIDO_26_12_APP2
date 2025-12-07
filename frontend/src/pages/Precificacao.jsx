@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import OrcamentoMateriais from '@/components/OrcamentoMateriais';
 
 const Precificacao = ({ user, onLogout }) => {
-  const [tipoPrecificacao, setTipoPrecificacao] = useState('produto');
+  const [tipoPrecificacao, setTipoPrecificacao] = useState('servico');
   const [tipoCobrancaServico, setTipoCobrancaServico] = useState('por-m2');
   const [showOrcamentoModal, setShowOrcamentoModal] = useState(false);
   const [loadingOrcamento, setLoadingOrcamento] = useState(false);
