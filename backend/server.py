@@ -956,7 +956,7 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
         c.roundRect(12*mm, y_top - height_mm, width - 24*mm, height_mm, 3*mm, fill=False, stroke=True)
     
     # (1) CABEÇALHO - Logo + Dados da Empresa
-    y_pos = height - 20*mm
+    y_pos = height - 15*mm
     
     # Tentar carregar logo se existir
     logo_path = None
@@ -968,48 +968,60 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
         except:
             pass
     
-    # Se tem logo, desenhar
+    # Se tem logo, desenhar (ajustado para não sobrepor linha)
     if logo_path:
         try:
-            c.drawImage(logo_path, 15*mm, y_pos - 25*mm, width=40*mm, height=25*mm, preserveAspectRatio=True, mask='auto')
+            # Logo menor e mais compacta
+            c.drawImage(logo_path, 15*mm, y_pos - 20*mm, width=35*mm, height=20*mm, preserveAspectRatio=True, mask='auto')
         except Exception as e:
             logger.warning(f"Erro ao carregar logo: {e}")
     
     # Dados da empresa ao lado da logo (ou início se não tiver logo)
-    x_empresa = 60*mm if logo_path else 15*mm
+    x_empresa = 55*mm if logo_path else 15*mm
+    y_empresa = y_pos
+    
     c.setFillColor(text_color)
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(x_empresa, y_pos, f"Empresa: {empresa.get('razao_social') or empresa.get('name', '')}")
-    y_pos -= 5*mm
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(x_empresa, y_empresa, f"Empresa: {empresa.get('razao_social') or empresa.get('name', '')}")
+    y_empresa -= 4.5*mm
     
-    c.setFont("Helvetica", 9)
+    c.setFont("Helvetica", 8)
+    # CNPJ
     if empresa.get('cnpj'):
-        c.drawString(x_empresa, y_pos, f"CNPJ: {empresa.get('cnpj')}")
-        y_pos -= 4*mm
+        c.drawString(x_empresa, y_empresa, f"CNPJ: {empresa.get('cnpj')}")
+        y_empresa -= 4*mm
     
+    # Endereço completo
     if empresa.get('endereco'):
         endereco_completo = empresa.get('endereco', '')
         if empresa.get('cidade'):
             endereco_completo += f", {empresa.get('cidade')}"
         if empresa.get('estado'):
             endereco_completo += f" - {empresa.get('estado')}"
-        c.drawString(x_empresa, y_pos, f"Endereço: {endereco_completo}")
-        y_pos -= 4*mm
+        if empresa.get('cep'):
+            endereco_completo += f", CEP: {empresa.get('cep')}"
+        c.drawString(x_empresa, y_empresa, f"Endereço: {endereco_completo}")
+        y_empresa -= 4*mm
     
+    # Telefone
     if empresa.get('telefone'):
-        c.drawString(x_empresa, y_pos, f"Telefone: {empresa.get('telefone')}")
-        y_pos -= 4*mm
+        c.drawString(x_empresa, y_empresa, f"Telefone: {empresa.get('telefone')}")
+        y_empresa -= 4*mm
     
+    # E-mail
     if empresa.get('email'):
-        c.drawString(x_empresa, y_pos, f"E-mail: {empresa.get('email')}")
-        y_pos -= 4*mm
+        c.drawString(x_empresa, y_empresa, f"E-mail: {empresa.get('email')}")
+        y_empresa -= 4*mm
     
+    # Site
     if empresa.get('site'):
-        c.drawString(x_empresa, y_pos, f"Site: {empresa.get('site')}")
-        y_pos -= 4*mm
+        c.drawString(x_empresa, y_empresa, f"Site: {empresa.get('site')}")
+        y_empresa -= 4*mm
     
-    # Linha separadora
-    y_pos -= 5*mm
+    # Calcular posição da linha (abaixo de tudo)
+    y_pos = min(y_pos - 25*mm, y_empresa - 5*mm)
+    
+    # Linha separadora (agora não sobrepõe a logo)
     c.setStrokeColor(primary_color)
     c.setLineWidth(2)
     c.line(15*mm, y_pos, width - 15*mm, y_pos)
