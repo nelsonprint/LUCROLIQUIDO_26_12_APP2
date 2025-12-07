@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-// Tabs removidos - agora usa apenas Serviço
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Calculator, DollarSign, TrendingUp, Users, Truck, UtensilsCrossed, Wrench, AlertTriangle, FileText, Clock } from 'lucide-react';
@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import OrcamentoMateriais from '@/components/OrcamentoMateriais';
 
 const Precificacao = ({ user, onLogout }) => {
-  const [tipoPrecificacao, setTipoPrecificacao] = useState('servico');
+  const [tipoPrecificacao, setTipoPrecificacao] = useState('produto');
   const [tipoCobrancaServico, setTipoCobrancaServico] = useState('por-m2');
   const [showOrcamentoModal, setShowOrcamentoModal] = useState(false);
   const [loadingOrcamento, setLoadingOrcamento] = useState(false);
@@ -295,17 +295,18 @@ const Precificacao = ({ user, onLogout }) => {
             <p className="text-zinc-400">Calculadora profissional de preço de venda</p>
           </div>
 
-          {/* Título - Apenas Serviço */}
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-white">Precificação de Serviços</h2>
-            <p className="text-gray-400 mt-2">Calcule o preço ideal para seus serviços</p>
-          </div>
+          {/* Tabs: Produto vs Serviço */}
+          <Tabs value={tipoPrecificacao} onValueChange={setTipoPrecificacao} className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2 bg-zinc-900">
+              <TabsTrigger value="produto">Produto</TabsTrigger>
+              <TabsTrigger value="servico">Serviço</TabsTrigger>
+            </TabsList>
 
-            {/* ========== SERVIÇO (ÚNICA OPÇÃO) ========== */}
-            <div className="space-y-6 mt-6">
-              {/* SERVIÇO - Conteúdo único */}
-              {/* Tipo de Cobrança do Serviço */}
-              <Card className="bg-zinc-900 border-zinc-800">
+            {/* ========== TAB: PRODUTO ========== */}
+            <TabsContent value="produto" className="space-y-6 mt-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Formulário Produto */}
+                <Card className="bg-zinc-900 border-zinc-800">
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Calculator className="mr-2" />
@@ -437,7 +438,10 @@ const Precificacao = ({ user, onLogout }) => {
                   </Card>
                 )}
               </div>
-            {/* Conteúdo de Serviço continua aqui */}
+            </TabsContent>
+
+            {/* ========== TAB: SERVIÇO ========== */}
+            <TabsContent value="servico" className="space-y-6 mt-6">
               {/* Tipo de Cobrança do Serviço */}
               <Card className="bg-zinc-900 border-zinc-800">
                 <CardHeader>
@@ -1316,7 +1320,8 @@ const Precificacao = ({ user, onLogout }) => {
                   </Card>
                 </div>
               )}
-            </div>
+            </TabsContent>
+          </Tabs>
 
           {/* Dicas */}
           <Card className="bg-zinc-900 border-zinc-800">
