@@ -931,24 +931,76 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     secondary_color = HexColor(config.get('cor_secundaria', '#3B82F6'))
     text_color = HexColor('#444444')
     
-    # Header com gradiente (simulado com retângulo)
+    # (1) CABEÇALHO - Logo + Dados da Empresa
+    y_pos = height - 20*mm
+    
+    # Tentar carregar logo se existir
+    logo_path = None
+    if config.get('logo_url'):
+        try:
+            logo_file = Path(ROOT_DIR) / config['logo_url'].lstrip('/')
+            if logo_file.exists():
+                logo_path = str(logo_file)
+        except:
+            pass
+    
+    # Se tem logo, desenhar
+    if logo_path:
+        try:
+            c.drawImage(logo_path, 15*mm, y_pos - 25*mm, width=40*mm, height=25*mm, preserveAspectRatio=True, mask='auto')
+        except Exception as e:
+            logger.warning(f"Erro ao carregar logo: {e}")
+    
+    # Dados da empresa ao lado da logo (ou início se não tiver logo)
+    x_empresa = 60*mm if logo_path else 15*mm
+    c.setFillColor(text_color)
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(x_empresa, y_pos, f"Empresa: {empresa.get('razao_social') or empresa.get('name', '')}")
+    y_pos -= 5*mm
+    
+    c.setFont("Helvetica", 9)
+    if empresa.get('cnpj'):
+        c.drawString(x_empresa, y_pos, f"CNPJ: {empresa.get('cnpj')}")
+        y_pos -= 4*mm
+    
+    if empresa.get('endereco'):
+        endereco_completo = empresa.get('endereco', '')
+        if empresa.get('cidade'):
+            endereco_completo += f", {empresa.get('cidade')}"
+        if empresa.get('estado'):
+            endereco_completo += f" - {empresa.get('estado')}"
+        c.drawString(x_empresa, y_pos, f"Endereço: {endereco_completo}")
+        y_pos -= 4*mm
+    
+    if empresa.get('telefone'):
+        c.drawString(x_empresa, y_pos, f"Telefone: {empresa.get('telefone')}")
+        y_pos -= 4*mm
+    
+    if empresa.get('email'):
+        c.drawString(x_empresa, y_pos, f"E-mail: {empresa.get('email')}")
+        y_pos -= 4*mm
+    
+    if empresa.get('site'):
+        c.drawString(x_empresa, y_pos, f"Site: {empresa.get('site')}")
+        y_pos -= 4*mm
+    
+    # Linha separadora
+    y_pos -= 5*mm
+    c.setStrokeColor(primary_color)
+    c.setLineWidth(2)
+    c.line(15*mm, y_pos, width - 15*mm, y_pos)
+    y_pos -= 10*mm
+    
+    # Título ORÇAMENTO centralizado
     c.setFillColor(primary_color)
-    c.rect(0, height - 80*mm, width, 80*mm, fill=True, stroke=False)
+    c.setFont("Helvetica-Bold", 20)
+    titulo_width = c.stringWidth("ORÇAMENTO", "Helvetica-Bold", 20)
+    c.drawString((width - titulo_width) / 2, y_pos, "ORÇAMENTO")
+    y_pos -= 5*mm
     
-    # Logo/Nome da Empresa
-    c.setFillColorRGB(1, 1, 1)
-    c.setFont("Helvetica-Bold", 24)
-    c.drawString(20*mm, height - 30*mm, empresa.get('razao_social') or empresa.get('name', 'EMPRESA'))
-    
-    # Título ORÇAMENTO
-    c.setFont("Helvetica-Bold", 28)
-    c.drawRightString(width - 20*mm, height - 30*mm, "ORÇAMENTO")
-    
-    # Número do orçamento
-    c.setFont("Helvetica", 12)
-    c.drawRightString(width - 20*mm, height - 40*mm, f"Nº {orcamento.get('numero_orcamento', 'N/A')}")
-    
-    # Data
+    # Número e Data
+    c.setFont("Helvetica", 10)
+    numero_orcamento = f"Nº {orcamento.get('numero_orcamento', 'N/A')}"
     data_emissao = orcamento.get('created_at', '')
     if isinstance(data_emissao, str) and len(data_emissao) >= 10:
         try:
@@ -958,7 +1010,9 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
             data_emissao = data_emissao[:10]
     else:
         data_emissao = dt.now().strftime("%d/%m/%Y")
-    c.drawRightString(width - 20*mm, height - 50*mm, f"Data: {data_emissao}")
+    
+    c.drawCentredString(width / 2, y_pos, f"{numero_orcamento} | Data: {data_emissao}")
+    y_pos -= 10*mm
     
     # Dados do Cliente
     y = height - 100*mm
