@@ -126,11 +126,23 @@ const AdminPanel = ({ user, onLogout }) => {
   const handleUpdatePrice = async () => {
     try {
       setLoading(true);
-      // Aqui você pode adicionar a API para salvar o preço
-      // Por enquanto, apenas mostrar toast de sucesso
-      toast.success(`Preço atualizado para R$ ${parseFloat(newPrice).toFixed(2)}`);
+      const price = parseFloat(newPrice);
+      
+      if (price <= 0) {
+        toast.error('Preço deve ser maior que zero');
+        return;
+      }
+      
+      await axiosInstance.put('/system-config/price', price, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      toast.success(`Preço atualizado para R$ ${price.toFixed(2)}`);
       setShowPriceDialog(false);
     } catch (error) {
+      console.error('Erro ao atualizar preço:', error);
       toast.error('Erro ao atualizar preço');
     } finally {
       setLoading(false);
