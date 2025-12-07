@@ -301,8 +301,8 @@ const Precificacao = ({ user, onLogout }) => {
             <p className="text-gray-400 mt-2">Calcule o preço ideal para seus serviços</p>
           </div>
 
-            {/* ========== TAB: PRODUTO ========== */}
-            <TabsContent value="produto" className="space-y-6 mt-6">
+            {/* ========== SERVIÇO (ÚNICA OPÇÃO) ========== */}
+            <div className="space-y-6 mt-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Formulário Produto */}
                 <Card className="bg-zinc-900 border-zinc-800">
