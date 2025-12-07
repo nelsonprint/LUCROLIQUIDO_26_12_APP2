@@ -1188,9 +1188,105 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     c.drawString(15*mm, y_pos, f"Condições de Pagamento: {orcamento.get('condicoes_pagamento', '')}")
     y_pos -= 10*mm
     
+    # (8) CIÊNCIA E ACEITAÇÃO DO CLIENTE
+    if y_pos < 60*mm:
+        c.showPage()
+        y_pos = height - 20*mm
+    
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(15*mm, y_pos, "CIÊNCIA E ACEITAÇÃO DO CLIENTE")
+    y_pos -= 6*mm
+    
+    c.setFont("Helvetica", 9)
+    texto_ciencia = config.get('texto_ciencia', 'Declaro, para os devidos fins, que aceito esta proposta comercial.')
+    # Quebrar texto em múltiplas linhas
+    max_width = width - 30*mm
+    words = texto_ciencia.split()
+    line = ""
+    for word in words:
+        test_line = line + word + " "
+        if c.stringWidth(test_line, "Helvetica", 9) < max_width:
+            line = test_line
+        else:
+            c.drawString(15*mm, y_pos, line.strip())
+            y_pos -= 4*mm
+            line = word + " "
+    if line:
+        c.drawString(15*mm, y_pos, line.strip())
+        y_pos -= 8*mm
+    
+    # (9) GARANTIA DOS SERVIÇOS
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(15*mm, y_pos, "GARANTIA DOS SERVIÇOS")
+    y_pos -= 6*mm
+    
+    c.setFont("Helvetica", 9)
+    texto_garantia = config.get('texto_garantia', 'Os serviços executados possuem garantia.')
+    # Quebrar texto em múltiplas linhas
+    words = texto_garantia.split()
+    line = ""
+    for word in words:
+        test_line = line + word + " "
+        if c.stringWidth(test_line, "Helvetica", 9) < max_width:
+            line = test_line
+        else:
+            c.drawString(15*mm, y_pos, line.strip())
+            y_pos -= 4*mm
+            line = word + " "
+    if line:
+        c.drawString(15*mm, y_pos, line.strip())
+        y_pos -= 10*mm
+    
+    # (10) ASSINATURA DO CLIENTE
+    if y_pos < 50*mm:
+        c.showPage()
+        y_pos = height - 20*mm
+    
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(15*mm, y_pos, "ASSINATURA DO CLIENTE")
+    y_pos -= 8*mm
+    
+    c.setFont("Helvetica", 9)
+    c.drawString(15*mm, y_pos, f"Cliente: {orcamento.get('cliente_nome', '')}")
+    y_pos -= 10*mm
+    
     # Linha de assinatura
     c.setFillColor(text_color)
-    c.setFont("Helvetica", 10)
+    c.line(15*mm, y_pos, 90*mm, y_pos)
+    y_pos -= 4*mm
+    c.setFont("Helvetica", 8)
+    c.drawString(15*mm, y_pos, "Assinatura")
+    y_pos -= 8*mm
+    
+    c.drawString(15*mm, y_pos, f"Data: ____/____/______")
+    y_pos -= 15*mm
+    
+    # (11) ASSINATURA DA EMPRESA
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(15*mm, y_pos, "ASSINATURA DA EMPRESA")
+    y_pos -= 8*mm
+    
+    c.setFont("Helvetica", 9)
+    # Puxar dados da empresa
+    responsavel = empresa.get('proprietario') or empresa.get('name', '')
+    c.drawString(15*mm, y_pos, f"Responsável pela Empresa: {responsavel}")
+    y_pos -= 4*mm
+    c.drawString(15*mm, y_pos, f"Empresa: {empresa.get('razao_social') or empresa.get('name', '')}")
+    y_pos -= 10*mm
+    
+    # Linha de assinatura
+    c.setFillColor(text_color)
+    c.line(15*mm, y_pos, 90*mm, y_pos)
+    y_pos -= 4*mm
+    c.setFont("Helvetica", 8)
+    c.drawString(15*mm, y_pos, "Assinatura")
+    
+    # (12) RODAPÉ DO PDF
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor('#666666'))
+    rodape_texto = f"{empresa.get('razao_social') or empresa.get('name', '')} | {empresa.get('endereco', '')} | {empresa.get('telefone', '')}"
+    rodape_width = c.stringWidth(rodape_texto, "Helvetica", 8)
+    c.drawString((width - rodape_width) / 2, 15*mm, rodape_texto)
     
     # Linha para assinatura
     assinatura_y = 50*mm
