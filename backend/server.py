@@ -1389,7 +1389,7 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     
     rodape_texto = ' | '.join(rodape_parts)
     rodape_width = c.stringWidth(rodape_texto, "Helvetica", 8)
-    c.drawString((width - rodape_width) / 2, 15*mm, rodape_texto)
+    c.drawString((width - rodape_width) / 2, 20*mm, rodape_texto)
     
     
     c.showPage()
