@@ -939,7 +939,7 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     bg_light = HexColor('#F9FAFB')  # Fundo claro para cards
     
     # Função auxiliar para desenhar card com borda colorida no estilo da imagem
-    def draw_card_box(y_top, height_mm, border_color, border_width=4):
+    def draw_card_box(y_top, height_mm, border_color, border_width=1):
         """Desenha um card com borda lateral esquerda colorida e grossa"""
         # Fundo claro do card com cantos arredondados
         c.setFillColor(bg_light)
