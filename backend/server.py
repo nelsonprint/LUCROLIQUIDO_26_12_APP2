@@ -1075,74 +1075,79 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
         c.drawString(15*mm, y_pos, line.strip())
         y_pos -= 8*mm
     
-    # Materiais (se houver)
+    # (5) MATERIAIS NECESSÁRIOS (fornecidos e pagos pelo cliente)
     if materiais and len(materiais) > 0:
-        y -= 10*mm
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(20*mm, y, "MATERIAIS UTILIZADOS")
-        y -= 10*mm
+        if y_pos < 80*mm:
+            c.showPage()
+            y_pos = height - 20*mm
+        
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(15*mm, y_pos, "MATERIAIS NECESSÁRIOS (fornecidos e pagos pelo cliente)")
+        y_pos -= 6*mm
         
         # Cabeçalho da tabela
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(20*mm, y, "Item")
-        c.drawString(70*mm, y, "Unid.")
-        c.drawString(90*mm, y, "Qtd.")
-        c.drawString(110*mm, y, "Preço Unit.")
-        c.drawString(140*mm, y, "Total")
-        y -= 5*mm
+        c.setFont("Helvetica-Bold", 8)
+        c.drawString(15*mm, y_pos, "Material")
+        c.drawString(75*mm, y_pos, "Quantidade")
+        c.drawString(105*mm, y_pos, "Valor Unitário")
+        c.drawString(140*mm, y_pos, "Valor Total")
+        y_pos -= 4*mm
         
         # Linha separadora
         c.setStrokeColor(HexColor('#CCCCCC'))
-        c.line(20*mm, y, width - 20*mm, y)
-        y -= 5*mm
+        c.line(15*mm, y_pos, width - 15*mm, y_pos)
+        y_pos -= 5*mm
         
         # Listar materiais
-        c.setFont("Helvetica", 9)
+        c.setFont("Helvetica", 8)
         total_materiais = 0
         for material in materiais:
             # Verificar se precisa de nova página
-            if y < 50*mm:
+            if y_pos < 40*mm:
                 c.showPage()
-                y = height - 30*mm
-                c.setFont("Helvetica", 9)
+                y_pos = height - 20*mm
             
-            # Item (com quebra de linha se necessário)
+            # Nome do material
             nome_item = material.get('nome_item', '')
-            if len(nome_item) > 30:
-                nome_item = nome_item[:27] + "..."
-            c.drawString(20*mm, y, nome_item)
+            if len(nome_item) > 40:
+                nome_item = nome_item[:37] + "..."
+            c.drawString(15*mm, y_pos, nome_item)
             
-            # Unidade
-            c.drawString(70*mm, y, material.get('unidade', ''))
-            
-            # Quantidade
-            c.drawString(90*mm, y, f"{material.get('quantidade', 0):.2f}")
+            # Quantidade + Unidade
+            qtd = material.get('quantidade', 0)
+            unidade = material.get('unidade', '')
+            c.drawString(75*mm, y_pos, f"{qtd:.2f} {unidade}")
             
             # Preço unitário final (formatado)
             preco_unit = material.get('preco_unitario_final', 0)
             preco_unit_fmt = f"R$ {preco_unit:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-            c.drawString(110*mm, y, preco_unit_fmt)
+            c.drawString(105*mm, y_pos, preco_unit_fmt)
             
             # Total do item (formatado)
             total_item = material.get('preco_total_item', 0)
             total_item_fmt = f"R$ {total_item:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-            c.drawString(140*mm, y, total_item_fmt)
+            c.drawString(140*mm, y_pos, total_item_fmt)
             
             total_materiais += total_item
-            y -= 5*mm
+            y_pos -= 4*mm
         
         # Linha separadora
-        y -= 2*mm
         c.setStrokeColor(HexColor('#CCCCCC'))
-        c.line(20*mm, y, width - 20*mm, y)
-        y -= 5*mm
+        c.line(15*mm, y_pos, width - 15*mm, y_pos)
+        y_pos -= 5*mm
         
         # Total de materiais
-        c.setFont("Helvetica-Bold", 10)
+        c.setFont("Helvetica-Bold", 9)
         total_mat_fmt = f"R$ {total_materiais:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-        c.drawString(110*mm, y, "TOTAL MATERIAIS:")
-        c.drawString(140*mm, y, total_mat_fmt)
-        y -= 5*mm
+        c.drawRightString(width - 15*mm, y_pos, f"Total de Materiais: {total_mat_fmt}")
+        y_pos -= 6*mm
+        
+        # Observação sobre materiais adicionais
+        c.setFont("Helvetica-Oblique", 8)
+        c.drawString(15*mm, y_pos, "Observação importante: Caso haja necessidade de materiais adicionais ou substituições não previstas,")
+        y_pos -= 3*mm
+        c.drawString(15*mm, y_pos, "o custo será integralmente do cliente mediante aprovação prévia.")
+        y_pos -= 8*mm
     
     # Valores
     y -= 10*mm
