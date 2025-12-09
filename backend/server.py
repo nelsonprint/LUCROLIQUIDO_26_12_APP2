@@ -1577,7 +1577,7 @@ async def generate_orcamento_html(orcamento_id: str):
   .hgroup{{ flex:1 1 auto; padding-top:10px; }}
   .hgroup h1{{ margin:0; font-size:20px; font-weight:700; }}
   .hgroup p{{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.5; }}
-  .meta{{ text-align:right; }}
+  .meta{{ text-align:right; padding-top:10px; }}
   .badge{{ display:inline-block;padding:6px 10px;border-radius:999px;border:2px solid var(--orange);color:var(--orange);font-weight:700;letter-spacing:.3px; }}
 
   .grid{{ display:grid; gap:18px; padding:20px; grid-template-columns:repeat(12,1fr); }}
