@@ -1574,9 +1574,9 @@ async def generate_orcamento_html(orcamento_id: str):
   .brand{{ width:100px;height:100px;border-radius:12px;border:2px solid var(--green);display:grid;place-items:center;font-weight:800;color:var(--green);font-size:32px; }}
   .brand img{{ width:100%;height:100%;object-fit:contain;border-radius:10px; }}
   .brand.has-logo{{ border:none;overflow:hidden; }}
-  .hgroup{{ flex:1 1 auto; }}
-  .hgroup h1{{ margin:0; font-size:20px; }}
-  .hgroup p{{ margin:6px 0 0; color:var(--muted); }}
+  .hgroup{{ flex:1 1 auto; padding-top:10px; }}
+  .hgroup h1{{ margin:0; font-size:20px; font-weight:700; }}
+  .hgroup p{{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.5; }}
   .meta{{ text-align:right; }}
   .badge{{ display:inline-block;padding:6px 10px;border-radius:999px;border:2px solid var(--orange);color:var(--orange);font-weight:700;letter-spacing:.3px; }}
 
