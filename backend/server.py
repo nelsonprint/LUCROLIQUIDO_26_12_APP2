@@ -1416,6 +1416,381 @@ async def generate_orcamento_pdf(orcamento_id: str):
         headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento.get('numero_orcamento', orcamento_id)}.pdf"}
     )
 
+
+@api_router.get("/orcamento/{orcamento_id}/html")
+async def generate_orcamento_html(orcamento_id: str):
+    """Gerar visualização HTML do orçamento para impressão e download de PDF"""
+    # Buscar orçamento
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    # Buscar dados da empresa
+    empresa = await db.companies.find_one({"id": orcamento['empresa_id']}, {"_id": 0})
+    
+    if not empresa:
+        empresa = {"name": "Empresa"}
+    
+    # Buscar materiais do orçamento
+    materiais = await db.orcamento_materiais.find(
+        {"id_orcamento": orcamento_id},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Buscar configuração de orçamento (cores, textos, logo)
+    config = await db.orcamento_config.find_one({"company_id": empresa.get('id')}, {"_id": 0})
+    
+    if not config:
+        config = {
+            'cor_primaria': '#22c55e',
+            'cor_secundaria': '#f97316',
+            'texto_ciencia': 'Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas.',
+            'texto_garantia': 'Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes.'
+        }
+    
+    # Formatar data
+    data_emissao = orcamento.get('created_at', '')
+    if isinstance(data_emissao, str) and len(data_emissao) >= 10:
+        try:
+            from datetime import datetime as dt
+            data_emissao = dt.fromisoformat(data_emissao.replace('Z', '+00:00'))
+            data_emissao = data_emissao.strftime("%d/%m/%Y")
+        except:
+            data_emissao = data_emissao[:10]
+    else:
+        from datetime import datetime as dt
+        data_emissao = dt.now().strftime("%d/%m/%Y")
+    
+    # Calcular total de materiais
+    total_materiais = sum(m.get('preco_total_item', 0) for m in materiais)
+    valor_servico = orcamento.get('preco_praticado', 0)
+    valor_total = valor_servico + total_materiais
+    
+    # Formatar valores
+    def format_money(value):
+        return f"R$ {value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    
+    # Gerar iniciais da empresa para o logo
+    nome_empresa = empresa.get('razao_social') or empresa.get('name', 'Empresa')
+    iniciais = ''.join([word[0].upper() for word in nome_empresa.split()[:2]])
+    
+    # Construir endereço completo
+    endereco_parts = []
+    if empresa.get('logradouro'):
+        endereco = empresa.get('logradouro')
+        if empresa.get('numero'):
+            endereco += f", {empresa.get('numero')}"
+        if empresa.get('complemento'):
+            endereco += f", {empresa.get('complemento')}"
+        endereco_parts.append(endereco)
+    if empresa.get('bairro'):
+        endereco_parts.append(empresa.get('bairro'))
+    if empresa.get('cidade'):
+        cidade_estado = empresa.get('cidade')
+        if empresa.get('estado'):
+            cidade_estado += f"-{empresa.get('estado')}"
+        endereco_parts.append(cidade_estado)
+    if empresa.get('cep'):
+        endereco_parts.append(empresa.get('cep'))
+    
+    endereco_completo = ', '.join(endereco_parts) if endereco_parts else ''
+    
+    # Construir contatos
+    contatos = []
+    if empresa.get('cnpj'):
+        contatos.append(f"CNPJ {empresa.get('cnpj')}")
+    if endereco_completo:
+        contatos.append(endereco_completo)
+    if empresa.get('celular_whatsapp'):
+        contatos.append(empresa.get('celular_whatsapp'))
+    if empresa.get('email_empresa'):
+        contatos.append(empresa.get('email_empresa'))
+    if empresa.get('site'):
+        contatos.append(empresa.get('site'))
+    
+    linha_contatos = ' • '.join(contatos)
+    
+    # Gerar linhas da tabela de materiais
+    materiais_html = ""
+    if materiais:
+        for material in materiais:
+            nome = material.get('nome_item', '')
+            qtd = material.get('quantidade', 0)
+            unidade = material.get('unidade', '')
+            preco_unit = format_money(material.get('preco_unitario_final', 0))
+            preco_total = format_money(material.get('preco_total_item', 0))
+            
+            materiais_html += f"""
+                  <tr><td>{nome}</td><td>{qtd:.2f} {unidade}</td><td>{preco_unit}</td><td>{preco_total}</td></tr>"""
+    
+    # HTML Template
+    html_content = f"""<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Orçamento {orcamento.get('numero_orcamento', '')} — {nome_empresa}</title>
+<style>
+  :root{{
+    --ink:#0f172a; --muted:#667085; --panel:#fff; --border:#e5e7eb;
+    --green:{config.get('cor_primaria', '#22c55e')}; --orange:{config.get('cor_secundaria', '#f97316')}; --bg-app:#f3f4f6;
+  }}
+  *{{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }}
+  html,body{{ height:100%; }}
+  body{{ margin:0; background:var(--bg-app); color:var(--ink); font:14px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif; }}
+
+  .page{{
+    width:210mm; height:297mm; padding:10mm; margin:12px auto; background:#fff;
+    box-shadow:0 10px 24px rgba(0,0,0,.08);
+    position:relative;
+  }}
+  .card{{ border:1px solid var(--border); border-radius:14px; overflow:hidden; background:#fff; }}
+  .header{{ display:flex; gap:20px; align-items:center; padding:18px 20px; border-bottom:1px solid var(--border); }}
+  .brand{{ width:56px;height:56px;border-radius:12px;border:2px solid var(--green);display:grid;place-items:center;font-weight:800;color:var(--green); }}
+  .hgroup{{ flex:1 1 auto; }}
+  .hgroup h1{{ margin:0; font-size:20px; }}
+  .hgroup p{{ margin:6px 0 0; color:var(--muted); }}
+  .meta{{ text-align:right; }}
+  .badge{{ display:inline-block;padding:6px 10px;border-radius:999px;border:2px solid var(--orange);color:var(--orange);font-weight:700;letter-spacing:.3px; }}
+
+  .grid{{ display:grid; gap:18px; padding:20px; grid-template-columns:repeat(12,1fr); }}
+  .panel{{
+    grid-column:span 12; background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px;
+    position:relative; z-index:1; break-inside:avoid;
+  }}
+  .panel h3{{ margin:0 0 10px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-size:12px; }}
+  .panel.is-green{{ border-left:4px solid var(--green); }}
+  .panel.is-orange{{ border-left:4px solid var(--orange); }}
+
+  .kv{{ display:grid; grid-template-columns:160px 1fr; gap:8px 14px; }}
+  .kv div{{ padding:6px 0; border-bottom:1px dashed var(--border); }}
+
+  .service{{ border:1px dashed var(--green); border-left:4px solid var(--green); border-radius:12px; padding:16px; background:#fafafa; break-inside:avoid; }}
+  .service h2{{ margin:0 0 6px; font-size:18px; }}
+
+  table{{ width:100%; border-collapse:collapse; }}
+  thead th{{ text-align:left; padding:10px 12px; font-size:12px; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); background:#fafafa; }}
+  tbody td{{ padding:12px; border-bottom:1px dashed var(--border); }}
+  tbody tr:last-child td{{ border-bottom:none; }}
+  tfoot td{{ padding:12px; font-weight:700; border-top:1px solid var(--border); }}
+
+  .totais{{ display:grid; grid-template-columns:1fr; gap:12px; }}
+  .money{{ display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border:2px solid var(--green); border-radius:12px; background:#fcfffc; }}
+  .money.total{{ border-color:var(--orange); background:#fffaf6; }}
+
+  .obs{{ display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:12px; border:2px solid var(--orange); background:#fffaf6; }}
+  .obs .dot{{ width:10px;height:10px;border-radius:50%;background:var(--orange);margin-top:6px; }}
+
+  .sign{{ display:grid; grid-template-columns:1fr; gap:14px; }}
+  .line{{ min-height:120px; padding:16px; border:1px dashed var(--border); border-radius:12px; background:#fafafa; display:flex; flex-direction:column; justify-content:flex-end; }}
+  .line .who{{ font-weight:700; }}
+
+  .footer{{ padding:12px 20px 16px; border-top:1px solid var(--border); color:var(--muted); font-size:13px; }}
+
+  .actions{{ position:fixed; right:24px; bottom:24px; display:flex; gap:10px; z-index:9999; }}
+  .btn{{ background:#fff; color:var(--ink); border:2px solid var(--green); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,.08); }}
+  .btn.orange{{ border-color:var(--orange); }}
+  .btn:active{{ transform:translateY(1px); }}
+
+  @media print{{
+    @page{{ size:A4; margin:0; }}
+    body{{ background:#fff; }}
+    .page{{ box-shadow:none; margin:0; }}
+    .actions{{ display:none !important; }}
+  }}
+</style>
+</head>
+<body>
+
+  <!-- Fonte do conteúdo em itens "flow" (paginados via JS) -->
+  <div id="flow" style="display:none">
+    <section class="flow-item">
+      <div class="card">
+        <header class="header">
+          <div class="brand" aria-hidden="true">{iniciais}</div>
+          <div class="hgroup">
+            <h1>{nome_empresa}</h1>
+            <p>{linha_contatos}</p>
+          </div>
+          <div class="meta">
+            <div class="badge">ORÇAMENTO</div>
+            <div style="margin-top:8px;">Nº <strong>{orcamento.get('numero_orcamento', 'N/A')}</strong></div>
+            <div>Data: <strong>{data_emissao}</strong></div>
+          </div>
+        </header>
+      </div>
+    </section>
+
+    <section class="flow-item">
+      <div class="card">
+        <section class="grid">
+          <div class="panel col-6 is-green">
+            <h3>Dados do Cliente</h3>
+            <div class="kv">
+              <div>Cliente</div><div><strong>{orcamento.get('cliente_nome', '')}</strong></div>
+              <div>CPF/CNPJ</div><div>{orcamento.get('cliente_documento', '')}</div>
+              <div>Endereço</div><div>{orcamento.get('cliente_endereco', '')}</div>
+              <div>Data da Emissão</div><div>{data_emissao}</div>
+            </div>
+          </div>
+
+          <div class="panel col-6 is-orange" style="z-index:2;">
+            <h3>Condições</h3>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+              <span>⏱️ Aproximadamente <strong>{orcamento.get('prazo_execucao', '')}</strong></span>
+              <span aria-hidden="true">•</span>
+              <span>📅 Validade: <strong>{orcamento.get('validade_proposta', '')}</strong></span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="flow-item">
+      <div class="card">
+        <section class="grid">
+          <div class="service" style="grid-column:span 12;">
+            <h2>Descrição do Serviço</h2>
+            <p><strong>{orcamento.get('descricao_servico_ou_produto', '')}</strong></p>
+          </div>
+          {'<div class="panel is-green" style="grid-column: span 12;">' if materiais else ''}
+            {'<h3>Materiais Necessários (fornecidos e pagos pelo cliente)</h3>' if materiais else ''}
+            {'<div style="overflow:auto;">' if materiais else ''}
+              {'<table role="table" aria-label="Materiais">' if materiais else ''}
+                {'<thead>' if materiais else ''}
+                  {'<tr>' if materiais else ''}
+                    {'<th style="width:40%;">Material</th>' if materiais else ''}
+                    {'<th>Quantidade</th>' if materiais else ''}
+                    {'<th>Valor Unitário</th>' if materiais else ''}
+                    {'<th>Valor Total</th>' if materiais else ''}
+                  {'</tr>' if materiais else ''}
+                {'</thead>' if materiais else ''}
+                {'<tbody>' if materiais else ''}
+                  {materiais_html}
+                {'</tbody>' if materiais else ''}
+                {'<tfoot>' if materiais else ''}
+                  {'<tr><td colspan="3" style="text-align:right;">Total de Materiais</td><td>' + format_money(total_materiais) + '</td></tr>' if materiais else ''}
+                {'</tfoot>' if materiais else ''}
+              {'</table>' if materiais else ''}
+            {'</div>' if materiais else ''}
+            {'<div class="obs" style="margin-top:12px;">' if materiais else ''}
+              {'<span class="dot" aria-hidden="true"></span>' if materiais else ''}
+              {'<div><strong>Observação:</strong> materiais adicionais/substituições não previstas serão por conta do cliente mediante aprovação prévia.</div>' if materiais else ''}
+            {'</div>' if materiais else ''}
+          {'</div>' if materiais else ''}
+        </section>
+      </div>
+    </section>
+
+    <section class="flow-item">
+      <div class="card">
+        <section class="grid">
+          <div class="panel col-6 is-green">
+            <h3>Valores</h3>
+            <div class="totais">
+              <div class="money"><span>Valor do Serviço</span><strong>{format_money(valor_servico)}</strong></div>
+              <div class="money"><span>Materiais</span><strong>{format_money(total_materiais)}</strong></div>
+              <div class="money total"><span>Total</span><strong>{format_money(valor_total)}</strong></div>
+            </div>
+          </div>
+
+          <div class="panel col-6 is-orange" style="z-index:2;">
+            <h3>Condições de Pagamento</h3>
+            <p style="margin:0;">{orcamento.get('condicoes_pagamento', '')}</p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="flow-item">
+      <div class="card">
+        <section class="grid">
+          <div class="panel is-green" style="grid-column: span 12;">
+            <h3>Ciência e Aceitação do Cliente</h3>
+            <p style="margin-top:0;">{config.get('texto_ciencia', 'Declaro que aceito esta proposta comercial de prestação de serviços nas condições acima.')}</p>
+            <div class="sign">
+              <div class="line">
+                <div style="border-top:1px solid var(--border); padding-top:10px;">
+                  <div class="who">Cliente: {orcamento.get('cliente_nome', '')}</div>
+                  <div>Assinatura: _____________________________</div>
+                  <div>Data: ____/____/______</div>
+                </div>
+              </div>
+              <div class="line">
+                <div style="border-top:1px solid var(--border); padding-top:10px;">
+                  <div class="who">Responsável pela Empresa: {empresa.get('proprietario') or empresa.get('name', '')}</div>
+                  <div>Empresa: {nome_empresa}</div>
+                  <div>Assinatura: _____________________________</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="panel is-green" style="grid-column: span 12;">
+            <h3>Garantia dos Serviços</h3>
+            <p style="margin-top:0;">{config.get('texto_garantia', 'Os serviços executados possuem garantia.')}</p>
+          </div>
+        </section>
+        <footer class="footer">Este documento é uma proposta comercial. Dúvidas: {empresa.get('celular_whatsapp', '')} • {empresa.get('email_empresa', '')}.</footer>
+      </div>
+    </section>
+  </div>
+
+  <!-- Páginas geradas -->
+  <div id="pages"></div>
+
+  <!-- Botões (fora do PDF) -->
+  <div class="actions" data-html2canvas-ignore>
+    <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+    <button class="btn orange" onclick="baixarPDF()">⬇️ Baixar PDF</button>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+  function mmToPx(mm){{ return mm * (96 / 25.4); }}
+  function createPage(){{
+    const page = document.createElement('div'); page.className = 'page';
+    const inner = document.createElement('div'); inner.className = 'card';
+    page.appendChild(inner); return {{ page, inner }};
+  }}
+  function paginate(){{
+    const source = document.getElementById('flow');
+    const items = Array.from(source.querySelectorAll('.flow-item'));
+    const pagesRoot = document.getElementById('pages'); pagesRoot.innerHTML = '';
+    let {{ page, inner }} = createPage(); pagesRoot.appendChild(page);
+    const maxPagePx = page.clientHeight; const tolerance = 2;
+    for(const item of items){{
+      const clone = item.firstElementChild.cloneNode(true);
+      inner.appendChild(clone);
+      if(page.scrollHeight > maxPagePx + tolerance){{
+        inner.removeChild(clone);
+        ({{ page, inner }} = createPage()); pagesRoot.appendChild(page);
+        inner.appendChild(clone);
+      }}
+    }}
+    source.style.display = 'none'; pagesRoot.style.display = 'block';
+  }}
+  function baixarPDF(){{
+    const el = document.getElementById('pages');
+    const opt = {{
+      margin: 0,
+      filename: 'orcamento-{orcamento.get('numero_orcamento', orcamento_id)}.pdf',
+      image: {{ type: 'jpeg', quality: 0.98 }},
+      html2canvas: {{ scale: 2, useCORS: true }},
+      jsPDF: {{ unit: 'mm', format: 'a4', orientation: 'portrait' }},
+      pagebreak: {{ mode: ['css','legacy'] }}
+    }};
+    html2pdf().set(opt).from(el).save();
+  }}
+  window.addEventListener('load', paginate);
+  window.addEventListener('resize', () => {{ clearTimeout(window.__r); window.__r = setTimeout(paginate, 150); }});
+</script>
+</body>
+</html>"""
+    
+    return HTMLResponse(content=html_content)
+
+
 # ========== ANÁLISE IA (CHATGPT) ==========
 
 @api_router.post("/orcamento/{orcamento_id}/whatsapp")
