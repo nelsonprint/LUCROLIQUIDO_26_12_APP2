@@ -19,7 +19,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
 from io import BytesIO
 import base64
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
 import aiofiles
 
 ROOT_DIR = Path(__file__).parent
