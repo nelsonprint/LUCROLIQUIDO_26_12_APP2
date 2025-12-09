@@ -1475,6 +1475,10 @@ async def generate_orcamento_html(orcamento_id: str):
     nome_empresa = empresa.get('razao_social') or empresa.get('name', 'Empresa')
     iniciais = ''.join([word[0].upper() for word in nome_empresa.split()[:2]])
     
+    # Verificar se tem logo configurada
+    logo_url = config.get('logo_url', '')
+    tem_logo = bool(logo_url)
+    
     # Construir endereço completo
     endereco_parts = []
     if empresa.get('logradouro'):
