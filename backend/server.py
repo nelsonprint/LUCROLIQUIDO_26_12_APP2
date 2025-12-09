@@ -3663,12 +3663,12 @@ async def export_excel(company_id: str, month: str):
 
 # ========== INCLUIR ROUTER ==========
 
-app.include_router(api_router)
-
-# Servir arquivos estáticos (uploads)
+# Servir arquivos estáticos (uploads) - DEVE vir ANTES do router
 uploads_dir = Path(ROOT_DIR) / "uploads"
 uploads_dir.mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
+
+app.include_router(api_router)
 
 # Health check endpoints
 @app.get("/")
