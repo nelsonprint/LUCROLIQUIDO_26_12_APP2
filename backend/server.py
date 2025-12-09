@@ -1657,7 +1657,7 @@ async def generate_orcamento_html(orcamento_id: str):
           </div>
           <div class="hgroup">
             <h1>{nome_empresa}</h1>
-            <p>{linha_contatos}</p>
+            <p>{linhas_contato_html}</p>
           </div>
           <div class="meta">
             <div class="badge">ORÇAMENTO</div>
