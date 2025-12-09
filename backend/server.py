@@ -1475,13 +1475,29 @@ async def generate_orcamento_html(orcamento_id: str):
     nome_empresa = empresa.get('razao_social') or empresa.get('name', 'Empresa')
     iniciais = ''.join([word[0].upper() for word in nome_empresa.split()[:2]])
     
-    # Verificar se tem logo configurada e converter para URL absoluta
+    # Verificar se tem logo configurada e converter para Base64
     logo_url = config.get('logo_url', '')
-    if logo_url and not logo_url.startswith('http'):
-        # Converter caminho relativo para absoluto
-        base_url = os.environ.get('BACKEND_URL', 'http://localhost:8001')
-        logo_url = f"{base_url}{logo_url}"
-    tem_logo = bool(logo_url)
+    logo_base64 = None
+    tem_logo = False
+    
+    if logo_url:
+        try:
+            # Tentar carregar logo do disco e converter para base64
+            logo_path = Path(ROOT_DIR) / logo_url.lstrip('/')
+            if logo_path.exists():
+                import base64
+                with open(logo_path, 'rb') as f:
+                    logo_data = f.read()
+                    logo_base64 = base64.b64encode(logo_data).decode('utf-8')
+                    # Detectar tipo de imagem
+                    ext = logo_path.suffix.lower()
+                    mime_types = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.svg': 'image/svg+xml'}
+                    mime_type = mime_types.get(ext, 'image/jpeg')
+                    logo_url = f"data:{mime_type};base64,{logo_base64}"
+                    tem_logo = True
+        except Exception as e:
+            logger.warning(f"Erro ao carregar logo: {e}")
+            logo_url = ''
     
     # Construir endereço completo
     endereco_parts = []
