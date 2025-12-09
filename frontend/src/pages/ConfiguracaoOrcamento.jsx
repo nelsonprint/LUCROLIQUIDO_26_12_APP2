@@ -160,11 +160,12 @@ const ConfiguracaoOrcamento = ({ user, onLogout }) => {
                       <p className="text-sm text-gray-400 mb-3">Preview da logo:</p>
                       <div className="flex items-center justify-center bg-white/10 rounded-lg p-4">
                         <img 
-                          src={`${process.env.REACT_APP_BACKEND_URL}${config.logo_url}`}
+                          src={config.logo_preview || `${process.env.REACT_APP_BACKEND_URL}${config.logo_url}`}
                           alt="Logo preview" 
                           className="max-h-32 object-contain"
                           onError={(e) => {
                             e.target.style.display = 'none';
+                            e.target.parentElement.innerHTML = '<p class="text-red-400 text-sm">Erro ao carregar logo</p>';
                           }}
                         />
                       </div>
