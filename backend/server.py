@@ -1475,8 +1475,12 @@ async def generate_orcamento_html(orcamento_id: str):
     nome_empresa = empresa.get('razao_social') or empresa.get('name', 'Empresa')
     iniciais = ''.join([word[0].upper() for word in nome_empresa.split()[:2]])
     
-    # Verificar se tem logo configurada
+    # Verificar se tem logo configurada e converter para URL absoluta
     logo_url = config.get('logo_url', '')
+    if logo_url and not logo_url.startswith('http'):
+        # Converter caminho relativo para absoluto
+        base_url = os.environ.get('BACKEND_URL', 'http://localhost:8001')
+        logo_url = f"{base_url}{logo_url}"
     tem_logo = bool(logo_url)
     
     # Construir endereço completo
