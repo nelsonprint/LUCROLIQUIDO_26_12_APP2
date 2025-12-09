@@ -1887,7 +1887,7 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
     
     mensagem = f"""Olá {orcamento.get('cliente_nome')}!
 
-Segue o orçamento {orcamento.get('numero_orcamento')} para sua análise.
+Segue o orçamento {orcamento.get('numero_orcamento')} da {nome_empresa} para sua análise.
 
 *{orcamento.get('descricao_servico_ou_produto')}*
 
