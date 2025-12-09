@@ -1499,41 +1499,59 @@ async def generate_orcamento_html(orcamento_id: str):
             logger.warning(f"Erro ao carregar logo: {e}")
             logo_url = ''
     
-    # Construir endereço completo
-    endereco_parts = []
+    # Construir dados da empresa em 3 linhas
+    # Linha 1: CNPJ • Endereço (logradouro, número, bairro)
+    linha1_parts = []
+    if empresa.get('cnpj'):
+        linha1_parts.append(f"CNPJ {empresa.get('cnpj')}")
+    
+    endereco_linha1 = []
     if empresa.get('logradouro'):
-        endereco = empresa.get('logradouro')
+        end = empresa.get('logradouro')
         if empresa.get('numero'):
-            endereco += f", {empresa.get('numero')}"
-        if empresa.get('complemento'):
-            endereco += f", {empresa.get('complemento')}"
-        endereco_parts.append(endereco)
+            end += f", {empresa.get('numero')}"
+        endereco_linha1.append(end)
     if empresa.get('bairro'):
-        endereco_parts.append(empresa.get('bairro'))
+        endereco_linha1.append(empresa.get('bairro'))
+    
+    if endereco_linha1:
+        linha1_parts.append(', '.join(endereco_linha1))
+    
+    linha1 = ' • '.join(linha1_parts) if linha1_parts else ''
+    
+    # Linha 2: Cidade-Estado, CEP
+    linha2_parts = []
     if empresa.get('cidade'):
         cidade_estado = empresa.get('cidade')
         if empresa.get('estado'):
             cidade_estado += f"-{empresa.get('estado')}"
-        endereco_parts.append(cidade_estado)
+        linha2_parts.append(cidade_estado)
     if empresa.get('cep'):
-        endereco_parts.append(empresa.get('cep'))
+        linha2_parts.append(empresa.get('cep'))
     
-    endereco_completo = ', '.join(endereco_parts) if endereco_parts else ''
+    linha2 = ', '.join(linha2_parts) if linha2_parts else ''
     
-    # Construir contatos
-    contatos = []
-    if empresa.get('cnpj'):
-        contatos.append(f"CNPJ {empresa.get('cnpj')}")
-    if endereco_completo:
-        contatos.append(endereco_completo)
-    if empresa.get('celular_whatsapp'):
-        contatos.append(empresa.get('celular_whatsapp'))
+    # Linha 3: Email • Site
+    linha3_parts = []
     if empresa.get('email_empresa'):
-        contatos.append(empresa.get('email_empresa'))
+        linha3_parts.append(empresa.get('email_empresa'))
     if empresa.get('site'):
-        contatos.append(empresa.get('site'))
+        linha3_parts.append(empresa.get('site'))
     
-    linha_contatos = ' • '.join(contatos)
+    linha3 = ' • '.join(linha3_parts) if linha3_parts else ''
+    
+    # Montar HTML das 3 linhas
+    linhas_contato_html = ''
+    if linha1:
+        linhas_contato_html += linha1
+    if linha2:
+        if linhas_contato_html:
+            linhas_contato_html += '<br>'
+        linhas_contato_html += linha2
+    if linha3:
+        if linhas_contato_html:
+            linhas_contato_html += '<br>'
+        linhas_contato_html += linha3
     
     # Gerar linhas da tabela de materiais
     materiais_html = ""
