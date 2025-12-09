@@ -1871,10 +1871,9 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
         }}
     )
     
-    # Retornar URL pública
-    # Em produção, use a URL da aplicação
-    base_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001/api')
-    pdf_url = f"{base_url}/orcamento/share/{token}"
+    # Retornar URL pública do HTML
+    base_url = os.environ.get('BACKEND_URL', 'https://financebud-3.preview.emergentagent.com')
+    html_url = f"{base_url}/api/orcamento/{orcamento_id}/html"
     
     # Preparar dados para WhatsApp
     import re
@@ -1882,23 +1881,9 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
     
     whatsapp_number = re.sub(r'\D', '', orcamento.get('cliente_whatsapp', ''))
     
-    # Formatar valor monetário
-    valor_formatado = f"R$ {float(orcamento.get('preco_praticado', 0)):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-    
-    mensagem = f"""Olá {orcamento.get('cliente_nome')}!
+    mensagem = f"""Olá! Segue o orçamento de {nome_empresa} n. {orcamento.get('numero_orcamento')}
 
-Segue o orçamento {orcamento.get('numero_orcamento')} da {nome_empresa} para sua análise.
-
-*{orcamento.get('descricao_servico_ou_produto')}*
-
-💰 Valor: {valor_formatado}
-
-Validade: {orcamento.get('validade_proposta')}
-Prazo: {orcamento.get('prazo_execucao')}
-
-📄 Ver orçamento completo (PDF): {pdf_url}
-
-Qualquer dúvida, estou à disposição!"""
+{html_url}"""
     
     return {
         "pdf_url": pdf_url,
