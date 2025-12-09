@@ -1614,7 +1614,7 @@ async def generate_orcamento_html(orcamento_id: str):
     <section class="flow-item">
       <div class="card">
         <header class="header">
-          <div class="brand{'has-logo' if tem_logo else ''}" aria-hidden="true">
+          <div class="brand {' has-logo' if tem_logo else ''}" aria-hidden="true">
             {f'<img src="{logo_url}" alt="Logo da empresa" />' if tem_logo else iniciais}
           </div>
           <div class="hgroup">
