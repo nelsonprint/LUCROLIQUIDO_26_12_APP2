@@ -175,6 +175,14 @@ const OrcamentoDetalhe = ({ user, onLogout }) => {
                 </Button>
                 
                 <Button
+                  onClick={handleVisualizarHTML}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Visualizar/Imprimir
+                </Button>
+
+                <Button
                   onClick={handleDownloadPDF}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
