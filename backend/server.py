@@ -1777,7 +1777,7 @@ async def generate_orcamento_html(orcamento_id: str):
             <p style="margin-top:0;">{config.get('texto_garantia', 'Os serviços executados possuem garantia.')}</p>
           </div>
         </section>
-        <footer class="footer">{nome_empresa}{' / ' + empresa.get('celular_whatsapp') if empresa.get('celular_whatsapp') else ''}{' / ' + empresa.get('email_empresa') if empresa.get('email_empresa') else ''}{' / ' + empresa.get('site') if empresa.get('site') else ''}</footer>
+        <footer class="footer">{nome_empresa}{' / ' + (empresa.get('celular_whatsapp') or empresa.get('telefone_fixo') or '') if (empresa.get('celular_whatsapp') or empresa.get('telefone_fixo')) else ''}{' / ' + empresa.get('email_empresa') if empresa.get('email_empresa') else ''}{' / ' + empresa.get('site') if empresa.get('site') else ''}</footer>
       </div>
     </section>
   </div>
