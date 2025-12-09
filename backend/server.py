@@ -1552,6 +1552,8 @@ async def generate_orcamento_html(orcamento_id: str):
   .card{{ border:1px solid var(--border); border-radius:14px; overflow:hidden; background:#fff; }}
   .header{{ display:flex; gap:20px; align-items:center; padding:18px 20px; border-bottom:1px solid var(--border); }}
   .brand{{ width:56px;height:56px;border-radius:12px;border:2px solid var(--green);display:grid;place-items:center;font-weight:800;color:var(--green); }}
+  .brand img{{ width:100%;height:100%;object-fit:contain;border-radius:10px; }}
+  .brand.has-logo{{ border:none;overflow:hidden; }}
   .hgroup{{ flex:1 1 auto; }}
   .hgroup h1{{ margin:0; font-size:20px; }}
   .hgroup p{{ margin:6px 0 0; color:var(--muted); }}
