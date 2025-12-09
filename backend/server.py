@@ -1886,10 +1886,10 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
 {html_url}"""
     
     return {
-        "pdf_url": pdf_url,
+        "pdf_url": html_url,
         "whatsapp_url": f"https://wa.me/55{whatsapp_number}?text={quote(mensagem)}",
         "token": token,
-        "expires_in": "24 horas"
+        "expires_in": "Permanente"
     }
 
 @api_router.get("/orcamento/share/{token}")
