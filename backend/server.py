@@ -1854,6 +1854,10 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
     if not orcamento:
         raise HTTPException(status_code=404, detail="Orçamento não encontrado")
     
+    # Buscar empresa para pegar o nome
+    empresa = await db.companies.find_one({"id": orcamento['empresa_id']}, {"_id": 0})
+    nome_empresa = empresa.get('razao_social') or empresa.get('name', 'Empresa') if empresa else 'Empresa'
+    
     # Gerar token único para este PDF
     token = secrets.token_urlsafe(32)
     expiration = int(time.time()) + (24 * 3600)  # Expira em 24 horas
