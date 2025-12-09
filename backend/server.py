@@ -2240,6 +2240,22 @@ async def get_orcamento_config(company_id: str):
             "texto_garantia": "Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes."
         }
     
+    # Converter logo para base64 para preview
+    if config.get('logo_url'):
+        try:
+            logo_path = Path(ROOT_DIR) / config['logo_url'].lstrip('/')
+            if logo_path.exists():
+                with open(logo_path, 'rb') as f:
+                    logo_data = f.read()
+                    logo_base64 = base64.b64encode(logo_data).decode('utf-8')
+                    # Detectar tipo de imagem
+                    ext = logo_path.suffix.lower()
+                    mime_types = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.svg': 'image/svg+xml'}
+                    mime_type = mime_types.get(ext, 'image/jpeg')
+                    config['logo_preview'] = f"data:{mime_type};base64,{logo_base64}"
+        except Exception as e:
+            logger.warning(f"Erro ao gerar preview da logo: {e}")
+    
     return config
 
 @api_router.post("/orcamento-config")
