@@ -3663,12 +3663,27 @@ async def export_excel(company_id: str, month: str):
 
 # ========== INCLUIR ROUTER ==========
 
-# Servir arquivos estáticos (uploads) - DEVE vir ANTES do router
+app.include_router(api_router)
+
+# Servir arquivos de upload
 uploads_dir = Path(ROOT_DIR) / "uploads"
 uploads_dir.mkdir(exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
-app.include_router(api_router)
+@app.get("/uploads/{filename}")
+async def serve_upload(filename: str):
+    """Servir arquivos de upload com content-type correto"""
+    file_path = uploads_dir / filename
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+    
+    # Detectar content-type baseado na extensão
+    import mimetypes
+    content_type, _ = mimetypes.guess_type(str(file_path))
+    if not content_type:
+        content_type = 'application/octet-stream'
+    
+    return FileResponse(file_path, media_type=content_type)
 
 # Health check endpoints
 @app.get("/")
