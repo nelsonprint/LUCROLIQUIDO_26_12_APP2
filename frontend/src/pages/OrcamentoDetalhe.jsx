@@ -52,6 +52,13 @@ const OrcamentoDetalhe = ({ user, onLogout }) => {
     }
   };
 
+  const handleVisualizarHTML = () => {
+    // Abrir visualização HTML em nova janela
+    const url = `${process.env.REACT_APP_BACKEND_URL}/api/orcamento/${id}/html`;
+    window.open(url, '_blank', 'width=1200,height=800');
+    toast.success('Visualização aberta em nova janela!');
+  };
+
   const handleEnviarWhatsApp = async () => {
     try {
       const whatsapp = orcamento.cliente_whatsapp?.replace(/\D/g, '');
