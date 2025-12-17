@@ -115,6 +115,92 @@ class Company(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
+# ========== MODELS DE CLIENTE ==========
+
+class ClienteCreate(BaseModel):
+    empresa_id: str
+    tipo: str  # "PF" ou "PJ"
+    
+    # Pessoa Física
+    nome: Optional[str] = None
+    sexo: Optional[str] = None  # "Masculino" ou "Feminino"
+    cpf: Optional[str] = None
+    profissao: Optional[str] = None
+    
+    # Pessoa Jurídica
+    nome_fantasia: Optional[str] = None
+    razao_social: Optional[str] = None
+    cnpj: Optional[str] = None
+    inscricao_municipal: Optional[str] = None
+    inscricao_estadual: Optional[str] = None
+    ramo_atuacao: Optional[str] = None
+    site: Optional[str] = None
+    
+    # Contato Financeiro (apenas PJ)
+    contato_financeiro_nome: Optional[str] = None
+    contato_financeiro_whatsapp: Optional[str] = None
+    contato_financeiro_email: Optional[str] = None
+    
+    # Endereço (ambos)
+    logradouro: Optional[str] = None
+    numero: Optional[str] = None
+    complemento: Optional[str] = None  # AP/Casa ou Sala
+    bairro: Optional[str] = None
+    ponto_referencia: Optional[str] = None
+    cep: Optional[str] = None
+    cidade: Optional[str] = None
+    estado: Optional[str] = None
+    
+    # Contato (ambos)
+    telefone_fixo: Optional[str] = None
+    whatsapp: Optional[str] = None
+    email: Optional[str] = None
+
+class Cliente(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    empresa_id: str
+    tipo: str
+    
+    # Pessoa Física
+    nome: Optional[str] = None
+    sexo: Optional[str] = None
+    cpf: Optional[str] = None
+    profissao: Optional[str] = None
+    
+    # Pessoa Jurídica
+    nome_fantasia: Optional[str] = None
+    razao_social: Optional[str] = None
+    cnpj: Optional[str] = None
+    inscricao_municipal: Optional[str] = None
+    inscricao_estadual: Optional[str] = None
+    ramo_atuacao: Optional[str] = None
+    site: Optional[str] = None
+    
+    # Contato Financeiro (apenas PJ)
+    contato_financeiro_nome: Optional[str] = None
+    contato_financeiro_whatsapp: Optional[str] = None
+    contato_financeiro_email: Optional[str] = None
+    
+    # Endereço
+    logradouro: Optional[str] = None
+    numero: Optional[str] = None
+    complemento: Optional[str] = None
+    bairro: Optional[str] = None
+    ponto_referencia: Optional[str] = None
+    cep: Optional[str] = None
+    cidade: Optional[str] = None
+    estado: Optional[str] = None
+    
+    # Contato
+    telefone_fixo: Optional[str] = None
+    whatsapp: Optional[str] = None
+    email: Optional[str] = None
+    
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class Subscription(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
