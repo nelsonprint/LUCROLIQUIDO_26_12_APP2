@@ -539,6 +539,164 @@ async def login(credentials: UserLogin):
 # ========== ROTAS DE EMPRESAS ==========
 
 @api_router.post("/companies")
+
+
+# ========== FUNÇÕES DE VALIDAÇÃO ==========
+
+def validar_cpf(cpf: str) -> bool:
+    """Valida CPF brasileiro"""
+    # Remove caracteres não numéricos
+    cpf = ''.join(filter(str.isdigit, cpf))
+    
+    if len(cpf) != 11:
+        return False
+    
+    # Verifica se todos os dígitos são iguais
+    if cpf == cpf[0] * 11:
+        return False
+    
+    # Calcula primeiro dígito verificador
+    soma = sum(int(cpf[i]) * (10 - i) for i in range(9))
+    digito1 = (soma * 10 % 11) % 10
+    
+    # Calcula segundo dígito verificador
+    soma = sum(int(cpf[i]) * (11 - i) for i in range(10))
+    digito2 = (soma * 10 % 11) % 10
+    
+    return cpf[-2:] == f"{digito1}{digito2}"
+
+def validar_cnpj(cnpj: str) -> bool:
+    """Valida CNPJ brasileiro"""
+    # Remove caracteres não numéricos
+    cnpj = ''.join(filter(str.isdigit, cnpj))
+    
+    if len(cnpj) != 14:
+        return False
+    
+    # Verifica se todos os dígitos são iguais
+    if cnpj == cnpj[0] * 14:
+        return False
+    
+    # Calcula primeiro dígito verificador
+    pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+    soma = sum(int(cnpj[i]) * pesos1[i] for i in range(12))
+    digito1 = 0 if soma % 11 < 2 else 11 - (soma % 11)
+    
+    # Calcula segundo dígito verificador
+    pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+    soma = sum(int(cnpj[i]) * pesos2[i] for i in range(13))
+    digito2 = 0 if soma % 11 < 2 else 11 - (soma % 11)
+    
+    return cnpj[-2:] == f"{digito1}{digito2}"
+
+# ========== ROTAS DE CLIENTES ==========
+
+@api_router.get("/clientes/{empresa_id}")
+async def get_clientes(empresa_id: str):
+    """Listar todos os clientes de uma empresa"""
+    clientes = await db.clientes.find({"empresa_id": empresa_id}, {"_id": 0}).to_list(1000)
+    return clientes
+
+@api_router.get("/cliente/{cliente_id}")
+async def get_cliente(cliente_id: str):
+    """Buscar um cliente específico"""
+    cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    return cliente
+
+@api_router.post("/clientes")
+async def create_cliente(cliente_data: ClienteCreate):
+    """Criar novo cliente"""
+    # Validar CPF se for Pessoa Física
+    if cliente_data.tipo == "PF" and cliente_data.cpf:
+        if not validar_cpf(cliente_data.cpf):
+            raise HTTPException(status_code=400, detail="CPF inválido")
+        
+        # Verificar unicidade do CPF
+        existing = await db.clientes.find_one({
+            "empresa_id": cliente_data.empresa_id,
+            "cpf": cliente_data.cpf
+        })
+        if existing:
+            raise HTTPException(status_code=400, detail="CPF já cadastrado")
+    
+    # Validar CNPJ se for Pessoa Jurídica
+    if cliente_data.tipo == "PJ" and cliente_data.cnpj:
+        if not validar_cnpj(cliente_data.cnpj):
+            raise HTTPException(status_code=400, detail="CNPJ inválido")
+        
+        # Verificar unicidade do CNPJ
+        existing = await db.clientes.find_one({
+            "empresa_id": cliente_data.empresa_id,
+            "cnpj": cliente_data.cnpj
+        })
+        if existing:
+            raise HTTPException(status_code=400, detail="CNPJ já cadastrado")
+    
+    # Criar cliente
+    cliente = Cliente(**cliente_data.model_dump())
+    await db.clientes.insert_one(cliente.model_dump())
+    
+    return {"message": "Cliente criado com sucesso!", "cliente": cliente.model_dump()}
+
+@api_router.put("/clientes/{cliente_id}")
+async def update_cliente(cliente_id: str, cliente_data: ClienteCreate):
+    """Atualizar cliente"""
+    # Buscar cliente existente
+    existing = await db.clientes.find_one({"id": cliente_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    # Validar CPF se for Pessoa Física e mudou
+    if cliente_data.tipo == "PF" and cliente_data.cpf:
+        if not validar_cpf(cliente_data.cpf):
+            raise HTTPException(status_code=400, detail="CPF inválido")
+        
+        # Verificar unicidade (exceto o próprio cliente)
+        duplicate = await db.clientes.find_one({
+            "empresa_id": cliente_data.empresa_id,
+            "cpf": cliente_data.cpf,
+            "id": {"$ne": cliente_id}
+        })
+        if duplicate:
+            raise HTTPException(status_code=400, detail="CPF já cadastrado")
+    
+    # Validar CNPJ se for Pessoa Jurídica e mudou
+    if cliente_data.tipo == "PJ" and cliente_data.cnpj:
+        if not validar_cnpj(cliente_data.cnpj):
+            raise HTTPException(status_code=400, detail="CNPJ inválido")
+        
+        # Verificar unicidade (exceto o próprio cliente)
+        duplicate = await db.clientes.find_one({
+            "empresa_id": cliente_data.empresa_id,
+            "cnpj": cliente_data.cnpj,
+            "id": {"$ne": cliente_id}
+        })
+        if duplicate:
+            raise HTTPException(status_code=400, detail="CNPJ já cadastrado")
+    
+    # Atualizar
+    update_data = cliente_data.model_dump()
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    await db.clientes.update_one(
+        {"id": cliente_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Cliente atualizado com sucesso!"}
+
+@api_router.delete("/clientes/{cliente_id}")
+async def delete_cliente(cliente_id: str):
+    """Deletar cliente"""
+    result = await db.clientes.delete_one({"id": cliente_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    return {"message": "Cliente deletado com sucesso!"}
+
 async def create_company(company_data: CompanyCreate):
     company = Company(
         user_id=company_data.user_id,
