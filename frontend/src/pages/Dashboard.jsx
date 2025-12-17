@@ -787,8 +787,8 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
         )}
 
-        {/* Alertas de Custos e Despesas */}
-        {costAlerts.length > 0 && (
+        {/* Alertas removidos para simplificar */}
+        {false && (
           <Card className="glass border-white/10 border-l-4 border-l-red-500 mt-6" data-testid="cost-alerts-card">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
