@@ -327,7 +327,7 @@ const Dashboard = ({ user, onLogout }) => {
                       {contasResumo.pagar.quantidade_total} conta(s) pendente(s)
                     </p>
                   </div>
-                  <AlertTriangle className="text-red-400" size={32} />
+                  <AlertCircle className="text-red-400" size={32} />
                 </div>
               </CardContent>
             </Card>
