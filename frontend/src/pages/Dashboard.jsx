@@ -193,25 +193,7 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
-  const analyzeWithAI = async () => {
-    setAnalyzingAI(true);
-
-    try {
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      const response = await axiosInstance.post('/ai-analysis', {
-        company_id: selectedCompany.id,
-        month: currentMonth,
-      });
-
-      setAiAnalysisResult(response.data.analysis);
-      setShowAIAnalysis(true);
-      toast.success('Análise gerada com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao gerar análise');
-    } finally {
-      setAnalyzingAI(false);
-    }
-  };
+  // Função de análise com IA removida
 
   return (
     <div className="flex min-h-screen" data-testid="dashboard-page">
