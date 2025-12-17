@@ -197,7 +197,7 @@ const Dashboard = ({ user, onLogout }) => {
 
   return (
     <div className="flex min-h-screen" data-testid="dashboard-page">
-      <Sidebar user={user} onLogout={onLogout} onOpenGlossary={() => setShowGlossary(true)} />
+      <Sidebar user={user} onLogout={onLogout} />
       
       <div className="flex-1 p-8">
         <SubscriptionCard user={user} />
