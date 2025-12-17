@@ -142,43 +142,7 @@ const Dashboard = ({ user, onLogout }) => {
     return Math.min((metrics.lucro_liquido / goal.goal_amount) * 100, 100);
   };
 
-  const fetchCostAlerts = async () => {
-    if (!selectedCompany) return;
-
-    try {
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      const response = await axiosInstance.get(`/transactions/${selectedCompany.id}?month=${currentMonth}`);
-      const transactions = response.data;
-
-      // Agrupar custos e despesas por categoria
-      const categoryTotals = {};
-      
-      transactions.forEach(t => {
-        if (t.type === 'custo' || t.type === 'despesa') {
-          if (t.status === 'realizado') {
-            if (!categoryTotals[t.category]) {
-              categoryTotals[t.category] = { amount: 0, type: t.type };
-            }
-            categoryTotals[t.category].amount += t.amount;
-          }
-        }
-      });
-
-      // Ordenar por valor e pegar os top 5
-      const sortedAlerts = Object.entries(categoryTotals)
-        .map(([category, data]) => ({
-          category,
-          amount: data.amount,
-          type: data.type
-        }))
-        .sort((a, b) => b.amount - a.amount)
-        .slice(0, 5);
-
-      setCostAlerts(sortedAlerts);
-    } catch (error) {
-      console.error('Erro ao buscar alertas:', error);
-    }
-  };
+  // Funções de IA removidas para simplificar o sistema
 
   const fetchDetailedAnalysis = async () => {
     if (!selectedCompany) return;
