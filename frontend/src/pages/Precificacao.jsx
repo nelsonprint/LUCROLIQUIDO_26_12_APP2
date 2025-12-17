@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Calculator, DollarSign, TrendingUp, Users, Truck, UtensilsCrossed, Wrench, AlertTriangle, FileText, Clock } from 'lucide-react';
+import { Calculator, DollarSign, TrendingUp, Users, Truck, UtensilsCrossed, Wrench, AlertTriangle, FileText, Clock, Plus, UserPlus } from 'lucide-react';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
