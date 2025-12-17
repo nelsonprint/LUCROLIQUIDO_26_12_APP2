@@ -195,7 +195,7 @@ function App() {
           path="/clientes"
           element={
             user ? (
-              <Clientes user={user} selectedCompany={selectedCompany} onLogout={handleLogout} />
+              <Clientes user={user} onLogout={handleLogout} />
             ) : (
               <Navigate to="/" replace />
             )
