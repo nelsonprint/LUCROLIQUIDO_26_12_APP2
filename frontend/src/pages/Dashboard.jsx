@@ -650,8 +650,8 @@ const Dashboard = ({ user, onLogout }) => {
 
         {/* Score de Saúde Financeira removido para simplificar */}
 
-        {/* Análise Detalhada por Categoria */}
-        {detailedAnalysis.length > 0 && (
+        {/* Análise Detalhada removida para simplificar */}
+        {false && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             {/* Gráfico de Donut - Distribuição de Custos e Despesas */}
             <Card className="glass border-white/10" data-testid="pie-chart-card">
