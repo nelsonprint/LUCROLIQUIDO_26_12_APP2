@@ -394,35 +394,25 @@ const Dashboard = ({ user, onLogout }) => {
         {/* Gráficos de Contas a Pagar e Receber */}
         {(fluxoCaixaData.length > 0 || contasPagarPorCategoria.length > 0 || contasReceberPorCliente.length > 0) && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 mb-6">
-            {/* Fluxo de Caixa Projetado */}
+            {/* Fluxo de Caixa Simplificado */}
             {fluxoCaixaData.length > 0 && (
               <Card className="glass border-white/10 border-l-4 border-l-blue-500">
                 <CardHeader>
-                  <CardTitle className="text-white text-base">Fluxo de Caixa Projetado</CardTitle>
-                  <p className="text-xs text-gray-400 mt-1">Próximos 6 meses</p>
+                  <CardTitle className="text-white text-base">💰 Fluxo de Caixa Simplificado</CardTitle>
+                  <p className="text-xs text-gray-400 mt-1">Entradas vs Saídas - Próximos 6 meses</p>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={fluxoCaixaData}>
-                      <defs>
-                        <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#EF4444" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
+                  <ResponsiveContainer width="100%" height={350}>
+                    <RechartsBarChart data={fluxoCaixaData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                       <XAxis 
                         dataKey="mes" 
                         stroke="#9CA3AF" 
-                        style={{ fontSize: '10px' }}
+                        style={{ fontSize: '12px', fontWeight: '500' }}
                       />
                       <YAxis 
                         stroke="#9CA3AF" 
-                        style={{ fontSize: '10px' }}
+                        style={{ fontSize: '12px' }}
                         tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
                       />
                       <Tooltip
@@ -430,47 +420,74 @@ const Dashboard = ({ user, onLogout }) => {
                           backgroundColor: '#1F2937', 
                           border: '1px solid #3B82F6',
                           borderRadius: '8px',
-                          fontSize: '12px'
+                          padding: '12px'
                         }}
-                        formatter={(value) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']}
-                      />
-                      <Legend 
-                        wrapperStyle={{ fontSize: '12px' }}
-                        formatter={(value) => {
+                        formatter={(value, name) => {
                           const labels = {
                             'entradas': 'Entradas',
                             'saidas': 'Saídas',
-                            'saldo': 'Saldo'
+                            'saldo': 'Saldo Projetado'
+                          };
+                          return [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, labels[name] || name];
+                        }}
+                      />
+                      <Legend 
+                        wrapperStyle={{ fontSize: '13px', paddingTop: '10px' }}
+                        formatter={(value) => {
+                          const labels = {
+                            'entradas': '💚 Entradas',
+                            'saidas': '❌ Saídas',
+                            'saldo': '📊 Saldo'
                           };
                           return labels[value] || value;
                         }}
                       />
-                      <Area 
-                        type="monotone" 
+                      <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" />
+                      <Bar 
                         dataKey="entradas" 
-                        stroke="#10B981" 
-                        fillOpacity={1} 
-                        fill="url(#colorEntradas)"
+                        fill="#10B981" 
                         name="entradas"
-                      />
-                      <Area 
-                        type="monotone" 
+                        radius={[8, 8, 0, 0]}
+                      >
+                        <LabelList 
+                          dataKey="entradas" 
+                          position="top" 
+                          style={{ fontSize: '10px', fill: '#10B981' }}
+                          formatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                        />
+                      </Bar>
+                      <Bar 
                         dataKey="saidas" 
-                        stroke="#EF4444" 
-                        fillOpacity={1} 
-                        fill="url(#colorSaidas)"
+                        fill="#EF4444" 
                         name="saidas"
-                      />
+                        radius={[8, 8, 0, 0]}
+                      >
+                        <LabelList 
+                          dataKey="saidas" 
+                          position="top" 
+                          style={{ fontSize: '10px', fill: '#EF4444' }}
+                          formatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                        />
+                      </Bar>
                       <Line 
                         type="monotone" 
                         dataKey="saldo" 
                         stroke="#3B82F6" 
-                        strokeWidth={2}
-                        dot={{ fill: '#3B82F6', r: 4 }}
+                        strokeWidth={3}
+                        dot={{ fill: '#3B82F6', strokeWidth: 2, r: 6 }}
+                        activeDot={{ r: 8 }}
                         name="saldo"
                       />
-                    </AreaChart>
+                    </RechartsBarChart>
                   </ResponsiveContainer>
+                  
+                  {/* Legenda Explicativa */}
+                  <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <p className="text-xs text-blue-200">
+                      <strong>💡 Como interpretar:</strong> As barras verdes mostram o que você vai receber, as vermelhas o que vai pagar. 
+                      A linha azul mostra o saldo final de cada mês (positivo = sobra dinheiro, negativo = falta dinheiro).
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}
