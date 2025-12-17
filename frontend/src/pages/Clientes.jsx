@@ -53,10 +53,25 @@ export const Clientes = ({ user, onLogout }) => {
   });
 
   useEffect(() => {
+    fetchCompany();
+  }, []);
+
+  useEffect(() => {
     if (selectedCompany) {
       fetchClientes();
     }
   }, [selectedCompany]);
+
+  const fetchCompany = async () => {
+    try {
+      const response = await axiosInstance.get(`/companies/${user.user_id}`);
+      if (response.data.length > 0) {
+        setSelectedCompany(response.data[0]);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar empresa:', error);
+    }
+  };
 
   const fetchClientes = async () => {
     try {
