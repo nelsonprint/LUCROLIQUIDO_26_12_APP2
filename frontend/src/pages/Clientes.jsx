@@ -10,7 +10,8 @@ import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { Users, Plus, Edit, Trash2, Phone } from 'lucide-react';
 
-export const Clientes = ({ user, selectedCompany, onLogout }) => {
+export const Clientes = ({ user, onLogout }) => {
+  const [selectedCompany, setSelectedCompany] = useState(null);
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
