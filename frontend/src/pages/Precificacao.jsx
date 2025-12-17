@@ -1521,6 +1521,48 @@ const Precificacao = ({ user, onLogout }) => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold border-b border-zinc-700 pb-2">Dados do Cliente</h3>
               
+              {/* Seleção de Cliente */}
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <Label>Selecionar Cliente *</Label>
+                  <Select value={clienteSelecionado} onValueChange={handleClienteChange}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue placeholder={loadingClientes ? "Carregando..." : "Selecione um cliente"} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-800 border-zinc-700">
+                      <SelectItem value="novo" className="text-green-400">
+                        <span className="flex items-center gap-2">
+                          <UserPlus size={16} />
+                          + Cadastrar Novo Cliente
+                        </span>
+                      </SelectItem>
+                      {clientes.length > 0 && (
+                        <div className="border-t border-zinc-700 my-1" />
+                      )}
+                      {clientes.map((cliente) => (
+                        <SelectItem key={cliente.id} value={cliente.id}>
+                          <span className="flex items-center gap-2">
+                            <span className={`text-xs px-1.5 py-0.5 rounded ${
+                              cliente.tipo === 'PF' ? 'bg-blue-500/20 text-blue-300' : 'bg-green-500/20 text-green-300'
+                            }`}>
+                              {cliente.tipo}
+                            </span>
+                            {cliente.tipo === 'PF' ? cliente.nome : (cliente.nome_fantasia || cliente.razao_social)}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => setShowNovoClienteModal(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Plus size={18} />
+                </Button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Nome do Cliente *</Label>
