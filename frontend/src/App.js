@@ -18,6 +18,7 @@ import Orcamentos from './pages/Orcamentos';
 import OrcamentoDetalhe from './pages/OrcamentoDetalhe';
 import EditarOrcamento from './pages/EditarOrcamento';
 import Materiais from './pages/Materiais';
+import { Clientes } from './pages/Clientes';
 import ConfiguracaoOrcamento from './pages/ConfiguracaoOrcamento';
 import Assinatura from './pages/Assinatura';
 import AdminPanel from './pages/AdminPanel';
