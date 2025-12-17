@@ -809,7 +809,7 @@ const Dashboard = ({ user, onLogout }) => {
           <Card className="glass border-white/10 border-l-4 border-l-red-500 mt-6" data-testid="cost-alerts-card">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
-                <AlertTriangle className="mr-2 text-red-400" />
+                <AlertCircle className="mr-2 text-red-400" />
                 ⚠️ Principais Gargalos de Custos e Despesas
               </CardTitle>
             </CardHeader>
