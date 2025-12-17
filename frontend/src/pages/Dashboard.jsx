@@ -832,17 +832,7 @@ const Dashboard = ({ user, onLogout }) => {
           </Card>
         )}
 
-        {/* Análise Inteligente com IA */}
-        {selectedCompany ? (
-          <div className="mt-6" data-testid="intelligent-analysis-container">
-            <h3 className="text-white text-2xl font-bold mb-4">🤖 Análise Inteligente com IA</h3>
-            <IntelligentAnalysis companyId={selectedCompany.id} />
-          </div>
-        ) : (
-          <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-            <p className="text-yellow-200">⏳ Aguardando seleção de empresa para carregar análises inteligentes...</p>
-          </div>
-        )}
+        {/* Análise Inteligente com IA removida para simplificar */}
 
         {/* Modal Criar Empresa */}
         <Dialog open={showCompanyModal} onOpenChange={setShowCompanyModal}>
