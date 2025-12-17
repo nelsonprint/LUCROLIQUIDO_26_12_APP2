@@ -64,12 +64,14 @@ export const Clientes = ({ user, onLogout }) => {
 
   const fetchCompany = async () => {
     try {
-      const response = await axiosInstance.get(`/companies/${user.user_id}`);
+      const userId = user.user_id || user.id;
+      const response = await axiosInstance.get(`/companies/${userId}`);
       if (response.data.length > 0) {
         setSelectedCompany(response.data[0]);
       }
     } catch (error) {
       console.error('Erro ao buscar empresa:', error);
+      toast.error('Erro ao carregar empresa');
     }
   };
 
