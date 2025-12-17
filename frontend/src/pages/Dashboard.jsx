@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
-import FinancialGlossary from '@/components/FinancialGlossary';
-import { IntelligentAnalysis } from '@/components/IntelligentAnalysis';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -10,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
-import { TrendingUp, DollarSign, AlertCircle, Target, BarChart, Sparkles, AlertTriangle } from 'lucide-react';
-import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LabelList, LineChart, Line, AreaChart, Area } from 'recharts';
+import { TrendingUp, DollarSign, AlertCircle, Target, BarChart } from 'lucide-react';
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LabelList, LineChart, Line, AreaChart, Area, ReferenceLine } from 'recharts';
 
 const Dashboard = ({ user, onLogout }) => {
   const [showCompanyModal, setShowCompanyModal] = useState(false);
