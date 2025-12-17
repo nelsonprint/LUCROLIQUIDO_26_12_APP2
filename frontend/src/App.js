@@ -192,6 +192,17 @@ function App() {
           }
         />
         <Route
+          path="/clientes"
+          element={
+            user ? (
+              <Clientes user={user} selectedCompany={selectedCompany} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        <Route
           path="/config-orcamento"
           element={
             user ? (
