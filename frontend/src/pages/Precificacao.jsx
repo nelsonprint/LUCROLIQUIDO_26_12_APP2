@@ -25,6 +25,11 @@ const Precificacao = ({ user, onLogout }) => {
 
   const company = JSON.parse(localStorage.getItem('company') || '{}');
 
+  // Estados para Clientes
+  const [clientes, setClientes] = useState([]);
+  const [clienteSelecionado, setClienteSelecionado] = useState('');
+  const [showNovoClienteModal, setShowNovoClienteModal] = useState(false);
+
   const [orcamentoData, setOrcamentoData] = useState({
     cliente_nome: '',
     cliente_documento: '',
