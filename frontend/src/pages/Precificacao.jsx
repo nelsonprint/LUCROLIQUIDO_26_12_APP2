@@ -29,6 +29,155 @@ const Precificacao = ({ user, onLogout }) => {
   const [clientes, setClientes] = useState([]);
   const [clienteSelecionado, setClienteSelecionado] = useState('');
   const [showNovoClienteModal, setShowNovoClienteModal] = useState(false);
+  const [loadingClientes, setLoadingClientes] = useState(false);
+  const [tipoNovoCliente, setTipoNovoCliente] = useState('PF');
+  const [novoClienteForm, setNovoClienteForm] = useState({
+    tipo: 'PF',
+    nome: '',
+    cpf: '',
+    nome_fantasia: '',
+    razao_social: '',
+    cnpj: '',
+    whatsapp: '',
+    email: '',
+    logradouro: '',
+    numero: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+  });
+
+  // Buscar clientes quando o modal de orçamento abrir
+  useEffect(() => {
+    if (showOrcamentoModal && company?.id) {
+      fetchClientes();
+    }
+  }, [showOrcamentoModal, company?.id]);
+
+  const fetchClientes = async () => {
+    if (!company?.id) return;
+    setLoadingClientes(true);
+    try {
+      const response = await axiosInstance.get(`/clientes/${company.id}`);
+      setClientes(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar clientes:', error);
+    } finally {
+      setLoadingClientes(false);
+    }
+  };
+
+  const handleClienteChange = (clienteId) => {
+    setClienteSelecionado(clienteId);
+    if (clienteId === 'novo') {
+      setShowNovoClienteModal(true);
+      return;
+    }
+    const cliente = clientes.find(c => c.id === clienteId);
+    if (cliente) {
+      const nome = cliente.tipo === 'PF' ? cliente.nome : (cliente.nome_fantasia || cliente.razao_social);
+      const documento = cliente.tipo === 'PF' ? cliente.cpf : cliente.cnpj;
+      const endereco = [cliente.logradouro, cliente.numero, cliente.bairro, cliente.cidade, cliente.estado]
+        .filter(Boolean).join(', ');
+      
+      setOrcamentoData(prev => ({
+        ...prev,
+        cliente_nome: nome,
+        cliente_documento: documento || '',
+        cliente_email: cliente.email || '',
+        cliente_whatsapp: cliente.whatsapp || '',
+        cliente_endereco: endereco,
+      }));
+    }
+  };
+
+  const maskCPF = (value) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+      .replace(/(-\d{2})\d+?$/, '$1');
+  };
+
+  const maskCNPJ = (value) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d)/, '$1-$2')
+      .replace(/(-\d{2})\d+?$/, '$1');
+  };
+
+  const maskPhone = (value) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 10) {
+      return numbers
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    return numbers
+      .replace(/(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{5})(\d)/, '$1-$2')
+      .replace(/(-\d{4})\d+?$/, '$1');
+  };
+
+  const handleCriarNovoCliente = async (e) => {
+    e.preventDefault();
+    try {
+      const data = {
+        ...novoClienteForm,
+        tipo: tipoNovoCliente,
+        empresa_id: company.id
+      };
+      
+      const response = await axiosInstance.post('/clientes', data);
+      toast.success('Cliente cadastrado com sucesso!');
+      
+      // Recarregar lista de clientes
+      await fetchClientes();
+      
+      // Selecionar o novo cliente
+      const novoId = response.data.id;
+      setClienteSelecionado(novoId);
+      
+      // Preencher dados do orçamento com o novo cliente
+      const nome = tipoNovoCliente === 'PF' ? novoClienteForm.nome : (novoClienteForm.nome_fantasia || novoClienteForm.razao_social);
+      const documento = tipoNovoCliente === 'PF' ? novoClienteForm.cpf : novoClienteForm.cnpj;
+      const endereco = [novoClienteForm.logradouro, novoClienteForm.numero, novoClienteForm.bairro, novoClienteForm.cidade, novoClienteForm.estado]
+        .filter(Boolean).join(', ');
+      
+      setOrcamentoData(prev => ({
+        ...prev,
+        cliente_nome: nome,
+        cliente_documento: documento || '',
+        cliente_email: novoClienteForm.email || '',
+        cliente_whatsapp: novoClienteForm.whatsapp || '',
+        cliente_endereco: endereco,
+      }));
+      
+      // Fechar modal e resetar form
+      setShowNovoClienteModal(false);
+      setNovoClienteForm({
+        tipo: 'PF',
+        nome: '',
+        cpf: '',
+        nome_fantasia: '',
+        razao_social: '',
+        cnpj: '',
+        whatsapp: '',
+        email: '',
+        logradouro: '',
+        numero: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao cadastrar cliente');
+    }
+  };
 
   const [orcamentoData, setOrcamentoData] = useState({
     cliente_nome: '',
