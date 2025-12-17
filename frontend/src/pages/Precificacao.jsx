@@ -1747,6 +1747,205 @@ const Precificacao = ({ user, onLogout }) => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Cadastro Rápido de Cliente */}
+      <Dialog open={showNovoClienteModal} onOpenChange={setShowNovoClienteModal}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="text-green-400" />
+              Cadastro Rápido de Cliente
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleCriarNovoCliente} className="space-y-4">
+            {/* Toggle Tipo */}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                onClick={() => setTipoNovoCliente('PF')}
+                className={tipoNovoCliente === 'PF' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-zinc-700 hover:bg-zinc-600'}
+              >
+                Pessoa Física
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setTipoNovoCliente('PJ')}
+                className={tipoNovoCliente === 'PJ' ? 'bg-green-600 hover:bg-green-700' : 'bg-zinc-700 hover:bg-zinc-600'}
+              >
+                Pessoa Jurídica
+              </Button>
+            </div>
+
+            {tipoNovoCliente === 'PF' ? (
+              /* Pessoa Física */
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label>Nome Completo *</Label>
+                  <Input
+                    required
+                    value={novoClienteForm.nome}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, nome: e.target.value})}
+                    placeholder="Nome completo"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div>
+                  <Label>CPF *</Label>
+                  <Input
+                    required
+                    value={novoClienteForm.cpf}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, cpf: maskCPF(e.target.value)})}
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div>
+                  <Label>WhatsApp *</Label>
+                  <Input
+                    required
+                    value={novoClienteForm.whatsapp}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, whatsapp: maskPhone(e.target.value)})}
+                    placeholder="(00) 00000-0000"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </div>
+            ) : (
+              /* Pessoa Jurídica */
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Nome Fantasia *</Label>
+                  <Input
+                    required
+                    value={novoClienteForm.nome_fantasia}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, nome_fantasia: e.target.value})}
+                    placeholder="Nome Fantasia"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div>
+                  <Label>Razão Social *</Label>
+                  <Input
+                    required
+                    value={novoClienteForm.razao_social}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, razao_social: e.target.value})}
+                    placeholder="Razão Social"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div>
+                  <Label>CNPJ *</Label>
+                  <Input
+                    required
+                    value={novoClienteForm.cnpj}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, cnpj: maskCNPJ(e.target.value)})}
+                    placeholder="00.000.000/0000-00"
+                    maxLength={18}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div>
+                  <Label>WhatsApp *</Label>
+                  <Input
+                    required
+                    value={novoClienteForm.whatsapp}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, whatsapp: maskPhone(e.target.value)})}
+                    placeholder="(00) 00000-0000"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Campos comuns */}
+            <div>
+              <Label>E-mail</Label>
+              <Input
+                type="email"
+                value={novoClienteForm.email}
+                onChange={(e) => setNovoClienteForm({...novoClienteForm, email: e.target.value})}
+                placeholder="cliente@email.com"
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+
+            {/* Endereço simplificado */}
+            <div className="border-t border-zinc-700 pt-4">
+              <h4 className="text-sm font-medium text-zinc-400 mb-3">Endereço (opcional)</h4>
+              <div className="grid grid-cols-4 gap-3">
+                <div className="col-span-3">
+                  <Label>Logradouro</Label>
+                  <Input
+                    value={novoClienteForm.logradouro}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, logradouro: e.target.value})}
+                    placeholder="Rua, Av..."
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div>
+                  <Label>Nº</Label>
+                  <Input
+                    value={novoClienteForm.numero}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, numero: e.target.value})}
+                    placeholder="123"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mt-3">
+                <div>
+                  <Label>Bairro</Label>
+                  <Input
+                    value={novoClienteForm.bairro}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, bairro: e.target.value})}
+                    placeholder="Bairro"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div>
+                  <Label>Cidade</Label>
+                  <Input
+                    value={novoClienteForm.cidade}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, cidade: e.target.value})}
+                    placeholder="Cidade"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div>
+                  <Label>UF</Label>
+                  <Input
+                    value={novoClienteForm.estado}
+                    onChange={(e) => setNovoClienteForm({...novoClienteForm, estado: e.target.value.toUpperCase()})}
+                    placeholder="SP"
+                    maxLength={2}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Botões */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-zinc-700">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowNovoClienteModal(false)}
+                className="border-zinc-700"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+              >
+                Cadastrar Cliente
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
