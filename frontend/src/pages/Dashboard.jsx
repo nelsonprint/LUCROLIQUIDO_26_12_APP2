@@ -20,12 +20,6 @@ const Dashboard = ({ user, onLogout }) => {
   const [goal, setGoal] = useState(null);
   const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState([]);
-  const [analyzingAI, setAnalyzingAI] = useState(false);
-  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
-  const [aiAnalysisResult, setAiAnalysisResult] = useState('');
-  const [costAlerts, setCostAlerts] = useState([]);
-  const [detailedAnalysis, setDetailedAnalysis] = useState([]);
-  const [showGlossary, setShowGlossary] = useState(false);
   const [contasResumo, setContasResumo] = useState(null);
   const [fluxoCaixaData, setFluxoCaixaData] = useState([]);
   const [contasPagarPorCategoria, setContasPagarPorCategoria] = useState([]);
