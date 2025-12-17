@@ -34,8 +34,6 @@ const Dashboard = ({ user, onLogout }) => {
       fetchMetrics();
       fetchGoal();
       generateChartData();
-      fetchCostAlerts();
-      fetchDetailedAnalysis();
       fetchContasResumo();
       fetchFluxoCaixa();
       fetchContasPagarPorCategoria();
