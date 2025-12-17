@@ -144,46 +144,7 @@ const Dashboard = ({ user, onLogout }) => {
 
   // Funções de IA removidas para simplificar o sistema
 
-  const fetchDetailedAnalysis = async () => {
-    if (!selectedCompany) return;
-
-    try {
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      const response = await axiosInstance.get(`/transactions/${selectedCompany.id}?month=${currentMonth}`);
-      const transactions = response.data.filter(t => t.status === 'realizado');
-
-      // Calcular totais por categoria
-      const categoryData = {};
-      
-      transactions.forEach(t => {
-        if (t.type === 'custo' || t.type === 'despesa') {
-          if (!categoryData[t.category]) {
-            categoryData[t.category] = {
-              name: t.category,
-              value: 0,
-              type: t.type
-            };
-          }
-          categoryData[t.category].value += t.amount;
-        }
-      });
-
-      // Calcular total de receitas
-      const totalReceitas = transactions
-        .filter(t => t.type === 'receita')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      // Converter para array e adicionar percentuais
-      const analysis = Object.values(categoryData).map(item => ({
-        ...item,
-        percentage: totalReceitas > 0 ? ((item.value / totalReceitas) * 100).toFixed(2) : 0
-      }));
-
-      setDetailedAnalysis(analysis);
-    } catch (error) {
-      console.error('Erro ao buscar análise detalhada:', error);
-    }
-  };
+  // Análise detalhada removida
 
   const fetchContasResumo = async () => {
     if (!selectedCompany) return;
