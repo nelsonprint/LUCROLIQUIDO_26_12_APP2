@@ -879,42 +879,11 @@ const Dashboard = ({ user, onLogout }) => {
         </Dialog>
 
         {/* Modal Análise IA */}
-        <Dialog open={showAIAnalysis} onOpenChange={setShowAIAnalysis}>
-          <DialogContent className="glass border-white/10 max-w-3xl max-h-[80vh] overflow-y-auto" data-testid="ai-analysis-dialog">
-            <DialogHeader>
-              <DialogTitle className="text-white flex items-center text-2xl">
-                <Sparkles className="mr-2 text-purple-400" />
-                Análise Inteligente (ChatGPT)
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Card className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-purple-500/30">
-                <CardContent className="p-6">
-                  <div className="prose prose-invert max-w-none">
-                    <div className="text-gray-200 whitespace-pre-line leading-relaxed">
-                      {aiAnalysisResult}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => setShowAIAnalysis(false)}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                  data-testid="close-ai-analysis-button"
-                >
-                  Fechar
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Modal de Análise IA removido */}
 
       </div>
       
-      {/* Glossário Financeiro */}
-      <FinancialGlossary isOpen={showGlossary} onClose={() => setShowGlossary(false)} />
+      {/* Glossário Financeiro removido */}
     </div>
   );
 };
