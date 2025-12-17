@@ -2116,7 +2116,7 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
     )
     
     # Retornar URL pública do HTML
-    base_url = os.environ.get('BACKEND_URL', 'https://financebud-3.preview.emergentagent.com')
+    base_url = os.environ.get('BACKEND_URL', 'https://orcements.preview.emergentagent.com')
     html_url = f"{base_url}/api/orcamento/{orcamento_id}/html"
     
     # Preparar dados para WhatsApp
