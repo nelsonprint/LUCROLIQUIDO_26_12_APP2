@@ -203,25 +203,12 @@ const Dashboard = ({ user, onLogout }) => {
         <SubscriptionCard user={user} />
 
         {/* Header */}
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2" data-testid="dashboard-title">Dashboard</h1>
-            {selectedCompany && (
-              <p className="text-gray-400" data-testid="selected-company-name">
-                {selectedCompany.name} - {selectedCompany.segment}
-              </p>
-            )}
-          </div>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2" data-testid="dashboard-title">Dashboard</h1>
           {selectedCompany && (
-            <Button
-              onClick={analyzeWithAI}
-              disabled={analyzingAI}
-              data-testid="analyze-ai-button"
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              <Sparkles className="mr-2" size={18} />
-              {analyzingAI ? 'Analisando...' : 'Analisar com IA'}
-            </Button>
+            <p className="text-gray-400" data-testid="selected-company-name">
+              {selectedCompany.name} - {selectedCompany.segment}
+            </p>
           )}
         </div>
 
