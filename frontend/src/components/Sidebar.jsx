@@ -134,15 +134,7 @@ export const Sidebar = ({ user, onLogout }) => {
           );
         })}
 
-        {/* Botão O que é... */}
-        <button
-          onClick={onOpenGlossary}
-          className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-300 hover:bg-white/5 hover:text-white"
-          data-testid="sidebar-glossary-button"
-        >
-          <BookOpen size={20} />
-          <span className="font-medium">O que é...</span>
-        </button>
+        {/* Botão "O que é..." removido para simplificar */}
       </nav>
 
       {/* Admin Badge (se aplicável) */}
