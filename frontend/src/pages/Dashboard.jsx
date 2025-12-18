@@ -8,8 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
-import { TrendingUp, DollarSign, AlertCircle, Target, BarChart } from 'lucide-react';
+import { TrendingUp, DollarSign, AlertCircle, Target, BarChart, Settings } from 'lucide-react';
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LabelList, LineChart, Line, AreaChart, Area, ReferenceLine } from 'recharts';
+import MarkupConfigModal from '@/components/MarkupConfigModal';
+import MarkupDonutChart from '@/components/MarkupDonutChart';
 
 const Dashboard = ({ user, onLogout }) => {
   const [showCompanyModal, setShowCompanyModal] = useState(false);
