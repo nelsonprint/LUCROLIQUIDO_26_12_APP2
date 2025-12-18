@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { axiosInstance } from '../App';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { TrendingUp, Settings } from 'lucide-react';
 
 // Cores neon para o gráfico
@@ -10,18 +10,50 @@ const NEON_COLORS = [
   '#88ff00', '#00aaff', '#ff4444', '#44ff88', '#8844ff', '#ff8844'
 ];
 
+// Tooltip customizado - definido FORA do componente
+const CustomTooltipContent = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-zinc-900 border border-purple-500/50 rounded-lg p-3 shadow-lg shadow-purple-500/20">
+        <p className="text-white font-semibold">{data.name}</p>
+        <p className="text-purple-400">Markup: <span className="text-white">{data.markup?.toFixed(4)}x</span></p>
+        <p className="text-green-400">BDI: <span className="text-white">{data.value?.toFixed(2)}%</span></p>
+      </div>
+    );
+  }
+  return null;
+};
+
+// Função de label customizada - definida FORA do componente
+const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }) => {
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="white"
+      textAnchor="middle"
+      dominantBaseline="central"
+      className="text-[10px] font-bold"
+      style={{ textShadow: '0 0 4px rgba(0,0,0,0.8)' }}
+    >
+      {value?.toFixed(0)}%
+    </text>
+  );
+};
+
 const MarkupDonutChart = ({ companyId, onConfigClick }) => {
   const [seriesData, setSeriesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentMonthData, setCurrentMonthData] = useState(null);
 
-  useEffect(() => {
-    if (companyId) {
-      fetchMarkupSeries();
-    }
-  }, [companyId]);
-
-  const fetchMarkupSeries = async () => {
+  const fetchMarkupSeries = useCallback(async () => {
+    if (!companyId) return;
     setLoading(true);
     try {
       const response = await axiosInstance.get(`/markup-profile/series/${companyId}?months=12`);
@@ -51,42 +83,11 @@ const MarkupDonutChart = ({ companyId, onConfigClick }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId]);
 
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-zinc-900 border border-purple-500/50 rounded-lg p-3 shadow-lg shadow-purple-500/20">
-          <p className="text-white font-semibold">{data.name}</p>
-          <p className="text-purple-400">Markup: <span className="text-white">{data.markup?.toFixed(4)}x</span></p>
-          <p className="text-green-400">BDI: <span className="text-white">{data.value?.toFixed(2)}%</span></p>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, name }) => {
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    return (
-      <text
-        x={x}
-        y={y}
-        fill="white"
-        textAnchor="middle"
-        dominantBaseline="central"
-        className="text-[10px] font-bold"
-        style={{ textShadow: '0 0 4px rgba(0,0,0,0.8)' }}
-      >
-        {value?.toFixed(0)}%
-      </text>
-    );
-  };
+  useEffect(() => {
+    fetchMarkupSeries();
+  }, [fetchMarkupSeries]);
 
   return (
     <Card className="glass border-white/10 hover-lift">
@@ -164,7 +165,7 @@ const MarkupDonutChart = ({ companyId, onConfigClick }) => {
                     />
                   ))}
                 </Pie>
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltipContent />} />
               </PieChart>
             </ResponsiveContainer>
             
