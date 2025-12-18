@@ -671,33 +671,33 @@ const Dashboard = ({ user, onLogout }) => {
 
         {/* Score de Saúde Financeira removido para simplificar */}
 
+        {/* Gráfico de Markup/BDI */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <MarkupDonutChart 
+            key={markupRefreshKey}
+            companyId={selectedCompany?.id} 
+            onConfigClick={() => setShowMarkupModal(true)} 
+          />
+          
+          {/* Botão de Configurar Markup */}
+          <Card className="glass border-white/10 flex flex-col justify-center items-center p-8">
+            <Settings size={48} className="text-purple-400 mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">Configurar Markup/BDI</h3>
+            <p className="text-gray-400 text-center mb-4">
+              Configure as taxas de impostos, custos indiretos e margem de lucro para calcular o markup mensal
+            </p>
+            <Button
+              onClick={() => setShowMarkupModal(true)}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              <Settings size={18} className="mr-2" />
+              Configurar Markup
+            </Button>
+          </Card>
+        </div>
+
         {/* Análise Detalhada removida para simplificar */}
         {false && (
-          {/* Gráfico de Markup/BDI */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-            <MarkupDonutChart 
-              key={markupRefreshKey}
-              companyId={selectedCompany?.id} 
-              onConfigClick={() => setShowMarkupModal(true)} 
-            />
-            
-            {/* Botão de Configurar Markup */}
-            <Card className="glass border-white/10 flex flex-col justify-center items-center p-8">
-              <Settings size={48} className="text-purple-400 mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">Configurar Markup/BDI</h3>
-              <p className="text-gray-400 text-center mb-4">
-                Configure as taxas de impostos, custos indiretos e margem de lucro para calcular o markup mensal
-              </p>
-              <Button
-                onClick={() => setShowMarkupModal(true)}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                <Settings size={18} className="mr-2" />
-                Configurar Markup
-              </Button>
-            </Card>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             {/* Gráfico de Donut - Distribuição de Custos e Despesas */}
             <Card className="glass border-white/10" data-testid="pie-chart-card">
