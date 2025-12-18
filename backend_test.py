@@ -244,13 +244,13 @@ class MarkupBDITester:
             self.log("✅ Month 11 profile created")
             
             # Now test copy to month 12
-            copy_data = {
+            copy_params = {
                 "company_id": self.company_id,
                 "year": 2025,
                 "month": 12
             }
             
-            response = self.session.post(f"{API_BASE}/markup-profile/copy-previous", json=copy_data)
+            response = self.session.post(f"{API_BASE}/markup-profile/copy-previous", params=copy_params)
             
             if response.status_code == 200:
                 result = response.json()
