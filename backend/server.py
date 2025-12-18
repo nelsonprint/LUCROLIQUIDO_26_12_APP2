@@ -444,6 +444,102 @@ class SystemConfig(BaseModel):
     subscription_price: float = 49.90
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# ========== MODELS: MARKUP/BDI MENSAL ==========
+
+class MarkupTaxes(BaseModel):
+    """Configuração de impostos para o markup"""
+    simples_effective_rate: float = 0.083  # Simples Nacional efetivo (8.3%)
+    iss_rate: float = 0.03  # ISS (3%)
+    include_materials_in_iss_base: bool = False  # Materiais entram na base do ISS?
+
+class MarkupProfileCreate(BaseModel):
+    """Criar/atualizar perfil de markup mensal"""
+    company_id: str
+    year: int
+    month: int  # 1-12
+    taxes: MarkupTaxes = MarkupTaxes()
+    indirects_rate: float = 0.10  # X - Indiretas (10%)
+    financial_rate: float = 0.02  # Y - Financeiro (2%)
+    profit_rate: float = 0.15  # Z - Lucro (15%)
+    notes: Optional[str] = None
+
+class MarkupProfile(BaseModel):
+    """Perfil de markup mensal completo"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    year: int
+    month: int
+    taxes: dict  # MarkupTaxes como dict
+    indirects_rate: float = 0.10
+    financial_rate: float = 0.02
+    profit_rate: float = 0.15
+    # Valores calculados
+    markup_multiplier: float = 1.0
+    bdi_percentage: float = 0.0
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# ========== MODELS: CATÁLOGO DE SERVIÇOS ==========
+
+class ServiceTemplateCreate(BaseModel):
+    """Criar template de serviço"""
+    company_id: str
+    name: str
+    category: Optional[str] = None
+    billing_model: str  # AREA_M2, LINEAR_M, POINT, UNIT, VOLUME_M3, WEIGHT_KG, HOUR, DAY, VISIT, MONTHLY, MILESTONE, GLOBAL, UNIT_COMPOSITION, COST_PLUS, PERFORMANCE
+    unit_label: str  # Ex: "m²", "m", "ponto", "un", "m³", "kg", "hora", "dia", "visita", "mês"
+    default_unit_price: float = 0.0
+    measurement_schema: List[str] = []  # Campos a pedir no orçamento: ["areaM2"], ["points"], ["hours"]
+    multipliers: Optional[dict] = None  # {urgency: 1.2, height: 1.1, difficulty: 1.3, risk: 1.1, access: 1.05}
+    materials_included: bool = False
+    material_margin_pct: Optional[float] = None
+    scope_checklist: List[str] = []
+    active: bool = True
+
+class ServiceTemplate(BaseModel):
+    """Template de serviço completo"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    name: str
+    category: Optional[str] = None
+    billing_model: str
+    unit_label: str
+    default_unit_price: float = 0.0
+    measurement_schema: List[str] = []
+    multipliers: Optional[dict] = None
+    materials_included: bool = False
+    material_margin_pct: Optional[float] = None
+    scope_checklist: List[str] = []
+    active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# ========== MODELS: MATERIAIS INTERNOS (EPI/CONSUMO) ==========
+
+class InternalMaterialCreate(BaseModel):
+    """Criar material interno (EPI/consumo)"""
+    company_id: str
+    name: str
+    category: str = "OUTROS"  # EPI, CONSUMIVEL, OUTROS
+    unit: str
+    default_cost: float = 0.0
+
+class InternalMaterial(BaseModel):
+    """Material interno completo"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    name: str
+    category: str = "OUTROS"
+    unit: str
+    default_cost: float = 0.0
+    active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # ========== STARTUP: CRIAR PRIMEIRO ADMIN ==========
 
 @app.on_event("startup")
