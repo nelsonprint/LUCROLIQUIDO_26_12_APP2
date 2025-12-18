@@ -927,6 +927,17 @@ const Dashboard = ({ user, onLogout }) => {
         {/* Modal Análise IA */}
         {/* Modal de Análise IA removido */}
 
+        {/* Modal de Configuração de Markup */}
+        <MarkupConfigModal
+          open={showMarkupModal}
+          onClose={() => setShowMarkupModal(false)}
+          companyId={selectedCompany?.id}
+          onSave={() => {
+            setShowMarkupModal(false);
+            setMarkupRefreshKey(prev => prev + 1);
+          }}
+        />
+
       </div>
       
       {/* Glossário Financeiro removido */}
