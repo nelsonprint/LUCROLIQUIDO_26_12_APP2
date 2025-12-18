@@ -15,6 +15,7 @@ import MarkupDonutChart from '@/components/MarkupDonutChart';
 
 const Dashboard = ({ user, onLogout }) => {
   const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [showMarkupModal, setShowMarkupModal] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [companyData, setCompanyData] = useState({ name: '', segment: '' });
@@ -26,6 +27,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [fluxoCaixaData, setFluxoCaixaData] = useState([]);
   const [contasPagarPorCategoria, setContasPagarPorCategoria] = useState([]);
   const [contasReceberPorCliente, setContasReceberPorCliente] = useState([]);
+  const [markupRefreshKey, setMarkupRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchCompanies();
