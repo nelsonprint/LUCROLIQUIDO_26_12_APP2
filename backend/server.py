@@ -2637,6 +2637,264 @@ async def create_or_update_orcamento_config(config_data: OrcamentoConfigCreate, 
         
         return {"message": "Configuração criada com sucesso!"}
 
+# ========== ROTAS: MARKUP/BDI MENSAL ==========
+
+def calculate_markup(indirects_rate: float, financial_rate: float, profit_rate: float, tax_rate: float) -> tuple:
+    """
+    Calcula o markup multiplicador e BDI percentual.
+    
+    Fórmula: markup = ((1+X)*(1+Y)*(1+Z)) / (1 - I)
+    
+    Onde:
+    - X = indiretas
+    - Y = financeiro
+    - Z = lucro
+    - I = impostos sobre venda
+    
+    Returns: (markup_multiplier, bdi_percentage)
+    """
+    numerator = (1 + indirects_rate) * (1 + financial_rate) * (1 + profit_rate)
+    denominator = 1 - tax_rate
+    
+    if denominator <= 0:
+        raise ValueError("Taxa de impostos não pode ser >= 100%")
+    
+    markup = numerator / denominator
+    bdi = (markup - 1) * 100  # BDI em percentual
+    
+    return round(markup, 4), round(bdi, 2)
+
+@api_router.get("/markup-profiles/{company_id}")
+async def get_markup_profiles(company_id: str, year: Optional[int] = None):
+    """Buscar perfis de markup de uma empresa"""
+    try:
+        query = {"company_id": company_id}
+        if year:
+            query["year"] = year
+        
+        profiles = await db.markup_profiles.find(query, {"_id": 0}).sort([("year", -1), ("month", -1)]).to_list(100)
+        return profiles
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/markup-profile/{company_id}/{year}/{month}")
+async def get_markup_profile(company_id: str, year: int, month: int):
+    """Buscar perfil de markup específico (mês/ano)"""
+    try:
+        profile = await db.markup_profiles.find_one(
+            {"company_id": company_id, "year": year, "month": month},
+            {"_id": 0}
+        )
+        if not profile:
+            return None
+        return profile
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/markup-profile/series/{company_id}")
+async def get_markup_series(company_id: str, months: int = 12):
+    """Buscar série temporal de markup (últimos N meses) para gráfico"""
+    try:
+        from datetime import date
+        from dateutil.relativedelta import relativedelta
+        
+        today = date.today()
+        series = []
+        
+        for i in range(months - 1, -1, -1):
+            target_date = today - relativedelta(months=i)
+            year = target_date.year
+            month = target_date.month
+            
+            profile = await db.markup_profiles.find_one(
+                {"company_id": company_id, "year": year, "month": month},
+                {"_id": 0}
+            )
+            
+            month_name = target_date.strftime("%b/%y")
+            
+            if profile:
+                series.append({
+                    "month": month_name,
+                    "year": year,
+                    "month_num": month,
+                    "markup": profile.get("markup_multiplier", 1.0),
+                    "bdi": profile.get("bdi_percentage", 0.0),
+                    "has_data": True
+                })
+            else:
+                series.append({
+                    "month": month_name,
+                    "year": year,
+                    "month_num": month,
+                    "markup": None,
+                    "bdi": None,
+                    "has_data": False
+                })
+        
+        return series
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/markup-profile")
+async def create_or_update_markup_profile(data: MarkupProfileCreate):
+    """Criar ou atualizar perfil de markup mensal"""
+    try:
+        # Calcular taxa total de impostos
+        taxes = data.taxes
+        total_tax_rate = taxes.simples_effective_rate + taxes.iss_rate
+        
+        # Calcular markup e BDI
+        markup_multiplier, bdi_percentage = calculate_markup(
+            data.indirects_rate,
+            data.financial_rate,
+            data.profit_rate,
+            total_tax_rate
+        )
+        
+        # Verificar se já existe perfil para este mês
+        existing = await db.markup_profiles.find_one({
+            "company_id": data.company_id,
+            "year": data.year,
+            "month": data.month
+        })
+        
+        profile_data = {
+            "company_id": data.company_id,
+            "year": data.year,
+            "month": data.month,
+            "taxes": taxes.model_dump(),
+            "indirects_rate": data.indirects_rate,
+            "financial_rate": data.financial_rate,
+            "profit_rate": data.profit_rate,
+            "markup_multiplier": markup_multiplier,
+            "bdi_percentage": bdi_percentage,
+            "notes": data.notes,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        if existing:
+            # Atualizar existente
+            await db.markup_profiles.update_one(
+                {"id": existing["id"]},
+                {"$set": profile_data}
+            )
+            return {
+                "message": "Perfil de markup atualizado com sucesso!",
+                "markup_multiplier": markup_multiplier,
+                "bdi_percentage": bdi_percentage,
+                "updated": True
+            }
+        else:
+            # Criar novo
+            profile = MarkupProfile(
+                company_id=data.company_id,
+                year=data.year,
+                month=data.month,
+                taxes=taxes.model_dump(),
+                indirects_rate=data.indirects_rate,
+                financial_rate=data.financial_rate,
+                profit_rate=data.profit_rate,
+                markup_multiplier=markup_multiplier,
+                bdi_percentage=bdi_percentage,
+                notes=data.notes
+            )
+            
+            doc = profile.model_dump()
+            doc['created_at'] = doc['created_at'].isoformat()
+            doc['updated_at'] = doc['updated_at'].isoformat()
+            
+            await db.markup_profiles.insert_one(doc)
+            
+            return {
+                "message": "Perfil de markup criado com sucesso!",
+                "id": profile.id,
+                "markup_multiplier": markup_multiplier,
+                "bdi_percentage": bdi_percentage,
+                "created": True
+            }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/markup-profile/copy-previous")
+async def copy_previous_markup_profile(company_id: str, year: int, month: int):
+    """Copiar configuração do mês anterior"""
+    try:
+        from dateutil.relativedelta import relativedelta
+        from datetime import date
+        
+        # Calcular mês anterior
+        target_date = date(year, month, 1) - relativedelta(months=1)
+        prev_year = target_date.year
+        prev_month = target_date.month
+        
+        # Buscar perfil do mês anterior
+        previous = await db.markup_profiles.find_one({
+            "company_id": company_id,
+            "year": prev_year,
+            "month": prev_month
+        }, {"_id": 0})
+        
+        if not previous:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Não existe configuração para {prev_month:02d}/{prev_year}"
+            )
+        
+        # Criar cópia para o mês atual
+        data = MarkupProfileCreate(
+            company_id=company_id,
+            year=year,
+            month=month,
+            taxes=MarkupTaxes(**previous.get("taxes", {})),
+            indirects_rate=previous.get("indirects_rate", 0.10),
+            financial_rate=previous.get("financial_rate", 0.02),
+            profit_rate=previous.get("profit_rate", 0.15),
+            notes=f"Copiado de {prev_month:02d}/{prev_year}"
+        )
+        
+        return await create_or_update_markup_profile(data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/markup-profile/current/{company_id}")
+async def get_current_markup(company_id: str):
+    """Buscar markup do mês atual (para usar nos cálculos)"""
+    try:
+        from datetime import date
+        today = date.today()
+        
+        profile = await db.markup_profiles.find_one({
+            "company_id": company_id,
+            "year": today.year,
+            "month": today.month
+        }, {"_id": 0})
+        
+        if not profile:
+            # Retornar valores padrão se não houver configuração
+            return {
+                "has_config": False,
+                "markup_multiplier": 1.0,
+                "bdi_percentage": 0.0,
+                "message": "Nenhuma configuração de markup para o mês atual"
+            }
+        
+        return {
+            "has_config": True,
+            "markup_multiplier": profile.get("markup_multiplier", 1.0),
+            "bdi_percentage": profile.get("bdi_percentage", 0.0),
+            "indirects_rate": profile.get("indirects_rate", 0),
+            "financial_rate": profile.get("financial_rate", 0),
+            "profit_rate": profile.get("profit_rate", 0),
+            "taxes": profile.get("taxes", {})
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/ai-analysis")
 async def ai_analysis(data: dict):
     try:
