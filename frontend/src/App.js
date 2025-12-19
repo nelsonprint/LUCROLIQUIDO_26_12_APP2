@@ -20,6 +20,7 @@ import EditarOrcamento from './pages/EditarOrcamento';
 import Materiais from './pages/Materiais';
 import { Clientes } from './pages/Clientes';
 import ConfiguracaoOrcamento from './pages/ConfiguracaoOrcamento';
+import CatalogoServicos from './pages/CatalogoServicos';
 import Assinatura from './pages/Assinatura';
 import AdminPanel from './pages/AdminPanel';
 
