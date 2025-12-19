@@ -2001,6 +2001,17 @@ const Precificacao = ({ user, onLogout }) => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Custos Internos */}
+      <CustosInternosModal
+        open={showCustosInternosModal}
+        onClose={() => setShowCustosInternosModal(false)}
+        companyId={company?.id}
+        markupMultiplier={currentMarkup}
+        initialHiddenCosts={custosInternos.hiddenCosts}
+        initialWorkUseMaterials={custosInternos.workUseMaterials}
+        onCostChange={(data) => setCustosInternos(data)}
+      />
     </div>
   );
 };
