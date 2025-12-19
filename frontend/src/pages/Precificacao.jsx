@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Calculator, DollarSign, TrendingUp, Users, Truck, UtensilsCrossed, Wrench, AlertTriangle, FileText, Clock, Plus, UserPlus } from 'lucide-react';
+import { Calculator, DollarSign, TrendingUp, Users, Truck, UtensilsCrossed, Wrench, AlertTriangle, FileText, Clock, Plus, UserPlus, Settings2 } from 'lucide-react';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import OrcamentoMateriais from '@/components/OrcamentoMateriais';
+import CustosInternosModal from '@/components/CustosInternosModal';
 
 const Precificacao = ({ user, onLogout }) => {
   const [tipoPrecificacao, setTipoPrecificacao] = useState('servico');
