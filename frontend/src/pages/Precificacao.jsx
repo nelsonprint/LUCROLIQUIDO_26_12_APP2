@@ -26,6 +26,31 @@ const Precificacao = ({ user, onLogout }) => {
 
   const company = JSON.parse(localStorage.getItem('company') || '{}');
 
+  // Estados para Custos Internos
+  const [showCustosInternosModal, setShowCustosInternosModal] = useState(false);
+  const [custosInternos, setCustosInternos] = useState({
+    hiddenCosts: [],
+    workUseMaterials: [],
+    totals: { totalCost: 0, totalPrice: 0 }
+  });
+  const [currentMarkup, setCurrentMarkup] = useState(1.0);
+
+  // Buscar markup atual da empresa
+  useEffect(() => {
+    const fetchCurrentMarkup = async () => {
+      if (!company?.id) return;
+      try {
+        const response = await axiosInstance.get(`/markup-profile/current/${company.id}`);
+        if (response.data.has_config) {
+          setCurrentMarkup(response.data.markup_multiplier);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar markup:', error);
+      }
+    };
+    fetchCurrentMarkup();
+  }, [company?.id]);
+
   // Estados para Clientes
   const [clientes, setClientes] = useState([]);
   const [clienteSelecionado, setClienteSelecionado] = useState('');
