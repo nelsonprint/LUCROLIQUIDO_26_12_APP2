@@ -1647,6 +1647,35 @@ const Precificacao = ({ user, onLogout }) => {
             </div>
 
             {/* Condições Comerciais */}
+            {/* Composição do Preço (Custos Internos) */}
+            <div className="p-4 bg-gradient-to-r from-orange-900/20 to-red-900/20 rounded-lg border border-orange-500/30">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-semibold text-orange-400 flex items-center gap-2">
+                    <Settings2 size={20} />
+                    Composição do Preço
+                  </h3>
+                  <p className="text-sm text-gray-400">Adicione custos indiretos e EPI/consumo interno</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  {custosInternos.totals.totalPrice > 0 && (
+                    <div className="text-right">
+                      <p className="text-xs text-gray-400">Custos Internos</p>
+                      <p className="text-lg font-bold text-green-400">+ R$ {custosInternos.totals.totalPrice.toFixed(2)}</p>
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={() => setShowCustosInternosModal(true)}
+                    variant="outline"
+                    className="border-orange-500 text-orange-400 hover:bg-orange-500/20"
+                  >
+                    {custosInternos.totals.totalPrice > 0 ? 'Editar Custos' : 'Adicionar Custos'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-4">
               <h3 className="text-lg font-semibold border-b border-zinc-700 pb-2">Condições Comerciais</h3>
               
