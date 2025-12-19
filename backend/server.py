@@ -2895,6 +2895,246 @@ async def get_current_markup(company_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ========== ROTAS: CATÁLOGO DE SERVIÇOS (SERVICE TEMPLATES) ==========
+
+# Enum de modalidades de cobrança
+BILLING_MODELS = [
+    "AREA_M2", "LINEAR_M", "POINT", "UNIT", "VOLUME_M3", "WEIGHT_KG",
+    "HOUR", "DAY", "VISIT", "MONTHLY", "MILESTONE", "GLOBAL",
+    "UNIT_COMPOSITION", "COST_PLUS", "PERFORMANCE"
+]
+
+BILLING_MODEL_LABELS = {
+    "AREA_M2": {"label": "Por Área (m²)", "unit": "m²", "fields": ["area"]},
+    "LINEAR_M": {"label": "Por Metro Linear", "unit": "m", "fields": ["length"]},
+    "POINT": {"label": "Por Ponto", "unit": "ponto", "fields": ["points"]},
+    "UNIT": {"label": "Por Unidade", "unit": "un", "fields": ["quantity"]},
+    "VOLUME_M3": {"label": "Por Volume (m³)", "unit": "m³", "fields": ["volume"]},
+    "WEIGHT_KG": {"label": "Por Peso (kg)", "unit": "kg", "fields": ["weight"]},
+    "HOUR": {"label": "Por Hora", "unit": "hora", "fields": ["hours"]},
+    "DAY": {"label": "Por Diária", "unit": "dia", "fields": ["days"]},
+    "VISIT": {"label": "Por Visita", "unit": "visita", "fields": ["visits"]},
+    "MONTHLY": {"label": "Mensal", "unit": "mês", "fields": ["months"]},
+    "MILESTONE": {"label": "Por Etapa", "unit": "etapa", "fields": ["milestones"]},
+    "GLOBAL": {"label": "Valor Global", "unit": "global", "fields": []},
+    "UNIT_COMPOSITION": {"label": "Composição Unitária", "unit": "comp", "fields": ["quantity"]},
+    "COST_PLUS": {"label": "Custo + Margem", "unit": "custo", "fields": ["cost"]},
+    "PERFORMANCE": {"label": "Por Performance", "unit": "perf", "fields": ["target", "achieved"]}
+}
+
+@api_router.get("/billing-models")
+async def get_billing_models():
+    """Retorna lista de modalidades de cobrança disponíveis"""
+    return {
+        "models": BILLING_MODELS,
+        "details": BILLING_MODEL_LABELS
+    }
+
+@api_router.get("/service-templates/{company_id}")
+async def get_service_templates(company_id: str, active_only: bool = True):
+    """Listar templates de serviço de uma empresa"""
+    try:
+        query = {"company_id": company_id}
+        if active_only:
+            query["active"] = True
+        
+        templates = await db.service_templates.find(query, {"_id": 0}).to_list(500)
+        return templates
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/service-template/{template_id}")
+async def get_service_template(template_id: str):
+    """Buscar template específico"""
+    try:
+        template = await db.service_templates.find_one({"id": template_id}, {"_id": 0})
+        if not template:
+            raise HTTPException(status_code=404, detail="Template não encontrado")
+        return template
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/service-templates")
+async def create_service_template(data: ServiceTemplateCreate):
+    """Criar novo template de serviço"""
+    try:
+        # Validar billing_model
+        if data.billing_model not in BILLING_MODELS:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Modalidade inválida. Use: {', '.join(BILLING_MODELS)}"
+            )
+        
+        # Se measurement_schema não foi fornecido, usar padrão da modalidade
+        measurement_schema = data.measurement_schema
+        if not measurement_schema:
+            measurement_schema = BILLING_MODEL_LABELS.get(data.billing_model, {}).get("fields", [])
+        
+        template = ServiceTemplate(
+            company_id=data.company_id,
+            name=data.name,
+            category=data.category,
+            billing_model=data.billing_model,
+            unit_label=data.unit_label or BILLING_MODEL_LABELS.get(data.billing_model, {}).get("unit", "un"),
+            default_unit_price=data.default_unit_price,
+            measurement_schema=measurement_schema,
+            multipliers=data.multipliers,
+            materials_included=data.materials_included,
+            material_margin_pct=data.material_margin_pct,
+            scope_checklist=data.scope_checklist,
+            active=data.active
+        )
+        
+        doc = template.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        doc['updated_at'] = doc['updated_at'].isoformat()
+        
+        await db.service_templates.insert_one(doc)
+        
+        return {"message": "Template criado com sucesso!", "id": template.id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/service-template/{template_id}")
+async def update_service_template(template_id: str, data: dict):
+    """Atualizar template de serviço"""
+    try:
+        existing = await db.service_templates.find_one({"id": template_id})
+        if not existing:
+            raise HTTPException(status_code=404, detail="Template não encontrado")
+        
+        # Validar billing_model se fornecido
+        if "billing_model" in data and data["billing_model"] not in BILLING_MODELS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Modalidade inválida. Use: {', '.join(BILLING_MODELS)}"
+            )
+        
+        data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        await db.service_templates.update_one(
+            {"id": template_id},
+            {"$set": data}
+        )
+        
+        return {"message": "Template atualizado com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/service-template/{template_id}")
+async def delete_service_template(template_id: str):
+    """Desativar template (soft delete)"""
+    try:
+        result = await db.service_templates.update_one(
+            {"id": template_id},
+            {"$set": {"active": False, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Template não encontrado")
+        
+        return {"message": "Template desativado com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ========== ROTAS: CATÁLOGO DE MATERIAIS INTERNOS (EPI/CONSUMO) ==========
+
+@api_router.get("/internal-materials/{company_id}")
+async def get_internal_materials(company_id: str, search: Optional[str] = None, category: Optional[str] = None):
+    """Listar materiais internos (EPI/consumo) de uma empresa"""
+    try:
+        query = {"company_id": company_id, "active": True}
+        
+        if search:
+            query["name"] = {"$regex": search, "$options": "i"}
+        
+        if category:
+            query["category"] = category
+        
+        materials = await db.internal_materials.find(query, {"_id": 0}).to_list(500)
+        return materials
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/internal-materials")
+async def create_internal_material(data: InternalMaterialCreate):
+    """Criar novo material interno"""
+    try:
+        # Validar categoria
+        valid_categories = ["EPI", "CONSUMIVEL", "OUTROS"]
+        if data.category not in valid_categories:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Categoria inválida. Use: {', '.join(valid_categories)}"
+            )
+        
+        material = InternalMaterial(
+            company_id=data.company_id,
+            name=data.name,
+            category=data.category,
+            unit=data.unit,
+            default_cost=data.default_cost
+        )
+        
+        doc = material.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        doc['updated_at'] = doc['updated_at'].isoformat()
+        
+        await db.internal_materials.insert_one(doc)
+        
+        return {"message": "Material criado com sucesso!", "id": material.id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/internal-material/{material_id}")
+async def update_internal_material(material_id: str, data: dict):
+    """Atualizar material interno"""
+    try:
+        existing = await db.internal_materials.find_one({"id": material_id})
+        if not existing:
+            raise HTTPException(status_code=404, detail="Material não encontrado")
+        
+        data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        await db.internal_materials.update_one(
+            {"id": material_id},
+            {"$set": data}
+        )
+        
+        return {"message": "Material atualizado com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/internal-material/{material_id}")
+async def delete_internal_material(material_id: str):
+    """Desativar material interno (soft delete)"""
+    try:
+        result = await db.internal_materials.update_one(
+            {"id": material_id},
+            {"$set": {"active": False, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Material não encontrado")
+        
+        return {"message": "Material desativado com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/ai-analysis")
 async def ai_analysis(data: dict):
     try:
