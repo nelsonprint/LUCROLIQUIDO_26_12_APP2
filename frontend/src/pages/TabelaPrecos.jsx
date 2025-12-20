@@ -261,12 +261,12 @@ const TabelaPrecos = ({ user, onLogout }) => {
                 </div>
 
                 {/* Categoria */}
-                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <Select value={filterCategory || "all-categories"} onValueChange={(v) => setFilterCategory(v === "all-categories" ? "" : v)}>
                   <SelectTrigger className="bg-zinc-800 border-zinc-700">
                     <SelectValue placeholder="Categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas</SelectItem>
+                    <SelectItem value="all-categories">Todas</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
@@ -274,12 +274,12 @@ const TabelaPrecos = ({ user, onLogout }) => {
                 </Select>
 
                 {/* Unidade */}
-                <Select value={filterUnit} onValueChange={setFilterUnit}>
+                <Select value={filterUnit || "all-units"} onValueChange={(v) => setFilterUnit(v === "all-units" ? "" : v)}>
                   <SelectTrigger className="bg-zinc-800 border-zinc-700">
                     <SelectValue placeholder="Unidade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas</SelectItem>
+                    <SelectItem value="all-units">Todas</SelectItem>
                     {UNITS.map((u) => (
                       <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
                     ))}
