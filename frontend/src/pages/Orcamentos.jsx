@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
-import { FileText, Download, MessageCircle, Eye, Edit, Trash2, Plus } from 'lucide-react';
+import { FileText, Download, MessageCircle, Eye, Edit, Trash2, Plus, Calculator, ChevronDown, Grid3X3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Orcamentos = ({ user, onLogout }) => {
