@@ -80,7 +80,7 @@ const OrcamentoItemsGrid = ({
   // Adicionar nova linha
   const addItem = () => {
     const newItem = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${Math.random().toString(36).substr(2, 9)}`,
       item_number: localItems.length + 1,
       service_price_id: null,
       description: '',
