@@ -21,6 +21,7 @@ import Materiais from './pages/Materiais';
 import { Clientes } from './pages/Clientes';
 import ConfiguracaoOrcamento from './pages/ConfiguracaoOrcamento';
 import CatalogoServicos from './pages/CatalogoServicos';
+import TabelaPrecos from './pages/TabelaPrecos';
 import Assinatura from './pages/Assinatura';
 import AdminPanel from './pages/AdminPanel';
 
