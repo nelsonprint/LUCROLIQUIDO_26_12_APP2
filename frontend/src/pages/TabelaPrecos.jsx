@@ -229,7 +229,7 @@ const TabelaPrecos = ({ user, onLogout }) => {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Tabela de Preços</h1>
+              <h1 className="text-3xl font-bold">Serviços</h1>
               <p className="text-zinc-400 mt-1">
                 Cadastre serviços com preço base (PU1) para usar nos orçamentos
               </p>
