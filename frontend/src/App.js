@@ -185,6 +185,16 @@ function App() {
           }
         />
         <Route
+          path="/orcamentos/novo"
+          element={
+            user ? (
+              <NovoOrcamentoGrid user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
           path="/materiais"
           element={
             user ? (
