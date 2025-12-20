@@ -281,13 +281,17 @@ class ServicePriceTableTester:
             self.log("❌ No service ID available for update test", "ERROR")
             return False
         
+        # Use timestamp to ensure unique description
+        import time
+        timestamp = int(time.time())
+        
         update_data = {
             "company_id": self.company_id,
-            "code": "ELE-001-UPD",
-            "description": "INSTALAÇÃO DE TOMADA ATUALIZADA",
-            "category": "Elétrica",
-            "unit": "PONTO",
-            "pu1_base_price": 50.00
+            "code": f"UPD-{timestamp}",
+            "description": f"SERVIÇO ATUALIZADO {timestamp}",
+            "category": "Teste",
+            "unit": "UN",
+            "pu1_base_price": 150.00
         }
         
         try:
@@ -300,8 +304,8 @@ class ServicePriceTableTester:
                 verify_response = self.session.get(f"{API_BASE}/service-price/{self.created_service_id}")
                 if verify_response.status_code == 200:
                     updated_item = verify_response.json()
-                    if (updated_item.get('description') == "INSTALAÇÃO DE TOMADA ATUALIZADA" and 
-                        updated_item.get('pu1_base_price') == 50.00):
+                    if (updated_item.get('description') == f"SERVIÇO ATUALIZADO {timestamp}" and 
+                        updated_item.get('pu1_base_price') == 150.00):
                         self.log("✅ Update verification successful!")
                         return True
                     else:
