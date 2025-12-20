@@ -138,13 +138,37 @@ const Orcamentos = ({ user, onLogout }) => {
               <h1 className="text-3xl font-bold">Orçamentos</h1>
               <p className="text-zinc-400 mt-1">Gerencie seus orçamentos e propostas</p>
             </div>
-            <Button
-              onClick={() => navigate('/precificacao')}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Orçamento
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Novo Orçamento
+                  <ChevronDown className="w-4 h-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+                <DropdownMenuItem 
+                  onClick={() => navigate('/orcamentos/novo')}
+                  className="cursor-pointer hover:bg-zinc-800"
+                >
+                  <Grid3X3 className="w-4 h-4 mr-2 text-purple-400" />
+                  <div>
+                    <p className="font-medium">Com Grid de Itens</p>
+                    <p className="text-xs text-zinc-400">Tabela de preços + PU1/PU2</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => navigate('/precificacao')}
+                  className="cursor-pointer hover:bg-zinc-800"
+                >
+                  <Calculator className="w-4 h-4 mr-2 text-blue-400" />
+                  <div>
+                    <p className="font-medium">Precificação Clássica</p>
+                    <p className="text-xs text-zinc-400">Por m², hora ou valor fechado</p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Filtros */}
