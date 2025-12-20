@@ -13,10 +13,24 @@ Testing:
 
 ## Test Results Summary
 
-### ✅ NOVA FUNCIONALIDADE - TABELA DE PREÇOS (PU1) - WORKING
-**Status:** Backend API fully functional
+### 🔄 NOVA FUNCIONALIDADE - TABELA DE PREÇOS (PU1) - PARTIALLY WORKING
+**Status:** Frontend partially functional, critical data loading issues
 **Test Date:** December 20, 2024
 **Tested by:** Testing Agent
+
+#### Frontend Test Results:
+✅ **WORKING FEATURES:**
+1. Page navigation to /tabela-precos - Working
+2. "Novo Serviço" modal functionality - Working
+3. Modal form fields (code, description, price) - Working
+4. Modal cancel functionality - Working
+5. Page layout and UI components - Working
+
+❌ **CRITICAL ISSUES FOUND:**
+1. **Data Loading Failure**: Table shows "Carregando..." but services never load
+2. **Service List Empty**: No services displayed despite backend having 11+ services
+3. **Search Filter Not Working**: Cannot test due to data loading issue
+4. **Edit Modal Not Functional**: Edit buttons not working properly
 
 #### Backend API Tests Completed:
 1. ✅ GET /api/service-price-table/{company_id} - List services with filters - WORKING
@@ -38,10 +52,37 @@ Testing:
 #### Minor Issues Found:
 - ⚠️ POST /api/service-price-table occasionally returns 500 error due to ObjectId serialization issue (non-critical)
 
-### 🔄 NOVA FUNCIONALIDADE - GRID DE ITENS NO ORÇAMENTO - BACKEND READY
-**Status:** Backend APIs ready, Frontend testing needed
+### 🔄 NOVA FUNCIONALIDADE - GRID DE ITENS NO ORÇAMENTO - PARTIALLY WORKING
+**Status:** Frontend partially functional, critical items grid issues
 **Test Date:** December 20, 2024
 **Tested by:** Testing Agent
+
+#### Frontend Test Results:
+✅ **WORKING FEATURES:**
+1. Navigation to /orcamentos/novo - Working
+2. **Client Tab Fully Functional:**
+   - Client selection dropdown - Working
+   - Nome do Cliente input - Working
+   - CPF/CNPJ input - Working
+   - Email input - Working
+   - WhatsApp input - Working
+   - Endereço input - Working
+3. **Condições Tab Fully Functional:**
+   - Validade da Proposta - Working
+   - Condições de Pagamento - Working
+   - Prazo de Execução - Working
+   - Observações - Working
+   - Summary display (total, items, markup) - Working
+   - "Salvar Orçamento" button - Working
+4. Tab navigation (Cliente → Itens → Condições) - Working
+
+❌ **CRITICAL ISSUES FOUND:**
+1. **Items Grid Not Loading**: "Itens do Orçamento" content not displaying in Items tab
+2. **OrcamentoItemsGrid Component Issue**: Core grid functionality not rendering
+3. **Autocomplete Not Working**: Cannot test service search functionality
+4. **Add Item Button Missing**: Core item addition functionality not accessible
+5. **Markup Display Missing**: Pricing calculations not visible
+6. **Service Selection Broken**: Cannot select services from price table
 
 #### Backend Support Verified:
 - ✅ Service Price Table autocomplete API working for item selection
@@ -50,29 +91,12 @@ Testing:
 - ✅ All required data fields available: id, description, unit, pu1_base_price
 - ✅ Markup calculation support available (current: 1.0000x)
 
-#### Frontend Features Still Need Testing:
-1. Navigate to /orcamentos/novo
-2. Fill client data (Tab Cliente)
-3. Switch to Tab Itens
-4. Add item using "Adicionar Item" button
-5. Test autocomplete search (type "tom" should show "INSTALAÇÃO DE TOMADA")
-6. Select service from autocomplete
-7. Verify unit fills automatically (should be "ponto")
-8. Verify PU2 = PU1 * markup (45 * 1.0 = 45)
-9. Change quantity (e.g., to 5)
-10. Verify line total updates (5 * 45 = 225)
-11. Verify total at footer updates
-12. Add multiple items
-13. Test item removal
-14. Navigate through tabs (Cliente → Itens → Condições)
-15. Fill conditions and save budget
-
 #### Expected Calculations (Backend Verified):
 - PU1 (base price from catalog): R$ 45,00 ✅
 - Markup: 1.0000x ✅
-- PU2 (sale price): R$ 45,00 (PU1 × Markup) - Frontend calculation needed
-- Quantity: 5 - Frontend input needed
-- Line Total: R$ 225,00 (Quantity × PU2) - Frontend calculation needed
+- PU2 (sale price): R$ 45,00 (PU1 × Markup) - **Frontend calculation broken**
+- Quantity: 5 - **Frontend input not accessible**
+- Line Total: R$ 225,00 (Quantity × PU2) - **Frontend calculation broken**
 
 ### ✅ FASE B - CATÁLOGO DE SERVIÇOS - WORKING
 **Status:** All core functionality working correctly
