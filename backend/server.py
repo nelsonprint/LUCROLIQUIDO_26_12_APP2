@@ -540,6 +540,72 @@ class InternalMaterial(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# ========== MODELS: TABELA DE PREÇOS (PU1) ==========
+
+# Unidades disponíveis para a tabela de preços
+PRICE_TABLE_UNITS = ["M2", "M", "UN", "PONTO", "HORA", "DIA", "VISITA", "MES", "ETAPA", "GLOBAL", "KG", "M3"]
+
+class ServicePriceCreate(BaseModel):
+    """Criar item na tabela de preços"""
+    company_id: str
+    code: Optional[str] = None  # Código opcional (ex: ELE-001)
+    description: str  # Descrição do serviço (será normalizada em uppercase)
+    category: Optional[str] = None  # Categoria (ex: Elétrica, Hidráulica)
+    unit: str  # Unidade de medida (M2, M, UN, PONTO, etc.)
+    pu1_base_price: float  # Preço base interno (PU1)
+
+class ServicePrice(BaseModel):
+    """Item da tabela de preços completo"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    code: Optional[str] = None
+    description: str
+    category: Optional[str] = None
+    unit: str
+    pu1_base_price: float
+    active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ServicePriceImportItem(BaseModel):
+    """Item para importação em lote"""
+    code: Optional[str] = None
+    description: str
+    category: Optional[str] = None
+    unit: str
+    pu1_base_price: float
+    active: bool = True
+
+# ========== MODELS: ORÇAMENTO COM ITENS (GRID) ==========
+
+class OrcamentoItemCreate(BaseModel):
+    """Item do orçamento com snapshot de preços"""
+    service_price_id: Optional[str] = None  # ID do serviço na tabela de preços (opcional)
+    description: str
+    unit: str
+    quantity: float
+    pu1_used: float  # Preço base usado (snapshot)
+    markup_used: float  # Markup usado (snapshot)
+    pu2_used: float  # Preço de venda calculado (snapshot)
+    line_total: float  # quantity * pu2_used
+    pricing_ref: Optional[str] = None  # Referência do markup (ex: "2024-12")
+
+class OrcamentoItem(BaseModel):
+    """Item do orçamento completo"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    item_number: int  # Número sequencial (001, 002, etc.)
+    service_price_id: Optional[str] = None
+    description: str
+    unit: str
+    quantity: float
+    pu1_used: float
+    markup_used: float
+    pu2_used: float
+    line_total: float
+    pricing_ref: Optional[str] = None
+
 # ========== STARTUP: CRIAR PRIMEIRO ADMIN ==========
 
 @app.on_event("startup")
