@@ -26,8 +26,7 @@ export const Sidebar = ({ user, onLogout }) => {
     { path: '/precificacao', icon: Calculator, label: 'Precificação' },
     { path: '/orcamentos', icon: FileText, label: 'Orçamentos' },
     { path: '/config-orcamento', icon: Settings, label: 'Config. Orç.' },
-    { path: '/catalogo-servicos', icon: Layers, label: 'Catálogo Serv.' },
-    { path: '/tabela-precos', icon: Table2, label: 'Tabela Preços' },
+    { path: '/tabela-precos', icon: Layers, label: 'Serviços' },
     { path: '/materiais', icon: Package, label: 'Materiais' },
     { path: '/assinatura', icon: CreditCard, label: 'Assinatura' },
   ];
