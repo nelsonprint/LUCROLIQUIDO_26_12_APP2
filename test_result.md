@@ -38,11 +38,19 @@ Testing:
 #### Minor Issues Found:
 - ⚠️ POST /api/service-price-table occasionally returns 500 error due to ObjectId serialization issue (non-critical)
 
-### 🔄 NOVA FUNCIONALIDADE - GRID DE ITENS NO ORÇAMENTO
-**Status:** Implemented - Needs testing
+### 🔄 NOVA FUNCIONALIDADE - GRID DE ITENS NO ORÇAMENTO - BACKEND READY
+**Status:** Backend APIs ready, Frontend testing needed
 **Test Date:** December 20, 2024
+**Tested by:** Testing Agent
 
-#### Features to Test:
+#### Backend Support Verified:
+- ✅ Service Price Table autocomplete API working for item selection
+- ✅ "INSTALAÇÃO DE TOMADA" available with correct price (R$ 45,00) and unit (PONTO)
+- ✅ "PINTURA DE PAREDE" available for additional item testing
+- ✅ All required data fields available: id, description, unit, pu1_base_price
+- ✅ Markup calculation support available (current: 1.0000x)
+
+#### Frontend Features Still Need Testing:
 1. Navigate to /orcamentos/novo
 2. Fill client data (Tab Cliente)
 3. Switch to Tab Itens
@@ -59,12 +67,12 @@ Testing:
 14. Navigate through tabs (Cliente → Itens → Condições)
 15. Fill conditions and save budget
 
-#### Expected Calculations:
-- PU1 (base price from catalog): R$ 45,00
-- Markup: 1.0000x
-- PU2 (sale price): R$ 45,00 (PU1 × Markup)
-- Quantity: 5
-- Line Total: R$ 225,00 (Quantity × PU2)
+#### Expected Calculations (Backend Verified):
+- PU1 (base price from catalog): R$ 45,00 ✅
+- Markup: 1.0000x ✅
+- PU2 (sale price): R$ 45,00 (PU1 × Markup) - Frontend calculation needed
+- Quantity: 5 - Frontend input needed
+- Line Total: R$ 225,00 (Quantity × PU2) - Frontend calculation needed
 
 ### ✅ FASE B - CATÁLOGO DE SERVIÇOS - WORKING
 **Status:** All core functionality working correctly
