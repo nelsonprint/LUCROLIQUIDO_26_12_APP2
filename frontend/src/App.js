@@ -213,6 +213,16 @@ function App() {
             )
           }
         />
+        <Route
+          path="/tabela-precos"
+          element={
+            user ? (
+              <TabelaPrecos user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
 
         <Route
           path="/config-orcamento"
