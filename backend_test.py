@@ -394,7 +394,7 @@ class ServicePriceTableTester:
 
 def main():
     """Main function"""
-    tester = MarkupBDITester()
+    tester = ServicePriceTableTester()
     success = tester.run_all_tests()
     
     # Exit code
