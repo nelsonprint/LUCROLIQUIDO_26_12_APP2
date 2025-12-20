@@ -25,6 +25,7 @@ const Orcamentos = ({ user, onLogout }) => {
 
   useEffect(() => {
     fetchOrcamentos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterStatus]);
 
   const fetchOrcamentos = async () => {
