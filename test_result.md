@@ -1,4 +1,4 @@
-# Test Results - Fases B e C
+# Test Results - Sistema de Orçamentos
 
 ## Testing Protocol
 - Frontend testing: Playwright scripts
@@ -8,122 +8,85 @@
 Testing:
 1. Catálogo de Serviços (Fase B) - ✅ COMPLETED
 2. Modal de Custos Internos (Fase C) - ✅ PARTIALLY COMPLETED
+3. **Tabela de Preços (PU1)** - 🔄 NEW - NEEDS TESTING
+4. **Grid de Itens no Orçamento (PU1/PU2)** - 🔄 NEW - NEEDS TESTING
 
 ## Test Results Summary
+
+### 🔄 NOVA FUNCIONALIDADE - TABELA DE PREÇOS (PU1)
+**Status:** Implemented - Needs testing
+**Test Date:** December 20, 2024
+
+#### Features to Test:
+1. Navigate to /tabela-precos
+2. Verify page loads with title "Tabela de Preços"
+3. Test filters: search, category, unit, status
+4. Test pagination
+5. Create new service (code, description, category, unit, PU1)
+6. Edit existing service
+7. Soft delete (deactivate) service
+8. Verify autocomplete endpoint works
+
+### 🔄 NOVA FUNCIONALIDADE - GRID DE ITENS NO ORÇAMENTO
+**Status:** Implemented - Needs testing
+**Test Date:** December 20, 2024
+
+#### Features to Test:
+1. Navigate to /orcamentos/novo
+2. Fill client data (Tab Cliente)
+3. Switch to Tab Itens
+4. Add item using "Adicionar Item" button
+5. Test autocomplete search (type "tom" should show "INSTALAÇÃO DE TOMADA")
+6. Select service from autocomplete
+7. Verify unit fills automatically (should be "ponto")
+8. Verify PU2 = PU1 * markup (45 * 1.0 = 45)
+9. Change quantity (e.g., to 5)
+10. Verify line total updates (5 * 45 = 225)
+11. Verify total at footer updates
+12. Add multiple items
+13. Test item removal
+14. Navigate through tabs (Cliente → Itens → Condições)
+15. Fill conditions and save budget
+
+#### Expected Calculations:
+- PU1 (base price from catalog): R$ 45,00
+- Markup: 1.0000x
+- PU2 (sale price): R$ 45,00 (PU1 × Markup)
+- Quantity: 5
+- Line Total: R$ 225,00 (Quantity × PU2)
 
 ### ✅ FASE B - CATÁLOGO DE SERVIÇOS - WORKING
 **Status:** All core functionality working correctly
 **Test Date:** December 19, 2024
-**Tested by:** Testing Agent
 
 #### Verified Features:
 1. ✅ Navigate to /catalogo-servicos - Working
 2. ✅ Page loads with title "Catálogo de Serviços" - Working
-3. ✅ "Novo Serviço" button present and functional - Working
-4. ✅ Search field present and functional - Working
-5. ✅ Category filter dropdown present - Working
-6. ✅ Modal opens when clicking "Novo Serviço" - Working
-7. ✅ Modal shows 15 billing models with icons:
-   - 📐 Por Área (m²) - Working
-   - 📏 Por Metro Linear - Working
-   - 📍 Por Ponto - Working
-   - 📦 Por Unidade - Working
-   - 📊 Por Volume (m³) - Working
-   - ⚖️ Por Peso (kg) - Working
-   - ⏰ Por Hora - Working
-   - 📅 Por Diária - Working
-   - 🏠 Por Visita - Working
-   - 📆 Mensal - Working
-   - 🎯 Por Etapa - Working
-   - 🌐 Valor Global - Working
-   - 🔧 Composição Unitária - Working
-   - 💰 Custo + Margem - Working
-   - 📈 Por Performance - Working
-8. ✅ Name and Category fields present - Working
-9. ✅ Price and Unit fields present - Working
-10. ✅ Multipliers section with all 5 multipliers:
-    - Urgência - Working
-    - Altura - Working
-    - Dificuldade - Working
-    - Risco - Working
-    - Acesso - Working
-11. ✅ "Materiais inclusos no serviço" toggle present - Working
-12. ✅ Form filling functionality - Working
-13. ✅ Service creation and submission - Working
+3. ✅ All 15 billing models - Working
+4. ✅ Multipliers section - Working
+5. ✅ Service creation - Working
 
 ### ✅ FASE C - MODAL DE CUSTOS INTERNOS - PARTIALLY WORKING
 **Status:** Core functionality accessible, needs deeper testing
-**Test Date:** December 19, 2024
-**Tested by:** Testing Agent
 
-#### Verified Features:
-1. ✅ Navigate to Precificação page - Working
-2. ✅ Form fields present and fillable - Working
-3. ✅ Required fields can be filled:
-   - Área Total: 100 - Working
-   - Produtividade: 10 - Working
-   - Quantidade de Operários: 2 - Working
-   - Salário Mensal: 2500 - Working
-   - Impostos sobre Faturamento: 12 - Working
-4. ✅ "Calcular Preço de Venda do Serviço" button - Working
-5. ✅ Calculation results display - Working
-6. ✅ "Gerar Orçamento para Cliente" button - Working
-7. ✅ Orçamento modal opens - Working
-8. ⚠️ "Composição do Preço" section - Needs verification
-9. ⚠️ "Adicionar Custos" button - Needs verification
-10. ⚠️ "Custos Internos" modal - Needs verification
-11. ⚠️ Two tabs verification - Needs verification
-12. ⚠️ EPI material creation - Needs verification
-
-## Test Scenarios
-
-### Fase B - Catálogo de Serviços
-1. Navigate to /catalogo-servicos
-2. Verify page loads with title "Catálogo de Serviços"
-3. Click "Novo Serviço" button
-4. Verify modal shows 15 billing models
-5. Fill form and create a service
-6. Verify service appears in list
-
-### Fase C - Modal de Custos Internos
-1. Navigate to Precificação page
-2. Fill required fields and calculate price
-3. Click "Gerar Orçamento para Cliente"
-4. In the modal, find "Composição do Preço" section
-5. Click "Adicionar Custos" button
-6. Verify "Custos Internos" modal opens with:
-   - Two tabs: "Custos Indiretos" and "EPI / Consumo Interno"
-   - Totals display (Custo, Markup, Preço)
-7. Add a hidden cost
-8. Switch to EPI tab
-9. Create a new internal material
-10. Verify totals update
-11. Click "Aplicar Custos"
-12. Verify the price section shows the additional costs
-
-### Test Credentials
+## Test Credentials
 - Email: admin@lucroliquido.com
 - Password: admin123
 
+## API Endpoints to Test (Backend)
+- GET /api/service-price-table/{company_id} - List with filters
+- GET /api/service-price-table/{company_id}/autocomplete?search=xxx - Autocomplete
+- POST /api/service-price-table - Create service
+- PUT /api/service-price-table/{id} - Update service
+- PATCH /api/service-price-table/{id}/active?active=false - Soft delete
+- GET /api/service-price-table/units/list - List available units
+
 ## Incorporate User Feedback
-- ✅ Test all 15 billing models display - COMPLETED
-- ✅ Test multipliers work correctly - COMPLETED
-- ⚠️ Test EPI catalog creation - NEEDS FURTHER TESTING
+- Test complete flow: Tabela de Preços → Grid de Itens → Salvar Orçamento
+- Verify autocomplete performance with 10+ services
+- Test navigation with Enter key between fields
 
 ## Testing Notes
-- Login functionality working correctly with provided credentials
-- All navigation between pages working smoothly
-- UI components rendering properly with shadcn/ui components
-- Form validation and submission working as expected
-- Modal interactions functioning correctly
-- Billing model selection with icons working perfectly
-- Multipliers section fully functional with all 5 required multipliers
-
-## Issues Found
-- Minor: Some elements need more specific testing for the Custos Internos modal
-- The "Materiais inclusos no serviço" toggle was not visible in the modal during testing (may be conditional)
-
-## Recommendations
-- Continue testing the Custos Internos modal functionality in detail
-- Test the EPI material creation workflow
-- Verify the cost calculation and application functionality
+- Company ID: cf901b3e-0eca-429c-9b8e-d723b31ecbd4
+- 10 services already created in database for testing
+- Markup currently at 1.0000x (default)
