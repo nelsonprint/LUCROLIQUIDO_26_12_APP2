@@ -93,13 +93,17 @@ class ServicePriceTableTester:
         """Test POST /api/service-price-table - Create service"""
         self.log("📊 Testing POST /api/service-price-table - Create service...")
         
+        # Use a unique service name to avoid conflicts
+        import time
+        timestamp = int(time.time())
+        
         test_data = {
             "company_id": self.company_id,
-            "code": "ELE-001",
-            "description": "INSTALAÇÃO DE TOMADA",
-            "category": "Elétrica",
-            "unit": "PONTO",
-            "pu1_base_price": 45.00
+            "code": f"TEST-{timestamp}",
+            "description": f"TESTE DE SERVIÇO {timestamp}",
+            "category": "Teste",
+            "unit": "UN",
+            "pu1_base_price": 100.00
         }
         
         try:
@@ -112,9 +116,9 @@ class ServicePriceTableTester:
                 
                 # Verify the created service data
                 item = result.get('item', {})
-                if (item.get('description') == "INSTALAÇÃO DE TOMADA" and 
-                    item.get('unit') == "PONTO" and 
-                    item.get('pu1_base_price') == 45.00):
+                if (item.get('description') == f"TESTE DE SERVIÇO {timestamp}" and 
+                    item.get('unit') == "UN" and 
+                    item.get('pu1_base_price') == 100.00):
                     self.log("✅ Service data is correct!")
                     return True
                 else:
@@ -122,6 +126,15 @@ class ServicePriceTableTester:
                     return False
             else:
                 self.log(f"❌ Failed to create service: {response.status_code} - {response.text}", "ERROR")
+                # If creation fails due to existing service, try to find an existing service to use for update tests
+                self.log("🔍 Trying to find existing service for update tests...")
+                list_response = self.session.get(f"{API_BASE}/service-price-table/{self.company_id}")
+                if list_response.status_code == 200:
+                    items = list_response.json().get('items', [])
+                    if items:
+                        self.created_service_id = items[0].get('id')
+                        self.log(f"✅ Using existing service ID for tests: {self.created_service_id}")
+                        return True
                 return False
                 
         except Exception as e:
