@@ -107,7 +107,6 @@ const TabelaPrecos = ({ user, onLogout }) => {
 
   useEffect(() => {
     fetchCategories();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [company?.id]);
 
   // Reset página ao mudar filtros
