@@ -4564,6 +4564,335 @@ async def admin_toggle_user_status(target_id: str, admin_user_id: str):
     
     return {"message": f"Status alterado para {new_status}", "new_status": new_status}
 
+# ========== ROTAS: TABELA DE PREÇOS (SERVICE_PRICE_TABLE) ==========
+
+@api_router.get("/service-price-table/{company_id}")
+async def get_service_price_table(
+    company_id: str,
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    unit: Optional[str] = None,
+    active: Optional[bool] = None,
+    page: int = 1,
+    limit: int = 50
+):
+    """Listar itens da tabela de preços com filtros e paginação"""
+    try:
+        query = {"company_id": company_id}
+        
+        if search:
+            query["$or"] = [
+                {"description": {"$regex": search, "$options": "i"}},
+                {"code": {"$regex": search, "$options": "i"}}
+            ]
+        
+        if category:
+            query["category"] = category
+        
+        if unit:
+            query["unit"] = unit
+        
+        if active is not None:
+            query["active"] = active
+        
+        # Contar total
+        total = await db.service_price_table.count_documents(query)
+        
+        # Buscar com paginação
+        skip = (page - 1) * limit
+        items = await db.service_price_table.find(
+            query, {"_id": 0}
+        ).sort([("description", 1)]).skip(skip).limit(limit).to_list(limit)
+        
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "pages": (total + limit - 1) // limit
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/service-price-table/{company_id}/categories")
+async def get_service_price_categories(company_id: str):
+    """Listar categorias únicas da tabela de preços"""
+    try:
+        categories = await db.service_price_table.distinct("category", {"company_id": company_id})
+        return {"categories": [c for c in categories if c]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/service-price-table/{company_id}/autocomplete")
+async def autocomplete_service_price(
+    company_id: str,
+    search: str = "",
+    category: Optional[str] = None,
+    limit: int = 20
+):
+    """Autocomplete otimizado para busca no orçamento"""
+    try:
+        query = {"company_id": company_id, "active": True}
+        
+        if search:
+            query["$or"] = [
+                {"description": {"$regex": search, "$options": "i"}},
+                {"code": {"$regex": search, "$options": "i"}}
+            ]
+        
+        if category:
+            query["category"] = category
+        
+        # Retornar apenas campos necessários
+        items = await db.service_price_table.find(
+            query,
+            {"_id": 0, "id": 1, "code": 1, "description": 1, "category": 1, "unit": 1, "pu1_base_price": 1}
+        ).limit(limit).to_list(limit)
+        
+        return items
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/service-price/{item_id}")
+async def get_service_price_item(item_id: str):
+    """Buscar item específico da tabela de preços"""
+    try:
+        item = await db.service_price_table.find_one({"id": item_id}, {"_id": 0})
+        if not item:
+            raise HTTPException(status_code=404, detail="Item não encontrado")
+        return item
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/service-price-table")
+async def create_service_price(data: ServicePriceCreate):
+    """Criar novo item na tabela de preços"""
+    try:
+        # Validar unidade
+        if data.unit not in PRICE_TABLE_UNITS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unidade inválida. Use: {', '.join(PRICE_TABLE_UNITS)}"
+            )
+        
+        # Validar preço
+        if data.pu1_base_price <= 0:
+            raise HTTPException(status_code=400, detail="Preço base deve ser maior que 0")
+        
+        # Validar descrição
+        description = data.description.strip().upper()
+        if len(description) < 3:
+            raise HTTPException(status_code=400, detail="Descrição deve ter no mínimo 3 caracteres")
+        
+        # Verificar duplicidade (description + unit + category)
+        existing = await db.service_price_table.find_one({
+            "company_id": data.company_id,
+            "description": description,
+            "unit": data.unit,
+            "category": data.category
+        })
+        
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail="Já existe um serviço com essa descrição, unidade e categoria"
+            )
+        
+        # Criar item
+        item = ServicePrice(
+            company_id=data.company_id,
+            code=data.code.strip().upper() if data.code else None,
+            description=description,
+            category=data.category.strip() if data.category else None,
+            unit=data.unit,
+            pu1_base_price=round(data.pu1_base_price, 2)
+        )
+        
+        doc = item.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        doc['updated_at'] = doc['updated_at'].isoformat()
+        
+        await db.service_price_table.insert_one(doc)
+        
+        return {
+            "message": "Item criado com sucesso!",
+            "id": item.id,
+            "item": doc
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/service-price-table/{item_id}")
+async def update_service_price(item_id: str, data: ServicePriceCreate):
+    """Atualizar item da tabela de preços"""
+    try:
+        existing = await db.service_price_table.find_one({"id": item_id})
+        if not existing:
+            raise HTTPException(status_code=404, detail="Item não encontrado")
+        
+        # Validar unidade
+        if data.unit not in PRICE_TABLE_UNITS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unidade inválida. Use: {', '.join(PRICE_TABLE_UNITS)}"
+            )
+        
+        # Validar preço
+        if data.pu1_base_price <= 0:
+            raise HTTPException(status_code=400, detail="Preço base deve ser maior que 0")
+        
+        description = data.description.strip().upper()
+        if len(description) < 3:
+            raise HTTPException(status_code=400, detail="Descrição deve ter no mínimo 3 caracteres")
+        
+        # Verificar duplicidade (exceto o próprio item)
+        duplicate = await db.service_price_table.find_one({
+            "company_id": data.company_id,
+            "description": description,
+            "unit": data.unit,
+            "category": data.category,
+            "id": {"$ne": item_id}
+        })
+        
+        if duplicate:
+            raise HTTPException(
+                status_code=400,
+                detail="Já existe um serviço com essa descrição, unidade e categoria"
+            )
+        
+        update_data = {
+            "code": data.code.strip().upper() if data.code else None,
+            "description": description,
+            "category": data.category.strip() if data.category else None,
+            "unit": data.unit,
+            "pu1_base_price": round(data.pu1_base_price, 2),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.service_price_table.update_one(
+            {"id": item_id},
+            {"$set": update_data}
+        )
+        
+        return {"message": "Item atualizado com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.patch("/service-price-table/{item_id}/active")
+async def toggle_service_price_active(item_id: str, active: bool):
+    """Ativar/Desativar item da tabela de preços (soft delete)"""
+    try:
+        result = await db.service_price_table.update_one(
+            {"id": item_id},
+            {"$set": {
+                "active": active,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Item não encontrado")
+        
+        status = "ativado" if active else "desativado"
+        return {"message": f"Item {status} com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/service-price-table/{item_id}")
+async def delete_service_price(item_id: str):
+    """Deletar item permanentemente (use soft delete preferencialmente)"""
+    try:
+        result = await db.service_price_table.delete_one({"id": item_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Item não encontrado")
+        
+        return {"message": "Item deletado com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/service-price-table/{company_id}/import")
+async def import_service_price_table(company_id: str, items: List[ServicePriceImportItem]):
+    """Importar itens em lote para a tabela de preços"""
+    try:
+        created = 0
+        skipped = 0
+        errors = []
+        
+        for idx, item in enumerate(items):
+            try:
+                # Validar unidade
+                if item.unit not in PRICE_TABLE_UNITS:
+                    errors.append(f"Linha {idx + 1}: Unidade inválida '{item.unit}'")
+                    continue
+                
+                # Validar preço
+                if item.pu1_base_price <= 0:
+                    errors.append(f"Linha {idx + 1}: Preço deve ser maior que 0")
+                    continue
+                
+                description = item.description.strip().upper()
+                if len(description) < 3:
+                    errors.append(f"Linha {idx + 1}: Descrição muito curta")
+                    continue
+                
+                # Verificar duplicidade
+                existing = await db.service_price_table.find_one({
+                    "company_id": company_id,
+                    "description": description,
+                    "unit": item.unit,
+                    "category": item.category
+                })
+                
+                if existing:
+                    skipped += 1
+                    continue
+                
+                # Criar item
+                new_item = ServicePrice(
+                    company_id=company_id,
+                    code=item.code.strip().upper() if item.code else None,
+                    description=description,
+                    category=item.category.strip() if item.category else None,
+                    unit=item.unit,
+                    pu1_base_price=round(item.pu1_base_price, 2),
+                    active=item.active
+                )
+                
+                doc = new_item.model_dump()
+                doc['created_at'] = doc['created_at'].isoformat()
+                doc['updated_at'] = doc['updated_at'].isoformat()
+                
+                await db.service_price_table.insert_one(doc)
+                created += 1
+                
+            except Exception as e:
+                errors.append(f"Linha {idx + 1}: {str(e)}")
+        
+        return {
+            "message": f"Importação concluída: {created} criados, {skipped} ignorados (duplicados)",
+            "created": created,
+            "skipped": skipped,
+            "errors": errors
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/service-price-table/units/list")
+async def get_service_price_units():
+    """Retornar lista de unidades disponíveis"""
+    return {"units": PRICE_TABLE_UNITS}
+
 # ========== EXPORTAÇÃO ==========
 
 @api_router.get("/export/excel/{company_id}")
