@@ -514,14 +514,14 @@ const TabelaPrecos = ({ user, onLogout }) => {
                   ) : (
                     <div className="flex gap-2">
                       <Select
-                        value={formData.category}
-                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                        value={formData.category || "no-category"}
+                        onValueChange={(value) => setFormData({ ...formData, category: value === "no-category" ? "" : value })}
                       >
                         <SelectTrigger className="bg-zinc-800 border-zinc-700 flex-1">
                           <SelectValue placeholder="Selecionar categoria" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sem categoria</SelectItem>
+                          <SelectItem value="no-category">Sem categoria</SelectItem>
                           {categories.map((cat) => (
                             <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                           ))}
