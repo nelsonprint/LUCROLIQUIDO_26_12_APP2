@@ -4716,6 +4716,9 @@ async def create_service_price(data: ServicePriceCreate):
         
         await db.service_price_table.insert_one(doc)
         
+        # Remover _id do MongoDB antes de retornar
+        doc.pop('_id', None)
+        
         return {
             "message": "Item criado com sucesso!",
             "id": item.id,
