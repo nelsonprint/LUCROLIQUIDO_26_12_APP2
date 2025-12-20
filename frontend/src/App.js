@@ -214,16 +214,6 @@ function App() {
           }
         />
         <Route
-          path="/catalogo-servicos"
-          element={
-            user ? (
-              <CatalogoServicos user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
           path="/tabela-precos"
           element={
             user ? (
