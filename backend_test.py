@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-Comprehensive test suite for Markup/BDI API endpoints.
+Comprehensive test suite for Service Price Table (Tabela de Preços) API endpoints.
 
-Tests all the Markup/BDI endpoints:
-1. POST /api/markup-profile - Create markup profile
-2. GET /api/markup-profiles/{company_id} - List all profiles for a company
-3. GET /api/markup-profile/{company_id}/{year}/{month} - Get specific profile
-4. GET /api/markup-profile/series/{company_id}?months=12 - Get series for donut chart
-5. POST /api/markup-profile/copy-previous - Copy previous month config
-6. GET /api/markup-profile/current/{company_id} - Get current month profile
+Tests all the Service Price Table endpoints:
+1. GET /api/service-price-table/{company_id} - List services with filters
+2. GET /api/service-price-table/{company_id}/autocomplete?search=xxx - Autocomplete
+3. POST /api/service-price-table - Create service
+4. PUT /api/service-price-table/{id} - Update service
+5. PATCH /api/service-price-table/{id}/active?active=false - Soft delete
+6. GET /api/service-price-table/units/list - List available units
+7. GET /api/service-price-table/{company_id}/categories - List categories
 """
 
 import requests
