@@ -965,13 +965,49 @@ async def update_company(company_id: str, company_data: CompanyCreate):
 
 @api_router.post("/transactions")
 async def create_transaction(transaction_data: TransactionCreate):
-    transaction = Transaction(**transaction_data.model_dump())
+    """
+    Criar lançamento com denormalização automática da categoria.
+    Busca dados do Plano de Contas e copia para o lançamento.
+    """
+    try:
+        # Buscar categoria no Plano de Contas para denormalizar
+        category = await db.expense_categories.find_one({
+            "id": transaction_data.category_id,
+            "company_id": transaction_data.company_id
+        }, {"_id": 0})
+        
+        if not category:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Categoria {transaction_data.category_id} não encontrada no Plano de Contas"
+            )
+        
+        # Criar transação base
+        transaction_dict = transaction_data.model_dump(exclude_none=True)
+        
+        # Denormalizar dados da categoria
+        transaction_dict.update({
+            "category_name": category.get("name"),
+            "category_group": category.get("group"),
+            "is_indirect_for_markup": category.get("is_indirect_for_markup", False),
+            # Manter category legado para compatibilidade
+            "category": category.get("name")
+        })
+        
+        # Criar objeto Transaction
+        transaction = Transaction(**transaction_dict)
+        
+        doc = transaction.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        await db.transactions.insert_one(doc)
+        
+        return {"message": "Lançamento criado com sucesso!", "transaction_id": transaction.id}
     
-    doc = transaction.model_dump()
-    doc['created_at'] = doc['created_at'].isoformat()
-    await db.transactions.insert_one(doc)
-    
-    return {"message": "Lançamento criado com sucesso!", "transaction_id": transaction.id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao criar lançamento: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/transactions/{company_id}")
 async def get_transactions(company_id: str, month: Optional[str] = None):
