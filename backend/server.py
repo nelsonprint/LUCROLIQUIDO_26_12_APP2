@@ -1025,17 +1025,47 @@ async def get_transactions(company_id: str, month: Optional[str] = None):
 
 @api_router.put("/transactions/{transaction_id}")
 async def update_transaction(transaction_id: str, transaction_data: TransactionCreate):
-    update_doc = transaction_data.model_dump()
+    """
+    Atualizar lançamento com denormalização automática da categoria.
+    """
+    try:
+        # Buscar categoria no Plano de Contas para denormalizar
+        category = await db.expense_categories.find_one({
+            "id": transaction_data.category_id,
+            "company_id": transaction_data.company_id
+        }, {"_id": 0})
+        
+        if not category:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Categoria {transaction_data.category_id} não encontrada no Plano de Contas"
+            )
+        
+        update_doc = transaction_data.model_dump(exclude_none=True)
+        
+        # Denormalizar dados da categoria
+        update_doc.update({
+            "category_name": category.get("name"),
+            "category_group": category.get("group"),
+            "is_indirect_for_markup": category.get("is_indirect_for_markup", False),
+            "category": category.get("name")  # Legado
+        })
+        
+        result = await db.transactions.update_one(
+            {"id": transaction_id},
+            {"$set": update_doc}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+        
+        return {"message": "Lançamento atualizado com sucesso!"}
     
-    result = await db.transactions.update_one(
-        {"id": transaction_id},
-        {"$set": update_doc}
-    )
-    
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Lançamento não encontrado")
-    
-    return {"message": "Lançamento atualizado com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao atualizar lançamento: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.delete("/transactions/{transaction_id}")
 async def delete_transaction(transaction_id: str):
