@@ -32,7 +32,8 @@ const Lancamentos = ({ user, onLogout }) => {
     type: 'receita',
     description: '',
     amount: '',
-    category: '',
+    category_id: '',  // Mudado de 'category' para 'category_id'
+    competence_month: new Date().toISOString().slice(0, 7),  // Novo campo: YYYY-MM
     date: new Date().toISOString().slice(0, 10),
     status: 'realizado',
     notes: '',
