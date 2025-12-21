@@ -769,35 +769,47 @@ async def create_company(company_data: CompanyCreate):
         # Criar categorias padrão do Plano de Contas automaticamente
         try:
             default_categories = [
-                # FIXAS - Entram no X_real
-                {"name": "Aluguel", "group": "FIXA", "is_indirect_for_markup": True, "description": "Aluguel do escritório/sede"},
-                {"name": "Energia Elétrica", "group": "FIXA", "is_indirect_for_markup": True, "description": "Conta de luz"},
-                {"name": "Água", "group": "FIXA", "is_indirect_for_markup": True, "description": "Conta de água"},
-                {"name": "Telefone/Internet", "group": "FIXA", "is_indirect_for_markup": True, "description": "Telecomunicações"},
-                {"name": "Contador", "group": "FIXA", "is_indirect_for_markup": True, "description": "Honorários contábeis"},
-                {"name": "Salários Administrativos", "group": "FIXA", "is_indirect_for_markup": True, "description": "Salários do pessoal administrativo"},
-                {"name": "Software/Sistemas", "group": "FIXA", "is_indirect_for_markup": True, "description": "Licenças de software"},
-                {"name": "Marketing", "group": "FIXA", "is_indirect_for_markup": True, "description": "Publicidade e marketing"},
+                # ===== RECEITAS =====
+                {"name": "Serviços Prestados", "type": "RECEITA", "group": None, "is_indirect_for_markup": False, "description": "Receita de serviços executados"},
+                {"name": "Venda de Produtos", "type": "RECEITA", "group": None, "is_indirect_for_markup": False, "description": "Receita de venda de produtos"},
+                {"name": "Receitas Financeiras", "type": "RECEITA", "group": None, "is_indirect_for_markup": False, "description": "Juros e rendimentos"},
+                {"name": "Outras Receitas", "type": "RECEITA", "group": None, "is_indirect_for_markup": False, "description": "Outras receitas operacionais"},
                 
-                # VARIÁVEIS INDIRETAS - Entram no X_real
-                {"name": "Combustível Administrativo", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Combustível de veículos administrativos"},
-                {"name": "Material de Escritório", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Papelaria e suprimentos"},
-                {"name": "Manutenção Equipamentos", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Manutenção de equipamentos de escritório"},
+                # ===== CUSTOS =====
+                {"name": "Custos de Produção", "type": "CUSTO", "group": None, "is_indirect_for_markup": False, "description": "Custos diretos da produção"},
+                {"name": "Matéria-Prima", "type": "CUSTO", "group": None, "is_indirect_for_markup": False, "description": "Insumos e matérias-primas"},
+                {"name": "Mão de Obra Direta", "type": "CUSTO", "group": None, "is_indirect_for_markup": False, "description": "Salários de produção"},
+                {"name": "Outros Custos", "type": "CUSTO", "group": None, "is_indirect_for_markup": False, "description": "Outros custos operacionais"},
                 
-                # DIRETAS DA OBRA - NÃO entram no X_real
-                {"name": "Salários Operacionais", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Salários de operários (entra no custo do serviço)"},
-                {"name": "Materiais de Obra", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Materiais aplicados na obra"},
-                {"name": "Combustível Obra", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Combustível para obras específicas"},
-                {"name": "Aluguel Equipamentos", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Aluguel de máquinas para obras"},
-                {"name": "Subempreiteiros", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Terceirizados em obras"},
+                # ===== DESPESAS FIXAS - Entram no X_real =====
+                {"name": "Aluguel", "type": "DESPESA", "group": "FIXA", "is_indirect_for_markup": True, "description": "Aluguel do escritório/sede"},
+                {"name": "Energia Elétrica", "type": "DESPESA", "group": "FIXA", "is_indirect_for_markup": True, "description": "Conta de luz"},
+                {"name": "Água", "type": "DESPESA", "group": "FIXA", "is_indirect_for_markup": True, "description": "Conta de água"},
+                {"name": "Telefone/Internet", "type": "DESPESA", "group": "FIXA", "is_indirect_for_markup": True, "description": "Telecomunicações"},
+                {"name": "Contador", "type": "DESPESA", "group": "FIXA", "is_indirect_for_markup": True, "description": "Honorários contábeis"},
+                {"name": "Salários Administrativos", "type": "DESPESA", "group": "FIXA", "is_indirect_for_markup": True, "description": "Salários do pessoal administrativo"},
+                {"name": "Software/Sistemas", "type": "DESPESA", "group": "FIXA", "is_indirect_for_markup": True, "description": "Licenças de software"},
+                {"name": "Marketing", "type": "DESPESA", "group": "FIXA", "is_indirect_for_markup": True, "description": "Publicidade e marketing"},
+                
+                # ===== DESPESAS VARIÁVEIS INDIRETAS - Entram no X_real =====
+                {"name": "Combustível Administrativo", "type": "DESPESA", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Combustível de veículos administrativos"},
+                {"name": "Material de Escritório", "type": "DESPESA", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Papelaria e suprimentos"},
+                {"name": "Manutenção Equipamentos", "type": "DESPESA", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Manutenção de equipamentos de escritório"},
+                
+                # ===== DESPESAS DIRETAS DA OBRA - NÃO entram no X_real =====
+                {"name": "Salários Operacionais", "type": "DESPESA", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Salários de operários (entra no custo do serviço)"},
+                {"name": "Materiais de Obra", "type": "DESPESA", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Materiais aplicados na obra"},
+                {"name": "Combustível Obra", "type": "DESPESA", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Combustível para obras específicas"},
+                {"name": "Aluguel Equipamentos", "type": "DESPESA", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Aluguel de máquinas para obras"},
+                {"name": "Subempreiteiros", "type": "DESPESA", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Terceirizados em obras"},
             ]
             
             for cat_data in default_categories:
                 category = ExpenseCategoryConfig(
                     company_id=company.id,
                     name=cat_data["name"],
-                    type="DESPESA",
-                    group=cat_data["group"],
+                    type=cat_data["type"],
+                    group=cat_data.get("group"),
                     is_indirect_for_markup=cat_data["is_indirect_for_markup"],
                     description=cat_data.get("description", ""),
                     active=True
