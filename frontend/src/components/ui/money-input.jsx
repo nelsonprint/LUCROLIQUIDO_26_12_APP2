@@ -2,7 +2,7 @@
  * Input Monetário com máscara BRL
  * Componente reutilizável para campos de valor monetário
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { formatBRL, parseBRL } from '@/lib/formatters';
 
@@ -27,18 +27,18 @@ export function MoneyInput({
   disabled = false,
   ...rest 
 }) {
-  const [displayValue, setDisplayValue] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState('');
   const inputRef = useRef(null);
   
-  // Atualiza o display quando o valor externo muda
-  useEffect(() => {
-    if (value !== undefined && value !== null) {
-      const formatted = formatBRL(value, false);
-      setDisplayValue(formatted);
-    } else {
-      setDisplayValue('');
+  // Calcula o valor de exibição baseado no valor externo
+  const displayValue = useMemo(() => {
+    if (isEditing) return editValue;
+    if (value !== undefined && value !== null && value !== 0) {
+      return formatBRL(value, false);
     }
-  }, [value]);
+    return '';
+  }, [value, isEditing, editValue]);
   
   const handleChange = (e) => {
     let inputValue = e.target.value;
@@ -47,7 +47,7 @@ export function MoneyInput({
     const digits = inputValue.replace(/\D/g, '');
     
     if (digits === '') {
-      setDisplayValue('');
+      setEditValue('');
       onChange?.(0);
       return;
     }
@@ -57,17 +57,23 @@ export function MoneyInput({
     
     // Formata para exibição
     const formatted = formatBRL(numericValue, false);
-    setDisplayValue(formatted);
+    setEditValue(formatted);
     
     // Retorna valor numérico para o parent
     onChange?.(numericValue);
   };
   
   const handleFocus = (e) => {
+    setIsEditing(true);
+    setEditValue(value ? formatBRL(value, false) : '');
     // Seleciona todo o texto ao focar
     setTimeout(() => {
       e.target.select();
     }, 0);
+  };
+  
+  const handleBlur = () => {
+    setIsEditing(false);
   };
   
   const handlePaste = (e) => {
@@ -76,7 +82,7 @@ export function MoneyInput({
     const numericValue = parseBRL(pastedText);
     
     const formatted = formatBRL(numericValue, false);
-    setDisplayValue(formatted);
+    setEditValue(formatted);
     onChange?.(numericValue);
   };
 
@@ -94,6 +100,7 @@ export function MoneyInput({
         value={displayValue}
         onChange={handleChange}
         onFocus={handleFocus}
+        onBlur={handleBlur}
         onPaste={handlePaste}
         placeholder={placeholder}
         disabled={disabled}
