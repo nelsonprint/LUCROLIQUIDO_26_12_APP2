@@ -85,64 +85,77 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
     });
   }, [formData]);
 
-  const loadProfile = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await axiosInstance.get(
-        `/markup-profile/${companyId}/${selectedYear}/${selectedMonth}`
-      );
+  // Load existing profile when modal opens or month/year changes
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!open || !companyId) return;
       
-      if (response.data.has_config) {
-        const profile = response.data;
-        setProfileId(profile.id);
-        setIsClosed(profile.is_closed || false);
-        setMode(profile.mode || 'MANUAL');
-        setFormData({
-          simplesEffectiveRate: (profile.taxes?.simples_effective_rate || 0.083) * 100,
-          issRate: (profile.taxes?.iss_rate || 0.03) * 100,
-          includeMaterialsInISSBase: profile.taxes?.include_materials_in_iss_base || false,
-          indirectsRate: (profile.indirects_rate || 0.10) * 100,
-          financialRate: (profile.financial_rate || 0.02) * 100,
-          profitRate: (profile.profit_rate || 0.15) * 100,
-          notes: profile.notes || ''
-        });
-      } else {
-        // Reset to defaults
-        setProfileId(null);
-        setIsClosed(false);
-        setMode('MANUAL');
-        setFormData({
-          simplesEffectiveRate: 8.3,
-          issRate: 3.0,
-          includeMaterialsInISSBase: false,
-          indirectsRate: 10.0,
-          financialRate: 2.0,
-          profitRate: 15.0,
-          notes: ''
-        });
+      setLoading(true);
+      try {
+        const response = await axiosInstance.get(
+          `/markup-profile/${companyId}/${selectedYear}/${selectedMonth}`
+        );
+        
+        if (response.data.has_config) {
+          const profile = response.data;
+          setProfileId(profile.id);
+          setIsClosed(profile.is_closed || false);
+          setMode(profile.mode || 'MANUAL');
+          setFormData({
+            simplesEffectiveRate: (profile.taxes?.simples_effective_rate || 0.083) * 100,
+            issRate: (profile.taxes?.iss_rate || 0.03) * 100,
+            includeMaterialsInISSBase: profile.taxes?.include_materials_in_iss_base || false,
+            indirectsRate: (profile.indirects_rate || 0.10) * 100,
+            financialRate: (profile.financial_rate || 0.02) * 100,
+            profitRate: (profile.profit_rate || 0.15) * 100,
+            notes: profile.notes || ''
+          });
+        } else {
+          // Reset to defaults
+          setProfileId(null);
+          setIsClosed(false);
+          setMode('MANUAL');
+          setFormData({
+            simplesEffectiveRate: 8.3,
+            issRate: 3.0,
+            includeMaterialsInISSBase: false,
+            indirectsRate: 10.0,
+            financialRate: 2.0,
+            profitRate: 15.0,
+            notes: ''
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao carregar perfil:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Erro ao carregar perfil:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [companyId, selectedYear, selectedMonth]);
+    };
 
-  const fetchXReal = useCallback(async () => {
-    if (!companyId) return;
-    setLoadingXReal(true);
-    try {
-      const response = await axiosInstance.get(
-        `/markup-profile/calculate-x-real/${companyId}/${selectedYear}/${selectedMonth}`
-      );
-      setXRealData(response.data);
-    } catch (error) {
-      console.error('Erro ao calcular X_real:', error);
-      setXRealData(null);
-    } finally {
-      setLoadingXReal(false);
-    }
-  }, [companyId, selectedYear, selectedMonth]);
+    loadProfile();
+  }, [open, companyId, selectedYear, selectedMonth]);
+
+  // Fetch X_real when mode changes to AUTO_MODEL2
+  useEffect(() => {
+    const fetchXReal = async () => {
+      if (!open || !companyId || mode !== 'AUTO_MODEL2') return;
+      
+      setLoadingXReal(true);
+      try {
+        const response = await axiosInstance.get(
+          `/markup-profile/calculate-x-real/${companyId}/${selectedYear}/${selectedMonth}`
+        );
+        setXRealData(response.data);
+      } catch (error) {
+        console.error('Erro ao calcular X_real:', error);
+        setXRealData(null);
+      } finally {
+        setLoadingXReal(false);
+      }
+    };
+
+    fetchXReal();
+  }, [mode, open, companyId, selectedYear, selectedMonth]);
 
   const applyXReal = () => {
     if (xRealData && !xRealData.error && xRealData.x_real_percent > 0) {
