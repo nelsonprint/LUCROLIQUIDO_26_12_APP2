@@ -163,7 +163,7 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
     } finally {
       setLoadingXReal(false);
     }
-  };
+  }, [companyId, selectedYear, selectedMonth]);
 
   const applyXReal = () => {
     if (xRealData && !xRealData.error && xRealData.x_real_percent > 0) {
