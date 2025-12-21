@@ -65,7 +65,7 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
   // Calculate markup on form change
   useEffect(() => {
     calculateMarkup();
-  }, [formData]);
+  }, [calculateMarkup]);
 
   // Load existing profile when month/year changes
   useEffect(() => {
@@ -75,14 +75,14 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
         fetchXReal();
       }
     }
-  }, [open, companyId, selectedYear, selectedMonth]);
+  }, [open, companyId, selectedYear, selectedMonth, loadProfile, fetchXReal, mode]);
 
   // Fetch X_real when mode changes to AUTO
   useEffect(() => {
     if (open && companyId && mode === 'AUTO_MODEL2') {
       fetchXReal();
     }
-  }, [mode, open, companyId]);
+  }, [mode, open, companyId, fetchXReal]);
 
   const calculateMarkup = useCallback(() => {
     const I = (formData.simplesEffectiveRate + formData.issRate) / 100;
