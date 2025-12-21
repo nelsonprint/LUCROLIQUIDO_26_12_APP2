@@ -215,9 +215,27 @@ const Lancamentos = ({ user, onLogout }) => {
       notes: '',
     });
     // Resetar categorias para receita (tipo padrão)
-    updateAvailableCategories('receita');
+    updateAvailableCategories('receita', categories);
     setEditingTransaction(null);
     setShowDialog(false);
+  };
+
+  const openNewTransactionModal = () => {
+    setEditingTransaction(null);
+    setFormData({
+      type: 'receita',
+      description: '',
+      amount: '',
+      category_id: '',
+      competence_month: new Date().toISOString().slice(0, 7),
+      date: new Date().toISOString().slice(0, 10),
+      status: 'realizado',
+      notes: '',
+    });
+    // Atualizar categorias disponíveis para o tipo padrão (receita)
+    console.log('🆕 Abrindo modal de novo lançamento, categorias:', categories);
+    updateAvailableCategories('receita', categories);
+    setShowDialog(true);
   };
 
   const getCategoryOptions = () => {
