@@ -488,6 +488,13 @@ class MarkupProfileCreate(BaseModel):
     financial_rate: float = 0.02  # Y - Financeiro (2%)
     profit_rate: float = 0.15  # Z - Lucro (15%)
     notes: Optional[str] = None
+    # Campos do Modelo 2 (automático)
+    mode: str = "MANUAL"  # MANUAL ou AUTO_MODEL2
+    x_real_applied: Optional[float] = None  # X_real aplicado (percentual)
+    x_real_base_month: Optional[str] = None  # Mês base (YYYY-MM)
+    x_real_indirects_total: Optional[float] = None  # Total despesas indiretas
+    x_real_revenue_base: Optional[float] = None  # Receita base
+    x_real_calculated_at: Optional[str] = None  # Timestamp do cálculo
 
 class MarkupProfile(BaseModel):
     """Perfil de markup mensal completo"""
@@ -504,6 +511,16 @@ class MarkupProfile(BaseModel):
     markup_multiplier: float = 1.0
     bdi_percentage: float = 0.0
     notes: Optional[str] = None
+    # Campos do Modelo 2 (automático)
+    mode: str = "MANUAL"  # MANUAL ou AUTO_MODEL2
+    x_real_applied: Optional[float] = None
+    x_real_base_month: Optional[str] = None
+    x_real_indirects_total: Optional[float] = None
+    x_real_revenue_base: Optional[float] = None
+    x_real_calculated_at: Optional[str] = None
+    # Controle de fechamento mensal
+    is_closed: bool = False  # Se fechado, não recalcula automaticamente
+    closed_at: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
