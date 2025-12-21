@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Plus, X, Search } from 'lucide-react';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
+import { formatBRL } from '@/lib/formatters';
 
 const OrcamentoMateriais = ({ orcamentoId, onTotalChange }) => {
   const [materiais, setMateriais] = useState([]);
