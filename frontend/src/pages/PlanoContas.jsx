@@ -384,7 +384,7 @@ const PlanoContas = ({ user, onLogout }) => {
 
                 {formData.group === 'DIRETA_OBRA' && (
                   <p className="text-xs text-orange-400">
-                    ⚠️ Categorias "Direta de Obra" não podem entrar no Markup para evitar dupla contagem.
+                    ⚠️ Categorias &quot;Direta de Obra&quot; não podem entrar no Markup para evitar dupla contagem.
                   </p>
                 )}
 
