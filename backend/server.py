@@ -446,6 +446,32 @@ class SystemConfig(BaseModel):
 
 # ========== MODELS: MARKUP/BDI MENSAL ==========
 
+# Grupos de categorias para o Plano de Contas
+EXPENSE_GROUPS = ["FIXA", "VARIAVEL_INDIRETA", "DIRETA_OBRA"]
+
+class ExpenseCategoryConfig(BaseModel):
+    """Configuração de categoria de despesa para o Plano de Contas"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    name: str  # Nome da categoria (ex: "Aluguel", "Energia", "Salários ADM")
+    type: str = "DESPESA"  # RECEITA ou DESPESA
+    group: str = "FIXA"  # FIXA, VARIAVEL_INDIRETA, DIRETA_OBRA
+    is_indirect_for_markup: bool = True  # True = entra no cálculo de X_real
+    description: Optional[str] = None
+    active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ExpenseCategoryCreate(BaseModel):
+    """Criar/atualizar categoria de despesa"""
+    company_id: str
+    name: str
+    type: str = "DESPESA"  # RECEITA ou DESPESA
+    group: str = "FIXA"  # FIXA, VARIAVEL_INDIRETA, DIRETA_OBRA
+    is_indirect_for_markup: bool = True
+    description: Optional[str] = None
+
 class MarkupTaxes(BaseModel):
     """Configuração de impostos para o markup"""
     simples_effective_rate: float = 0.083  # Simples Nacional efetivo (8.3%)
