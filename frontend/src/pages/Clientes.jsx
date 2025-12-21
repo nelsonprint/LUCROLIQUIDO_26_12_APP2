@@ -393,7 +393,11 @@ export const Clientes = ({ user, onLogout }) => {
                       <Label className="text-white">CPF *</Label>
                       <CPFInput
                         value={formData.cpf}
-                        onChange={(value) => setFormData({...formData, cpf: value})}
+                        onChange={(value) => {
+                          setFormData({...formData, cpf: value});
+                          setCpfValido(true); // Reset validação ao digitar
+                        }}
+                        onValidation={(isValid) => setCpfValido(isValid)}
                         required
                         className="glass border-white/10 text-white"
                       />
