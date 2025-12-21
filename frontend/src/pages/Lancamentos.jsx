@@ -466,17 +466,18 @@ const Lancamentos = ({ user, onLogout }) => {
                   />
                 </div>
               </div>
-                <div>
-                  <Label className="text-gray-300">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white" data-testid="transaction-status-select">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="realizado">Realizado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
+              <div>
+                <Label className="text-gray-300">Status</Label>
+                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white" data-testid="transaction-status-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="realizado">Realizado</SelectItem>
+                    <SelectItem value="previsto">Previsto</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
