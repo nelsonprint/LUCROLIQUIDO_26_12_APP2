@@ -755,6 +755,70 @@ async def login(credentials: UserLogin):
 # ========== ROTAS DE EMPRESAS ==========
 
 @api_router.post("/companies")
+async def create_company(company_data: CompanyCreate):
+    """Criar nova empresa vinculada ao usuário"""
+    try:
+        # Criar empresa
+        company = Company(**company_data.model_dump())
+        
+        doc = company.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        doc['updated_at'] = doc['updated_at'].isoformat()
+        await db.companies.insert_one(doc)
+        
+        # Criar categorias padrão do Plano de Contas automaticamente
+        try:
+            default_categories = [
+                # FIXAS - Entram no X_real
+                {"name": "Aluguel", "group": "FIXA", "is_indirect_for_markup": True, "description": "Aluguel do escritório/sede"},
+                {"name": "Energia Elétrica", "group": "FIXA", "is_indirect_for_markup": True, "description": "Conta de luz"},
+                {"name": "Água", "group": "FIXA", "is_indirect_for_markup": True, "description": "Conta de água"},
+                {"name": "Telefone/Internet", "group": "FIXA", "is_indirect_for_markup": True, "description": "Telecomunicações"},
+                {"name": "Contador", "group": "FIXA", "is_indirect_for_markup": True, "description": "Honorários contábeis"},
+                {"name": "Salários Administrativos", "group": "FIXA", "is_indirect_for_markup": True, "description": "Salários do pessoal administrativo"},
+                {"name": "Software/Sistemas", "group": "FIXA", "is_indirect_for_markup": True, "description": "Licenças de software"},
+                {"name": "Marketing", "group": "FIXA", "is_indirect_for_markup": True, "description": "Publicidade e marketing"},
+                
+                # VARIÁVEIS INDIRETAS - Entram no X_real
+                {"name": "Combustível Administrativo", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Combustível de veículos administrativos"},
+                {"name": "Material de Escritório", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Papelaria e suprimentos"},
+                {"name": "Manutenção Equipamentos", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Manutenção de equipamentos de escritório"},
+                
+                # DIRETAS DA OBRA - NÃO entram no X_real
+                {"name": "Salários Operacionais", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Salários de operários (entra no custo do serviço)"},
+                {"name": "Materiais de Obra", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Materiais aplicados na obra"},
+                {"name": "Combustível Obra", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Combustível para obras específicas"},
+                {"name": "Aluguel Equipamentos", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Aluguel de máquinas para obras"},
+                {"name": "Subempreiteiros", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Terceirizados em obras"},
+            ]
+            
+            for cat_data in default_categories:
+                category = ExpenseCategoryConfig(
+                    company_id=company.id,
+                    name=cat_data["name"],
+                    type="DESPESA",
+                    group=cat_data["group"],
+                    is_indirect_for_markup=cat_data["is_indirect_for_markup"],
+                    description=cat_data.get("description", ""),
+                    active=True
+                )
+                cat_doc = category.model_dump()
+                cat_doc['created_at'] = cat_doc['created_at'].isoformat()
+                await db.expense_categories.insert_one(cat_doc)
+            
+            logger.info(f"✅ Categorias padrão criadas para empresa {company.id}")
+        except Exception as cat_error:
+            logger.error(f"⚠️ Erro ao criar categorias padrão: {cat_error}")
+            # Não falha a criação da empresa se categorias falharem
+        
+        return {
+            "message": "Empresa criada com sucesso!",
+            "company_id": company.id,
+            "name": company.name
+        }
+    except Exception as e:
+        logger.error(f"Erro ao criar empresa: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao criar empresa: {str(e)}")
 
 
 # ========== FUNÇÕES DE VALIDAÇÃO ==========
