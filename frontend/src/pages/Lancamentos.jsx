@@ -441,6 +441,20 @@ const Lancamentos = ({ user, onLogout }) => {
                   />
                 </div>
                 <div>
+                  <Label className="text-gray-300">
+                    Competência *
+                    <span className="text-xs text-gray-500 ml-1">(Mês de apuração)</span>
+                  </Label>
+                  <Input
+                    type="month"
+                    data-testid="transaction-competence-input"
+                    value={formData.competence_month}
+                    onChange={(e) => setFormData({ ...formData, competence_month: e.target.value })}
+                    required
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                </div>
+                <div>
                   <Label className="text-gray-300">Data</Label>
                   <Input
                     type="date"
@@ -451,6 +465,7 @@ const Lancamentos = ({ user, onLogout }) => {
                     className="bg-white/5 border-white/10 text-white"
                   />
                 </div>
+              </div>
                 <div>
                   <Label className="text-gray-300">Status</Label>
                   <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
