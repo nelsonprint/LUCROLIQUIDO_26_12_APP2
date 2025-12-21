@@ -103,6 +103,14 @@ const Lancamentos = ({ user, onLogout }) => {
     updateAvailableCategories(newType);
   };
 
+  // Atualizar categorias disponíveis quando o modal abrir
+  useEffect(() => {
+    if (showDialog && categories) {
+      // Atualizar categorias disponíveis baseado no tipo atual
+      updateAvailableCategories(formData.type, categories);
+    }
+  }, [showDialog, categories, formData.type]);
+
   const fetchTransactions = async () => {
     if (!company.id) return;
 
