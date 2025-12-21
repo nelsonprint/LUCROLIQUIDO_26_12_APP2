@@ -221,8 +221,17 @@ const Lancamentos = ({ user, onLogout }) => {
     setShowDialog(false);
   };
 
-  const openNewTransactionModal = () => {
+  const openNewTransactionModal = async () => {
     setEditingTransaction(null);
+    
+    // Garantir que as categorias estejam carregadas
+    if (!categories || Object.keys(categories).length === 0 || !categories.receita) {
+      console.log('⚠️ Categorias não carregadas, buscando...');
+      await fetchCategories();
+      // Aguardar um pouco para o estado atualizar
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
     setFormData({
       type: 'receita',
       description: '',
@@ -233,9 +242,16 @@ const Lancamentos = ({ user, onLogout }) => {
       status: 'realizado',
       notes: '',
     });
+    
     // Atualizar categorias disponíveis para o tipo padrão (receita)
-    console.log('🆕 Abrindo modal de novo lançamento, categorias:', categories);
-    updateAvailableCategories('receita', categories);
+    console.log('🆕 Abrindo modal de novo lançamento');
+    console.log('📊 Categorias disponíveis:', categories);
+    
+    // Usar setTimeout para garantir que o estado foi atualizado
+    setTimeout(() => {
+      updateAvailableCategories('receita', categories);
+    }, 100);
+    
     setShowDialog(true);
   };
 
