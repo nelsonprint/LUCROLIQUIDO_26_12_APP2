@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { Settings, Calculator, Zap, Lock, Unlock, AlertTriangle, RefreshCw, CheckCircle } from 'lucide-react';
+import { formatBRL } from '@/lib/formatters';
 
 const MONTHS = [
   { value: 1, label: 'Janeiro' },
