@@ -19,6 +19,8 @@ export const Clientes = ({ user, onLogout }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingCliente, setEditingCliente] = useState(null);
   const [tipoCliente, setTipoCliente] = useState('PF'); // PF ou PJ
+  const [cpfValido, setCpfValido] = useState(true);
+  const [cnpjValido, setCnpjValido] = useState(true);
 
   const [formData, setFormData] = useState({
     tipo: 'PF',
