@@ -70,6 +70,50 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
   // Itens do orçamento (Grid)
   const [orcamentoItems, setOrcamentoItems] = useState([]);
 
+  // Materiais do orçamento
+  const [totalMateriais, setTotalMateriais] = useState(0);
+
+  // Modal de confirmação para sair
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+
+  // Verificar se há dados não salvos
+  const hasUnsavedData = useCallback(() => {
+    return (
+      orcamentoData.cliente_nome ||
+      orcamentoItems.length > 0 ||
+      totalMateriais > 0 ||
+      orcamentoData.validade_proposta ||
+      orcamentoData.condicoes_pagamento ||
+      orcamentoData.prazo_execucao ||
+      orcamentoData.observacoes
+    );
+  }, [orcamentoData, orcamentoItems, totalMateriais]);
+
+  // Interceptar navegação
+  const handleNavigate = useCallback((path) => {
+    if (hasUnsavedData()) {
+      setPendingNavigation(path);
+      setShowExitModal(true);
+    } else {
+      navigate(path);
+    }
+  }, [hasUnsavedData, navigate]);
+
+  // Confirmar saída
+  const confirmExit = () => {
+    setShowExitModal(false);
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+    }
+  };
+
+  // Cancelar saída
+  const cancelExit = () => {
+    setShowExitModal(false);
+    setPendingNavigation(null);
+  };
+
   // Buscar markup atual
   useEffect(() => {
     const fetchMarkup = async () => {
