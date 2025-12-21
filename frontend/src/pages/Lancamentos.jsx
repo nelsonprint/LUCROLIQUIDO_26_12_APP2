@@ -56,11 +56,11 @@ const Lancamentos = ({ user, onLogout }) => {
       const response = await axiosInstance.get(`/expense-categories/${company.id}?active_only=true`);
       const planoCategorias = response.data.categories || [];
       
-      // Organizar por tipo
+      // Organizar por tipo (case-insensitive)
       const organized = {
-        receita: planoCategorias.filter(c => c.type === 'receita'),
-        custo: planoCategorias.filter(c => c.type === 'custo'),
-        despesa: planoCategorias.filter(c => c.type === 'despesa'),
+        receita: planoCategorias.filter(c => c.type?.toLowerCase() === 'receita'),
+        custo: planoCategorias.filter(c => c.type?.toLowerCase() === 'custo'),
+        despesa: planoCategorias.filter(c => c.type?.toLowerCase() === 'despesa'),
       };
       
       setCategories(organized);
