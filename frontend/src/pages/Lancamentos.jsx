@@ -277,7 +277,7 @@ const Lancamentos = ({ user, onLogout }) => {
             <p className="text-gray-400">Gerencie receitas, custos e despesas</p>
           </div>
           <Button
-            onClick={() => setShowDialog(true)}
+            onClick={openNewTransactionModal}
             data-testid="add-transaction-button"
             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
           >
