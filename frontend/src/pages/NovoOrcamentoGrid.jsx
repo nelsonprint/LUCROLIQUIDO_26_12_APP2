@@ -749,6 +749,43 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
               </form>
             </DialogContent>
           </Dialog>
+
+          {/* Modal de Confirmação para Sair */}
+          <Dialog open={showExitModal} onOpenChange={setShowExitModal}>
+            <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-yellow-400">
+                  <AlertTriangle className="w-5 h-5" />
+                  Cancelar Orçamento?
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="py-4">
+                <p className="text-zinc-300">
+                  Você tem dados não salvos neste orçamento. Se sair agora, perderá todas as informações inseridas.
+                </p>
+                <p className="text-zinc-400 mt-2 text-sm">
+                  Deseja realmente cancelar este orçamento?
+                </p>
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={cancelExit}
+                  className="border-zinc-700"
+                >
+                  Não, continuar editando
+                </Button>
+                <Button 
+                  onClick={confirmExit}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Sim, cancelar orçamento
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
