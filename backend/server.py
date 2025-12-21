@@ -219,10 +219,13 @@ class TransactionCreate(BaseModel):
     type: str  # receita, custo, despesa
     description: str
     amount: float
-    category: str
-    date: str
+    category_id: str  # ID da categoria do Plano de Contas
+    competence_month: str  # Formato YYYY-MM (mês de competência)
+    date: str  # Data de pagamento/registro
     status: str = "previsto"  # previsto, realizado
     notes: Optional[str] = None
+    # Campos legados (manter compatibilidade temporária)
+    category: Optional[str] = None
 
 class Transaction(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -232,14 +235,22 @@ class Transaction(BaseModel):
     type: str
     description: str
     amount: float
-    category: str
-    date: str
+    category_id: str  # ID da categoria do Plano de Contas
+    competence_month: str  # Mês de competência (YYYY-MM)
+    date: str  # Data de pagamento/registro
     status: str = "previsto"
     notes: Optional[str] = None
+    # Denormalização para performance
+    category_name: Optional[str] = None  # Nome da categoria
+    category_group: Optional[str] = None  # FIXA, VARIAVEL_INDIRETA, DIRETA_OBRA
+    is_indirect_for_markup: Optional[bool] = None  # Flag para X_real
+    # Campos de controle
     origem: str = "manual"  # manual ou conta (vindo de contas a pagar/receber)
     conta_id: Optional[str] = None  # ID da conta vinculada (se origem = conta)
     cancelled: bool = False  # Indica se o lançamento foi cancelado
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Campos legados (manter compatibilidade temporária)
+    category: Optional[str] = None
 
 class MonthlyGoalCreate(BaseModel):
     company_id: str
