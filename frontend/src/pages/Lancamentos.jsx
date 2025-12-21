@@ -474,6 +474,7 @@ const Lancamentos = ({ user, onLogout }) => {
                     {availableCategories.length === 0 && <span className="text-xs text-gray-500 ml-2">(selecione o tipo primeiro)</span>}
                   </Label>
                   <Select 
+                    key={`category-select-${selectKey}`}
                     value={formData.category_id} 
                     onValueChange={(value) => setFormData({ ...formData, category_id: value })}
                     disabled={availableCategories.length === 0}
