@@ -202,12 +202,7 @@ const OrcamentoMateriais = ({ orcamentoId, onTotalChange }) => {
     });
   };
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+  const formatCurrency = (value) => formatBRL(value);
 
   const totalMateriais = materiais.reduce((sum, mat) => sum + (mat.preco_total_item || 0), 0);
 
