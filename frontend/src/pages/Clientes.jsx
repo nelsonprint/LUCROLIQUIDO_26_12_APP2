@@ -419,12 +419,10 @@ export const Clientes = ({ user, onLogout }) => {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <Label className="text-white">CNPJ *</Label>
-                      <Input
+                      <CNPJInput
                         value={formData.cnpj}
-                        onChange={(e) => setFormData({...formData, cnpj: maskCNPJ(e.target.value)})}
+                        onChange={(value) => setFormData({...formData, cnpj: value})}
                         required
-                        placeholder="00.000.000/0000-00"
-                        maxLength={18}
                         className="glass border-white/10 text-white"
                       />
                     </div>
