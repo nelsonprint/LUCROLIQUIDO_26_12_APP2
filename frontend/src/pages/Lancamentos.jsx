@@ -508,14 +508,11 @@ const Lancamentos = ({ user, onLogout }) => {
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label className="text-gray-300">Valor</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
+                  <Label className="text-gray-300">Valor *</Label>
+                  <MoneyInput
                     data-testid="transaction-amount-input"
                     value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    required
+                    onChange={(value) => setFormData({ ...formData, amount: value })}
                     className="bg-white/5 border-white/10 text-white"
                   />
                 </div>
