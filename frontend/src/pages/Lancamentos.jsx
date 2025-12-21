@@ -33,7 +33,7 @@ const Lancamentos = ({ user, onLogout }) => {
   const [formData, setFormData] = useState({
     type: 'receita',
     description: '',
-    amount: '',
+    amount: 0,  // Valor numérico para MoneyInput
     category_id: '',  // Mudado de 'category' para 'category_id'
     competence_month: new Date().toISOString().slice(0, 7),  // Novo campo: YYYY-MM
     date: new Date().toISOString().slice(0, 10),
