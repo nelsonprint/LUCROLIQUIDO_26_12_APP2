@@ -2995,7 +2995,7 @@ async def seed_default_expense_categories(company_id: str):
 async def calculate_x_real(company_id: str, year: int, month: int):
     """
     Calcula X_real = (Despesas Indiretas) / (Receita Base) do mês anterior.
-    Usa regime de competência (data do lançamento representa o mês de competência).
+    Usa regime de competência (competence_month) e denormalização (is_indirect_for_markup).
     """
     try:
         from dateutil.relativedelta import relativedelta
@@ -3006,45 +3006,26 @@ async def calculate_x_real(company_id: str, year: int, month: int):
         ref_month = ref_date.month
         ref_month_str = f"{ref_year}-{str(ref_month).zfill(2)}"
         
-        # Buscar categorias que entram no X_real
-        indirect_categories = await db.expense_categories.find({
-            "company_id": company_id,
-            "is_indirect_for_markup": True,
-            "active": True
-        }, {"_id": 0, "name": 1}).to_list(100)
-        
-        category_names = [c["name"] for c in indirect_categories]
-        
-        # Se não houver categorias configuradas, retornar erro amigável
-        if not category_names:
-            return {
-                "error": True,
-                "message": "Nenhuma categoria configurada para o cálculo de X_real. Configure o Plano de Contas primeiro.",
-                "x_real": 0,
-                "x_real_percent": 0,
-                "despesas_indiretas": 0,
-                "receita_base": 0,
-                "periodo_referencia": ref_month_str,
-                "categorias_usadas": []
-            }
-        
-        # Buscar despesas indiretas por competência (usando o campo date no formato YYYY-MM-DD)
-        # O mês de competência é derivado do campo date
+        # Buscar despesas indiretas usando denormalização e competência
         despesas_query = {
             "company_id": company_id,
-            "type": {"$in": ["despesa", "custo"]},
-            "category": {"$in": category_names},
-            "date": {"$regex": f"^{ref_month_str}"}  # Filtra por mês (YYYY-MM)
+            "type": "despesa",
+            "is_indirect_for_markup": True,  # Usa campo denormalizado
+            "competence_month": ref_month_str  # Usa competência ao invés de date
         }
         
-        despesas = await db.transactions.find(despesas_query, {"_id": 0, "amount": 1, "category": 1}).to_list(1000)
+        despesas = await db.transactions.find(
+            despesas_query, 
+            {"_id": 0, "amount": 1, "category_name": 1, "category_group": 1}
+        ).to_list(1000)
+        
         despesas_indiretas = sum([d["amount"] for d in despesas])
         
         # Buscar receita base por competência
         receita_query = {
             "company_id": company_id,
             "type": "receita",
-            "date": {"$regex": f"^{ref_month_str}"}
+            "competence_month": ref_month_str
         }
         
         receitas = await db.transactions.find(receita_query, {"_id": 0, "amount": 1}).to_list(1000)
@@ -3055,25 +3036,31 @@ async def calculate_x_real(company_id: str, year: int, month: int):
         x_real_percent = 0
         warning = None
         
-        if receita_base > 0:
+        if receita_base > 0 and despesas_indiretas > 0:
             x_real = despesas_indiretas / receita_base
             x_real_percent = round(x_real * 100, 2)
             
             # Alerta se X_real for muito alto (> 60%)
             if x_real_percent > 60:
                 warning = f"X_real muito alto ({x_real_percent}%). Verifique se as categorias estão corretas ou se houve despesas extraordinárias."
-        elif despesas_indiretas > 0:
+        elif receita_base > 0 and despesas_indiretas == 0:
+            warning = "Nenhuma despesa indireta encontrada no mês base. Verifique:\n1. Se há lançamentos de despesas em Nov/2025\n2. Se as categorias estão marcadas como 'Entra no Markup' no Plano de Contas\n3. Se o campo 'competence_month' está preenchido"
+        elif receita_base == 0:
             warning = "Receita base = R$ 0,00. Não é possível calcular X_real. Verifique os lançamentos de receita do mês anterior."
         else:
             warning = "Sem dados suficientes para calcular X_real. Verifique os lançamentos do mês anterior."
         
         # Detalhar categorias usadas
         categorias_detalhadas = {}
+        grupos_usados = set()
         for d in despesas:
-            cat = d["category"]
+            cat = d.get("category_name", "Sem categoria")
+            grupo = d.get("category_group", "N/A")
             if cat not in categorias_detalhadas:
                 categorias_detalhadas[cat] = 0
             categorias_detalhadas[cat] += d["amount"]
+            if grupo:
+                grupos_usados.add(grupo)
         
         return {
             "error": False,
@@ -3085,10 +3072,12 @@ async def calculate_x_real(company_id: str, year: int, month: int):
             "periodo_referencia_label": f"{ref_date.strftime('%b')}/{ref_year}",
             "categorias_usadas": list(categorias_detalhadas.keys()),
             "categorias_valores": categorias_detalhadas,
+            "grupos_usados": list(grupos_usados),
             "warning": warning,
             "calculated_at": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
+        logger.error(f"Erro no cálculo de X_real: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/markup-profile/{profile_id}/close-month")
