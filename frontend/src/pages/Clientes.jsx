@@ -135,16 +135,30 @@ export const Clientes = ({ user, onLogout }) => {
     e.preventDefault();
     
     // Validação de CPF/CNPJ antes de enviar
-    if (tipoCliente === 'PF' && formData.cpf) {
-      if (!isValidCPF(formData.cpf)) {
-        toast.error('CPF inválido. Por favor, verifique o número informado.');
+    if (tipoCliente === 'PF') {
+      if (formData.cpf && !isValidCPF(formData.cpf)) {
+        toast.error('CPF inválido. Por favor, corrija antes de continuar.');
+        setCpfValido(false);
+        return;
+      }
+      // CPF é obrigatório para PF
+      if (!formData.cpf || onlyDigits(formData.cpf).length < 11) {
+        toast.error('CPF é obrigatório para Pessoa Física.');
+        setCpfValido(false);
         return;
       }
     }
     
-    if (tipoCliente === 'PJ' && formData.cnpj) {
-      if (!isValidCNPJ(formData.cnpj)) {
-        toast.error('CNPJ inválido. Por favor, verifique o número informado.');
+    if (tipoCliente === 'PJ') {
+      if (formData.cnpj && !isValidCNPJ(formData.cnpj)) {
+        toast.error('CNPJ inválido. Por favor, corrija antes de continuar.');
+        setCnpjValido(false);
+        return;
+      }
+      // CNPJ é obrigatório para PJ
+      if (!formData.cnpj || onlyDigits(formData.cnpj).length < 14) {
+        toast.error('CNPJ é obrigatório para Pessoa Jurídica.');
+        setCnpjValido(false);
         return;
       }
     }
