@@ -84,7 +84,7 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
     }
   }, [mode, open, companyId]);
 
-  const calculateMarkup = () => {
+  const calculateMarkup = useCallback(() => {
     const I = (formData.simplesEffectiveRate + formData.issRate) / 100;
     const X = formData.indirectsRate / 100;
     const Y = formData.financialRate / 100;
@@ -104,9 +104,9 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
       markupMultiplier: parseFloat(markup.toFixed(4)),
       bdiPercentage: parseFloat(bdi.toFixed(2))
     });
-  };
+  }, [formData]);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get(
@@ -147,9 +147,9 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId, selectedYear, selectedMonth]);
 
-  const fetchXReal = async () => {
+  const fetchXReal = useCallback(async () => {
     if (!companyId) return;
     setLoadingXReal(true);
     try {
