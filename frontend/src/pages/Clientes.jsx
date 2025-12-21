@@ -375,12 +375,10 @@ export const Clientes = ({ user, onLogout }) => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-white">CPF *</Label>
-                      <Input
+                      <CPFInput
                         value={formData.cpf}
-                        onChange={(e) => setFormData({...formData, cpf: maskCPF(e.target.value)})}
+                        onChange={(value) => setFormData({...formData, cpf: value})}
                         required
-                        placeholder="000.000.000-00"
-                        maxLength={14}
                         className="glass border-white/10 text-white"
                       />
                     </div>
