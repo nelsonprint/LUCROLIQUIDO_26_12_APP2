@@ -7,9 +7,11 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
-import { Settings, Copy, Calculator, TrendingUp, Percent } from 'lucide-react';
+import { Settings, Calculator, TrendingUp, Percent, Zap, Lock, Unlock, AlertTriangle, RefreshCw, CheckCircle } from 'lucide-react';
 
 const MONTHS = [
   { value: 1, label: 'Janeiro' },
@@ -32,6 +34,13 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth() + 1);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [profileId, setProfileId] = useState(null);
+  
+  // Modo: MANUAL ou AUTO_MODEL2
+  const [mode, setMode] = useState('MANUAL');
+  
+  // Status de fechamento
+  const [isClosed, setIsClosed] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -50,52 +59,69 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
     bdiPercentage: 0.0
   });
 
+  // X_real suggestion (Modelo 2)
+  const [xRealData, setXRealData] = useState(null);
+  const [loadingXReal, setLoadingXReal] = useState(false);
+
   // Calculate markup on form change
   useEffect(() => {
     calculateMarkup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData]);
 
   // Load existing profile when month/year changes
   useEffect(() => {
     if (open && companyId) {
       loadProfile();
+      if (mode === 'AUTO_MODEL2') {
+        fetchXReal();
+      }
     }
-  }, [open, selectedYear, selectedMonth, companyId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, companyId, selectedYear, selectedMonth]);
+
+  // Fetch X_real when mode changes to AUTO
+  useEffect(() => {
+    if (open && companyId && mode === 'AUTO_MODEL2') {
+      fetchXReal();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   const calculateMarkup = () => {
-    const { simplesEffectiveRate, issRate, indirectsRate, financialRate, profitRate } = formData;
+    const I = (formData.simplesEffectiveRate + formData.issRate) / 100;
+    const X = formData.indirectsRate / 100;
+    const Y = formData.financialRate / 100;
+    const Z = formData.profitRate / 100;
     
-    // Convert percentages to decimals
-    const I = (simplesEffectiveRate + issRate) / 100; // Total tax rate
-    const X = indirectsRate / 100; // Indirects
-    const Y = financialRate / 100; // Financial
-    const Z = profitRate / 100; // Profit
-    
-    // Formula: markup = ((1+X)*(1+Y)*(1+Z)) / (1 - I)
-    const numerator = (1 + X) * (1 + Y) * (1 + Z);
-    const denominator = 1 - I;
-    
-    if (denominator <= 0) {
+    if (I >= 1) {
       setCalculated({ markupMultiplier: 0, bdiPercentage: 0 });
       return;
     }
     
+    const numerator = (1 + X) * (1 + Y) * (1 + Z);
+    const denominator = 1 - I;
     const markup = numerator / denominator;
     const bdi = (markup - 1) * 100;
     
     setCalculated({
-      markupMultiplier: Math.round(markup * 10000) / 10000,
-      bdiPercentage: Math.round(bdi * 100) / 100
+      markupMultiplier: parseFloat(markup.toFixed(4)),
+      bdiPercentage: parseFloat(bdi.toFixed(2))
     });
   };
 
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get(`/markup-profile/${companyId}/${selectedYear}/${selectedMonth}`);
+      const response = await axiosInstance.get(
+        `/markup-profile/${companyId}/${selectedYear}/${selectedMonth}`
+      );
       
-      if (response.data) {
+      if (response.data.has_config) {
         const profile = response.data;
+        setProfileId(profile.id);
+        setIsClosed(profile.is_closed || false);
+        setMode(profile.mode || 'MANUAL');
         setFormData({
           simplesEffectiveRate: (profile.taxes?.simples_effective_rate || 0.083) * 100,
           issRate: (profile.taxes?.iss_rate || 0.03) * 100,
@@ -106,7 +132,10 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
           notes: profile.notes || ''
         });
       } else {
-        // Reset to defaults if no profile
+        // Reset to defaults
+        setProfileId(null);
+        setIsClosed(false);
+        setMode('MANUAL');
         setFormData({
           simplesEffectiveRate: 8.3,
           issRate: 3.0,
@@ -124,7 +153,38 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
     }
   };
 
+  const fetchXReal = async () => {
+    if (!companyId) return;
+    setLoadingXReal(true);
+    try {
+      const response = await axiosInstance.get(
+        `/markup-profile/calculate-x-real/${companyId}/${selectedYear}/${selectedMonth}`
+      );
+      setXRealData(response.data);
+    } catch (error) {
+      console.error('Erro ao calcular X_real:', error);
+      setXRealData(null);
+    } finally {
+      setLoadingXReal(false);
+    }
+  };
+
+  const applyXReal = () => {
+    if (xRealData && !xRealData.error && xRealData.x_real_percent > 0) {
+      setFormData(prev => ({
+        ...prev,
+        indirectsRate: xRealData.x_real_percent
+      }));
+      toast.success(`X aplicado: ${xRealData.x_real_percent}% (baseado em ${xRealData.periodo_referencia_label})`);
+    }
+  };
+
   const handleSave = async () => {
+    if (isClosed) {
+      toast.error('Este mês está fechado. Reabra para editar.');
+      return;
+    }
+    
     setSaving(true);
     try {
       const data = {
@@ -139,237 +199,349 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
         indirects_rate: formData.indirectsRate / 100,
         financial_rate: formData.financialRate / 100,
         profit_rate: formData.profitRate / 100,
-        notes: formData.notes
+        notes: formData.notes,
+        mode: mode,
+        // Campos do Modelo 2 (se aplicável)
+        x_real_applied: mode === 'AUTO_MODEL2' && xRealData ? xRealData.x_real_percent / 100 : null,
+        x_real_base_month: mode === 'AUTO_MODEL2' && xRealData ? xRealData.periodo_referencia : null,
+        x_real_indirects_total: mode === 'AUTO_MODEL2' && xRealData ? xRealData.despesas_indiretas : null,
+        x_real_revenue_base: mode === 'AUTO_MODEL2' && xRealData ? xRealData.receita_base : null,
+        x_real_calculated_at: mode === 'AUTO_MODEL2' && xRealData ? xRealData.calculated_at : null
       };
       
-      const response = await axiosInstance.post('/markup-profile', data);
-      toast.success(response.data.message);
-      
-      if (onSave) {
-        onSave();
-      }
+      await axiosInstance.post('/markup-profile', data);
+      toast.success('Markup salvo com sucesso!');
+      onSave?.();
+      onClose();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao salvar configuração');
+      toast.error(error.response?.data?.detail || 'Erro ao salvar');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleCopyPrevious = async () => {
-    setLoading(true);
+  const handleCloseMonth = async () => {
+    if (!profileId) {
+      toast.error('Salve o perfil primeiro antes de fechar o mês');
+      return;
+    }
+    
     try {
-      const response = await axiosInstance.post(`/markup-profile/copy-previous?company_id=${companyId}&year=${selectedYear}&month=${selectedMonth}`);
-      toast.success('Configuração copiada do mês anterior!');
-      loadProfile();
+      await axiosInstance.post(`/markup-profile/${profileId}/close-month`);
+      toast.success('Mês fechado com sucesso!');
+      setIsClosed(true);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao copiar configuração');
-    } finally {
-      setLoading(false);
+      toast.error('Erro ao fechar mês');
     }
   };
 
-  const years = [];
-  for (let y = today.getFullYear() - 2; y <= today.getFullYear() + 1; y++) {
-    years.push(y);
-  }
+  const handleReopenMonth = async () => {
+    if (!profileId) return;
+    
+    try {
+      await axiosInstance.post(`/markup-profile/${profileId}/reopen-month`);
+      toast.success('Mês reaberto!');
+      setIsClosed(false);
+    } catch (error) {
+      toast.error('Erro ao reabrir mês');
+    }
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Settings className="text-purple-400" size={24} />
-            Configurar Markup/BDI Mensal
+          <DialogTitle className="flex items-center gap-2">
+            <Settings className="w-5 h-5 text-purple-400" />
+            Configurar Markup/BDI
+            {isClosed && (
+              <Badge className="ml-2 bg-red-500/20 text-red-400 border-red-500/30">
+                <Lock className="w-3 h-3 mr-1" />
+                Mês Fechado
+              </Badge>
+            )}
           </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Configure as taxas e margens para calcular o markup do mês
+          <DialogDescription className="text-zinc-400">
+            Configure o markup para o mês selecionado
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Seletor de Mês/Ano */}
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Label>Mês</Label>
-              <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  {MONTHS.map(m => (
-                    <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-32">
-              <Label>Ano</Label>
-              <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  {years.map(y => (
-                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-end">
-              <Button
-                variant="outline"
-                onClick={handleCopyPrevious}
-                disabled={loading}
-                className="border-zinc-700 hover:bg-zinc-800"
-              >
-                <Copy size={16} className="mr-2" />
-                Copiar Anterior
-              </Button>
-            </div>
-          </div>
-
-          {/* Resultado Calculado */}
-          <Card className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border-purple-500/30">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Calculator className="text-purple-400" size={28} />
-                  <div>
-                    <p className="text-gray-400 text-sm">Markup Multiplicador</p>
-                    <p className="text-3xl font-bold text-white">{calculated.markupMultiplier.toFixed(4)}x</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-gray-400 text-sm">BDI</p>
-                  <p className="text-3xl font-bold text-green-400">{calculated.bdiPercentage.toFixed(2)}%</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Impostos */}
+        {loading ? (
+          <div className="py-8 text-center text-zinc-400">Carregando...</div>
+        ) : (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-purple-400 flex items-center gap-2">
-              <Percent size={18} />
-              Impostos sobre Venda (I)
-            </h3>
-            
+            {/* Seleção de Mês/Ano */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Simples Nacional Efetivo (%)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.simplesEffectiveRate}
-                  onChange={(e) => setFormData({...formData, simplesEffectiveRate: parseFloat(e.target.value) || 0})}
-                  className="bg-zinc-800 border-zinc-700"
-                />
-                <p className="text-xs text-gray-500 mt-1">Alíquota efetiva do Simples</p>
+                <Label>Mês</Label>
+                <Select 
+                  value={selectedMonth.toString()} 
+                  onValueChange={(v) => setSelectedMonth(parseInt(v))}
+                  disabled={isClosed}
+                >
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map(m => (
+                      <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label>ISS (%)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.issRate}
-                  onChange={(e) => setFormData({...formData, issRate: parseFloat(e.target.value) || 0})}
-                  className="bg-zinc-800 border-zinc-700"
-                />
-                <p className="text-xs text-gray-500 mt-1">Imposto sobre serviços</p>
+                <Label>Ano</Label>
+                <Select 
+                  value={selectedYear.toString()} 
+                  onValueChange={(v) => setSelectedYear(parseInt(v))}
+                  disabled={isClosed}
+                >
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[today.getFullYear() - 1, today.getFullYear(), today.getFullYear() + 1].map(y => (
+                      <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            
-            <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg">
-              <Switch
-                checked={formData.includeMaterialsInISSBase}
-                onCheckedChange={(checked) => setFormData({...formData, includeMaterialsInISSBase: checked})}
-              />
-              <div>
-                <Label className="cursor-pointer">Materiais entram na base do ISS?</Label>
-                <p className="text-xs text-gray-500">Se sim, o ISS incidirá sobre materiais também</p>
-              </div>
-            </div>
-          </div>
 
-          {/* Taxas de Formação */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-blue-400 flex items-center gap-2">
-              <TrendingUp size={18} />
-              Taxas de Formação de Preço
-            </h3>
-            
+            {/* Tabs: Manual / Automático */}
+            <Tabs value={mode} onValueChange={(v) => !isClosed && setMode(v)}>
+              <TabsList className="grid w-full grid-cols-2 bg-zinc-800">
+                <TabsTrigger value="MANUAL" disabled={isClosed}>
+                  <Calculator className="w-4 h-4 mr-2" />
+                  Manual
+                </TabsTrigger>
+                <TabsTrigger value="AUTO_MODEL2" disabled={isClosed}>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Automático (Modelo 2)
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Modo Automático - Card de Sugestão */}
+              {mode === 'AUTO_MODEL2' && (
+                <div className="mt-4">
+                  {loadingXReal ? (
+                    <Card className="bg-zinc-800 border-zinc-700">
+                      <CardContent className="py-4 text-center text-zinc-400">
+                        <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2" />
+                        Calculando X_real...
+                      </CardContent>
+                    </Card>
+                  ) : xRealData?.error ? (
+                    <Card className="bg-orange-500/10 border-orange-500/30">
+                      <CardContent className="py-4">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium text-orange-300">Atenção</p>
+                            <p className="text-sm text-zinc-400">{xRealData.message}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : xRealData ? (
+                    <Card className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border-blue-500/30">
+                      <CardContent className="py-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="text-sm text-blue-300 font-medium">
+                              Sugestão baseada em {xRealData.periodo_referencia_label}
+                            </p>
+                            <p className="text-3xl font-bold text-white">
+                              X = {xRealData.x_real_percent}%
+                            </p>
+                          </div>
+                          <Button 
+                            onClick={applyXReal} 
+                            disabled={isClosed || xRealData.x_real_percent === 0}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Aplicar X_real
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="bg-zinc-800/50 rounded p-2">
+                            <p className="text-zinc-400">Despesas Indiretas</p>
+                            <p className="font-medium">{formatCurrency(xRealData.despesas_indiretas)}</p>
+                          </div>
+                          <div className="bg-zinc-800/50 rounded p-2">
+                            <p className="text-zinc-400">Receita Base</p>
+                            <p className="font-medium">{formatCurrency(xRealData.receita_base)}</p>
+                          </div>
+                        </div>
+
+                        {xRealData.warning && (
+                          <p className="text-xs text-orange-400 mt-2">
+                            ⚠️ {xRealData.warning}
+                          </p>
+                        )}
+
+                        {xRealData.categorias_usadas?.length > 0 && (
+                          <div className="mt-3">
+                            <p className="text-xs text-zinc-400 mb-1">Categorias consideradas:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {xRealData.categorias_usadas.map(cat => (
+                                <Badge key={cat} variant="outline" className="text-xs border-zinc-600">
+                                  {cat}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ) : null}
+                </div>
+              )}
+            </Tabs>
+
+            {/* Impostos */}
+            <Card className="bg-zinc-800 border-zinc-700">
+              <CardContent className="pt-4">
+                <p className="text-sm font-medium text-zinc-300 mb-3">I - Impostos sobre Venda</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs">Simples Nacional (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={formData.simplesEffectiveRate}
+                      onChange={(e) => setFormData({...formData, simplesEffectiveRate: parseFloat(e.target.value) || 0})}
+                      className="bg-zinc-900 border-zinc-600"
+                      disabled={isClosed}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">ISS (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={formData.issRate}
+                      onChange={(e) => setFormData({...formData, issRate: parseFloat(e.target.value) || 0})}
+                      className="bg-zinc-900 border-zinc-600"
+                      disabled={isClosed}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 mt-2">
+                  Total I: {(formData.simplesEffectiveRate + formData.issRate).toFixed(1)}%
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* X, Y, Z */}
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label>Indiretas - X (%)</Label>
+                <Label className="flex items-center gap-1">
+                  X - Indiretas (%)
+                  {mode === 'AUTO_MODEL2' && <Zap className="w-3 h-3 text-blue-400" />}
+                </Label>
                 <Input
                   type="number"
-                  step="0.01"
+                  step="0.1"
                   value={formData.indirectsRate}
                   onChange={(e) => setFormData({...formData, indirectsRate: parseFloat(e.target.value) || 0})}
                   className="bg-zinc-800 border-zinc-700"
+                  disabled={isClosed}
                 />
-                <p className="text-xs text-gray-500 mt-1">Custos indiretos</p>
               </div>
               <div>
-                <Label>Financeiro - Y (%)</Label>
+                <Label>Y - Financeiro (%)</Label>
                 <Input
                   type="number"
-                  step="0.01"
+                  step="0.1"
                   value={formData.financialRate}
                   onChange={(e) => setFormData({...formData, financialRate: parseFloat(e.target.value) || 0})}
                   className="bg-zinc-800 border-zinc-700"
+                  disabled={isClosed}
                 />
-                <p className="text-xs text-gray-500 mt-1">Taxa financeira</p>
               </div>
               <div>
-                <Label>Lucro - Z (%)</Label>
+                <Label>Z - Lucro (%)</Label>
                 <Input
                   type="number"
-                  step="0.01"
+                  step="0.1"
                   value={formData.profitRate}
                   onChange={(e) => setFormData({...formData, profitRate: parseFloat(e.target.value) || 0})}
                   className="bg-zinc-800 border-zinc-700"
+                  disabled={isClosed}
                 />
-                <p className="text-xs text-gray-500 mt-1">Margem de lucro</p>
+              </div>
+            </div>
+
+            {/* Resultado */}
+            <Card className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border-purple-500/30">
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-zinc-400">Markup Multiplicador</p>
+                    <p className="text-3xl font-bold text-white">{calculated.markupMultiplier}x</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-zinc-400">BDI</p>
+                    <p className="text-3xl font-bold text-purple-400">{calculated.bdiPercentage}%</p>
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 mt-3">
+                  Fórmula: ((1+X) × (1+Y) × (1+Z)) / (1 - I)
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Observações */}
+            <div>
+              <Label>Observações</Label>
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                className="bg-zinc-800 border-zinc-700"
+                rows={2}
+                disabled={isClosed}
+              />
+            </div>
+
+            {/* Botões */}
+            <div className="flex justify-between pt-4">
+              <div>
+                {profileId && (
+                  isClosed ? (
+                    <Button variant="outline" onClick={handleReopenMonth} className="border-zinc-700">
+                      <Unlock className="w-4 h-4 mr-2" />
+                      Reabrir Mês
+                    </Button>
+                  ) : (
+                    <Button variant="outline" onClick={handleCloseMonth} className="border-orange-500 text-orange-400 hover:bg-orange-500/20">
+                      <Lock className="w-4 h-4 mr-2" />
+                      Fechar Mês
+                    </Button>
+                  )
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={onClose} className="border-zinc-700">
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleSave} 
+                  disabled={saving || isClosed}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  {saving ? 'Salvando...' : 'Salvar Markup'}
+                </Button>
               </div>
             </div>
           </div>
-
-          {/* Fórmula */}
-          <div className="p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
-            <p className="text-xs text-gray-400 font-mono text-center">
-              Markup = ((1+X) × (1+Y) × (1+Z)) / (1 - I)
-            </p>
-            <p className="text-xs text-gray-500 text-center mt-1">
-              = ((1+{(formData.indirectsRate/100).toFixed(2)}) × (1+{(formData.financialRate/100).toFixed(2)}) × (1+{(formData.profitRate/100).toFixed(2)})) / (1 - {((formData.simplesEffectiveRate + formData.issRate)/100).toFixed(3)})
-            </p>
-          </div>
-
-          {/* Observações */}
-          <div>
-            <Label>Observações</Label>
-            <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              placeholder="Anotações sobre esta configuração..."
-              className="bg-zinc-800 border-zinc-700 h-20"
-            />
-          </div>
-
-          {/* Botões */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-700">
-            <Button variant="outline" onClick={onClose} className="border-zinc-700">
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            >
-              {saving ? 'Salvando...' : 'Salvar Configuração'}
-            </Button>
-          </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
