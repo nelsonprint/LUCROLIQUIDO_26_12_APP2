@@ -37,6 +37,7 @@ export const Sidebar = ({ user, onLogout, onNavigate }) => {
     { path: '/orcamentos', icon: FileText, label: 'Orçamentos' },
     { path: '/config-orcamento', icon: Settings, label: 'Config. Orç.' },
     { path: '/tabela-precos', icon: Layers, label: 'Serviços' },
+    { path: '/plano-contas', icon: FolderTree, label: 'Plano de Contas' },
     { path: '/materiais', icon: Package, label: 'Materiais' },
     { path: '/assinatura', icon: CreditCard, label: 'Assinatura' },
   ];
