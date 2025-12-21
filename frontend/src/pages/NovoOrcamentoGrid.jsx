@@ -320,7 +320,7 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
 
   return (
     <div className="flex min-h-screen bg-zinc-950 text-white">
-      <Sidebar user={user} onLogout={onLogout} activePage="orcamentos" />
+      <Sidebar user={user} onLogout={onLogout} activePage="orcamentos" onNavigate={handleNavigate} />
 
       <div className="flex-1 p-8 ml-64">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -331,7 +331,7 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
-                onClick={() => navigate('/orcamentos')}
+                onClick={() => handleNavigate('/orcamentos')}
                 className="text-zinc-400 hover:text-white"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -348,22 +348,37 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
               <div className="text-right">
                 <p className="text-xs text-zinc-400">Total do Orçamento</p>
                 <p className="text-2xl font-bold text-green-400">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalServicos)}
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalGeral)}
                 </p>
+                {totalMateriais > 0 && (
+                  <p className="text-xs text-zinc-500">
+                    Serviços: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalServicos)} | 
+                    Materiais: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalMateriais)}
+                  </p>
+                )}
               </div>
             </Card>
           </div>
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3 bg-zinc-900">
+            <TabsList className="grid w-full grid-cols-4 bg-zinc-900">
               <TabsTrigger value="cliente" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 Cliente
               </TabsTrigger>
               <TabsTrigger value="itens" className="flex items-center gap-2">
                 <Calculator className="w-4 h-4" />
-                Itens
+                Serviços
+              </TabsTrigger>
+              <TabsTrigger value="materiais" className="flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                Materiais
+                {totalMateriais > 0 && (
+                  <span className="ml-1 text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalMateriais)}
+                  </span>
+                )}
               </TabsTrigger>
               <TabsTrigger value="condicoes" className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4" />
