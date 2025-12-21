@@ -252,7 +252,7 @@ const Lancamentos = ({ user, onLogout }) => {
     setFormData({
       type: 'receita',
       description: '',
-      amount: '',
+      amount: 0,  // Valor numérico
       category_id: '',
       competence_month: new Date().toISOString().slice(0, 7),
       date: new Date().toISOString().slice(0, 10),
