@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2, Search, Calculator } from 'lucide-react';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
+import { formatBRL, parseBRL } from '@/lib/formatters';
 
 // Unidades disponíveis
 const UNITS = [
