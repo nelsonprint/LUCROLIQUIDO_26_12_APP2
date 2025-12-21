@@ -107,17 +107,17 @@ export const Sidebar = ({ user, onLogout, onNavigate }) => {
                     {item.items.map((subItem) => {
                       const isSubActive = location.pathname === subItem.path;
                       return (
-                        <Link key={subItem.path} to={subItem.path}>
-                          <div
-                            className={`px-4 py-2 rounded-lg text-sm transition-all ${
-                              isSubActive
-                                ? 'bg-white/10 text-white font-medium'
-                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                            }`}
-                          >
-                            {subItem.label}
-                          </div>
-                        </Link>
+                        <div
+                          key={subItem.path}
+                          onClick={() => handleNavigation(subItem.path)}
+                          className={`px-4 py-2 rounded-lg text-sm transition-all cursor-pointer ${
+                            isSubActive
+                              ? 'bg-white/10 text-white font-medium'
+                              : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                          }`}
+                        >
+                          {subItem.label}
+                        </div>
                       );
                     })}
                   </div>
@@ -131,7 +131,12 @@ export const Sidebar = ({ user, onLogout, onNavigate }) => {
           const isActive = location.pathname === item.path;
 
           return (
-            <Link key={item.path} to={item.path} data-testid={`sidebar-link-${item.label.toLowerCase().replace(' ', '-')}`}>
+            <div 
+              key={item.path} 
+              onClick={() => handleNavigation(item.path)} 
+              data-testid={`sidebar-link-${item.label.toLowerCase().replace(' ', '-')}`}
+              className="cursor-pointer"
+            >
               <div
                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
                   isActive
@@ -142,7 +147,7 @@ export const Sidebar = ({ user, onLogout, onNavigate }) => {
                 <Icon size={20} />
                 <span className="font-medium">{item.label}</span>
               </div>
-            </Link>
+            </div>
           );
         })}
 
