@@ -207,6 +207,7 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
 
   // Calcular totais
   const totalServicos = orcamentoItems.reduce((acc, item) => acc + (item.line_total || 0), 0);
+  const totalGeral = totalServicos + totalMateriais;
 
   // Validar e salvar orçamento
   const handleSalvarOrcamento = async () => {
