@@ -397,17 +397,18 @@ const Lancamentos = ({ user, onLogout }) => {
                     {availableCategories.length === 0 && <span className="text-xs text-gray-500 ml-2">(selecione o tipo primeiro)</span>}
                   </Label>
                   <Select 
-                    value={formData.category} 
-                    onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    value={formData.category_id} 
+                    onValueChange={(value) => setFormData({ ...formData, category_id: value })}
                     disabled={availableCategories.length === 0}
                   >
                     <SelectTrigger className="bg-white/5 border-white/10 text-white" data-testid="transaction-category-select">
                       <SelectValue placeholder={availableCategories.length === 0 ? "Selecione o tipo primeiro" : "Selecione a categoria"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {getCategoryOptions().map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
+                      {availableCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                          {cat.is_indirect_for_markup && <span className="ml-2 text-xs text-blue-400">(Markup)</span>}
                         </SelectItem>
                       ))}
                     </SelectContent>
