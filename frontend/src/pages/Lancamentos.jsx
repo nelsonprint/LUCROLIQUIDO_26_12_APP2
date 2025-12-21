@@ -56,12 +56,20 @@ const Lancamentos = ({ user, onLogout }) => {
       const response = await axiosInstance.get(`/expense-categories/${company.id}?active_only=true`);
       const planoCategorias = response.data.categories || [];
       
+      console.log('📊 Total de categorias carregadas:', planoCategorias.length);
+      
       // Organizar por tipo (case-insensitive)
       const organized = {
         receita: planoCategorias.filter(c => c.type?.toLowerCase() === 'receita'),
         custo: planoCategorias.filter(c => c.type?.toLowerCase() === 'custo'),
         despesa: planoCategorias.filter(c => c.type?.toLowerCase() === 'despesa'),
       };
+      
+      console.log('📋 Categorias organizadas:', {
+        receita: organized.receita.length,
+        custo: organized.custo.length,
+        despesa: organized.despesa.length
+      });
       
       setCategories(organized);
       // Inicializar categorias disponíveis baseado no tipo inicial
