@@ -2746,6 +2746,318 @@ async def create_or_update_orcamento_config(config_data: OrcamentoConfigCreate, 
         
         return {"message": "Configuração criada com sucesso!"}
 
+# ========== ROTAS: PLANO DE CONTAS (CATEGORIAS PARA MARKUP) ==========
+
+@api_router.get("/expense-categories/{company_id}")
+async def get_expense_categories(company_id: str, active_only: bool = True):
+    """Listar categorias de despesa configuradas para o markup"""
+    try:
+        query = {"company_id": company_id}
+        if active_only:
+            query["active"] = True
+        
+        categories = await db.expense_categories.find(query, {"_id": 0}).sort("name", 1).to_list(100)
+        return {"categories": categories}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/expense-categories")
+async def create_expense_category(data: ExpenseCategoryCreate):
+    """Criar nova categoria de despesa para o Plano de Contas"""
+    try:
+        # Validar group
+        if data.group not in EXPENSE_GROUPS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Grupo inválido. Use: {', '.join(EXPENSE_GROUPS)}"
+            )
+        
+        # Verificar duplicidade
+        existing = await db.expense_categories.find_one({
+            "company_id": data.company_id,
+            "name": data.name.strip()
+        })
+        
+        if existing:
+            raise HTTPException(status_code=400, detail="Categoria já existe")
+        
+        category = ExpenseCategoryConfig(
+            company_id=data.company_id,
+            name=data.name.strip(),
+            type=data.type,
+            group=data.group,
+            is_indirect_for_markup=data.is_indirect_for_markup,
+            description=data.description
+        )
+        
+        doc = category.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        doc['updated_at'] = doc['updated_at'].isoformat()
+        
+        await db.expense_categories.insert_one(doc)
+        doc.pop('_id', None)
+        
+        return {"message": "Categoria criada com sucesso!", "category": doc}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/expense-categories/{category_id}")
+async def update_expense_category(category_id: str, data: ExpenseCategoryCreate):
+    """Atualizar categoria de despesa"""
+    try:
+        if data.group not in EXPENSE_GROUPS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Grupo inválido. Use: {', '.join(EXPENSE_GROUPS)}"
+            )
+        
+        result = await db.expense_categories.update_one(
+            {"id": category_id},
+            {"$set": {
+                "name": data.name.strip(),
+                "type": data.type,
+                "group": data.group,
+                "is_indirect_for_markup": data.is_indirect_for_markup,
+                "description": data.description,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Categoria não encontrada")
+        
+        return {"message": "Categoria atualizada com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.patch("/expense-categories/{category_id}/toggle")
+async def toggle_expense_category(category_id: str, active: bool):
+    """Ativar/Desativar categoria"""
+    try:
+        result = await db.expense_categories.update_one(
+            {"id": category_id},
+            {"$set": {
+                "active": active,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Categoria não encontrada")
+        
+        status = "ativada" if active else "desativada"
+        return {"message": f"Categoria {status} com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/expense-categories/{company_id}/seed-defaults")
+async def seed_default_expense_categories(company_id: str):
+    """Criar categorias padrão para uma empresa"""
+    try:
+        # Verificar se já existem categorias
+        existing_count = await db.expense_categories.count_documents({"company_id": company_id})
+        if existing_count > 0:
+            return {"message": "Categorias já existem para esta empresa", "created": 0}
+        
+        # Categorias padrão
+        default_categories = [
+            # FIXAS - Entram no X_real
+            {"name": "Aluguel", "group": "FIXA", "is_indirect_for_markup": True, "description": "Aluguel do escritório/sede"},
+            {"name": "Energia Elétrica", "group": "FIXA", "is_indirect_for_markup": True, "description": "Conta de luz"},
+            {"name": "Água", "group": "FIXA", "is_indirect_for_markup": True, "description": "Conta de água"},
+            {"name": "Telefone/Internet", "group": "FIXA", "is_indirect_for_markup": True, "description": "Telecomunicações"},
+            {"name": "Contador", "group": "FIXA", "is_indirect_for_markup": True, "description": "Honorários contábeis"},
+            {"name": "Salários Administrativos", "group": "FIXA", "is_indirect_for_markup": True, "description": "Salários do pessoal administrativo"},
+            {"name": "Software/Sistemas", "group": "FIXA", "is_indirect_for_markup": True, "description": "Licenças de software"},
+            {"name": "Marketing", "group": "FIXA", "is_indirect_for_markup": True, "description": "Publicidade e marketing"},
+            
+            # VARIÁVEIS INDIRETAS - Entram no X_real
+            {"name": "Combustível Administrativo", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Combustível de veículos administrativos"},
+            {"name": "Material de Escritório", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Papelaria e suprimentos"},
+            {"name": "Manutenção Equipamentos", "group": "VARIAVEL_INDIRETA", "is_indirect_for_markup": True, "description": "Manutenção de equipamentos de escritório"},
+            
+            # DIRETAS DA OBRA - NÃO entram no X_real
+            {"name": "Salários Operacionais", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Salários de operários (entra no custo do serviço)"},
+            {"name": "Materiais de Obra", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Materiais aplicados na obra"},
+            {"name": "Combustível Obra", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Combustível para obras específicas"},
+            {"name": "Aluguel Equipamentos", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Aluguel de máquinas para obras"},
+            {"name": "Subempreiteiros", "group": "DIRETA_OBRA", "is_indirect_for_markup": False, "description": "Terceirizados em obras"},
+        ]
+        
+        created_count = 0
+        for cat_data in default_categories:
+            category = ExpenseCategoryConfig(
+                company_id=company_id,
+                name=cat_data["name"],
+                type="DESPESA",
+                group=cat_data["group"],
+                is_indirect_for_markup=cat_data["is_indirect_for_markup"],
+                description=cat_data.get("description")
+            )
+            
+            doc = category.model_dump()
+            doc['created_at'] = doc['created_at'].isoformat()
+            doc['updated_at'] = doc['updated_at'].isoformat()
+            
+            await db.expense_categories.insert_one(doc)
+            created_count += 1
+        
+        return {"message": f"{created_count} categorias padrão criadas!", "created": created_count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ========== ROTAS: CÁLCULO X_REAL (MODELO 2) ==========
+
+@api_router.get("/markup-profile/calculate-x-real/{company_id}/{year}/{month}")
+async def calculate_x_real(company_id: str, year: int, month: int):
+    """
+    Calcula X_real = (Despesas Indiretas) / (Receita Base) do mês anterior.
+    Usa regime de competência (data do lançamento representa o mês de competência).
+    """
+    try:
+        from dateutil.relativedelta import relativedelta
+        
+        # Mês base = mês anterior ao solicitado
+        ref_date = date(year, month, 1) - relativedelta(months=1)
+        ref_year = ref_date.year
+        ref_month = ref_date.month
+        ref_month_str = f"{ref_year}-{str(ref_month).zfill(2)}"
+        
+        # Buscar categorias que entram no X_real
+        indirect_categories = await db.expense_categories.find({
+            "company_id": company_id,
+            "is_indirect_for_markup": True,
+            "active": True
+        }, {"_id": 0, "name": 1}).to_list(100)
+        
+        category_names = [c["name"] for c in indirect_categories]
+        
+        # Se não houver categorias configuradas, retornar erro amigável
+        if not category_names:
+            return {
+                "error": True,
+                "message": "Nenhuma categoria configurada para o cálculo de X_real. Configure o Plano de Contas primeiro.",
+                "x_real": 0,
+                "x_real_percent": 0,
+                "despesas_indiretas": 0,
+                "receita_base": 0,
+                "periodo_referencia": ref_month_str,
+                "categorias_usadas": []
+            }
+        
+        # Buscar despesas indiretas por competência (usando o campo date no formato YYYY-MM-DD)
+        # O mês de competência é derivado do campo date
+        despesas_query = {
+            "company_id": company_id,
+            "type": {"$in": ["despesa", "custo"]},
+            "category": {"$in": category_names},
+            "date": {"$regex": f"^{ref_month_str}"}  # Filtra por mês (YYYY-MM)
+        }
+        
+        despesas = await db.transactions.find(despesas_query, {"_id": 0, "amount": 1, "category": 1}).to_list(1000)
+        despesas_indiretas = sum([d["amount"] for d in despesas])
+        
+        # Buscar receita base por competência
+        receita_query = {
+            "company_id": company_id,
+            "type": "receita",
+            "date": {"$regex": f"^{ref_month_str}"}
+        }
+        
+        receitas = await db.transactions.find(receita_query, {"_id": 0, "amount": 1}).to_list(1000)
+        receita_base = sum([r["amount"] for r in receitas])
+        
+        # Calcular X_real
+        x_real = 0
+        x_real_percent = 0
+        warning = None
+        
+        if receita_base > 0:
+            x_real = despesas_indiretas / receita_base
+            x_real_percent = round(x_real * 100, 2)
+            
+            # Alerta se X_real for muito alto (> 60%)
+            if x_real_percent > 60:
+                warning = f"X_real muito alto ({x_real_percent}%). Verifique se as categorias estão corretas ou se houve despesas extraordinárias."
+        elif despesas_indiretas > 0:
+            warning = "Receita base = R$ 0,00. Não é possível calcular X_real. Verifique os lançamentos de receita do mês anterior."
+        else:
+            warning = "Sem dados suficientes para calcular X_real. Verifique os lançamentos do mês anterior."
+        
+        # Detalhar categorias usadas
+        categorias_detalhadas = {}
+        for d in despesas:
+            cat = d["category"]
+            if cat not in categorias_detalhadas:
+                categorias_detalhadas[cat] = 0
+            categorias_detalhadas[cat] += d["amount"]
+        
+        return {
+            "error": False,
+            "x_real": round(x_real, 4),
+            "x_real_percent": x_real_percent,
+            "despesas_indiretas": round(despesas_indiretas, 2),
+            "receita_base": round(receita_base, 2),
+            "periodo_referencia": ref_month_str,
+            "periodo_referencia_label": f"{ref_date.strftime('%b')}/{ref_year}",
+            "categorias_usadas": list(categorias_detalhadas.keys()),
+            "categorias_valores": categorias_detalhadas,
+            "warning": warning,
+            "calculated_at": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/markup-profile/{profile_id}/close-month")
+async def close_markup_month(profile_id: str):
+    """Fechar o mês do markup (impede recálculo automático)"""
+    try:
+        result = await db.markup_profiles.update_one(
+            {"id": profile_id},
+            {"$set": {
+                "is_closed": True,
+                "closed_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Perfil não encontrado")
+        
+        return {"message": "Mês fechado com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/markup-profile/{profile_id}/reopen-month")
+async def reopen_markup_month(profile_id: str):
+    """Reabrir o mês do markup (permite recálculo)"""
+    try:
+        result = await db.markup_profiles.update_one(
+            {"id": profile_id},
+            {"$set": {
+                "is_closed": False,
+                "closed_at": None,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Perfil não encontrado")
+        
+        return {"message": "Mês reaberto com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ========== ROTAS: MARKUP/BDI MENSAL ==========
 
 def calculate_markup(indirects_rate: float, financial_rate: float, profit_rate: float, tax_rate: float) -> tuple:
