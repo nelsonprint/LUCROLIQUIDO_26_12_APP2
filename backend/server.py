@@ -5042,6 +5042,29 @@ async def get_service_price_item(item_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+async def gerar_codigo_servico(company_id: str):
+    """Gerar código automático sequencial para serviço (formato: SRV-0001)"""
+    # Buscar último serviço com código automático
+    ultimo_servico = await db.service_price_table.find_one(
+        {
+            "company_id": company_id,
+            "code": {"$regex": r"^SRV-\d+$"}
+        },
+        sort=[("created_at", -1)]
+    )
+    
+    if ultimo_servico and ultimo_servico.get('code'):
+        try:
+            # Extrair número do último código
+            ultimo_numero = int(ultimo_servico['code'].split('-')[-1])
+            proximo_numero = ultimo_numero + 1
+        except:
+            proximo_numero = 1
+    else:
+        proximo_numero = 1
+    
+    return f"SRV-{proximo_numero:04d}"
+
 @api_router.post("/service-price-table")
 async def create_service_price(data: ServicePriceCreate):
     """Criar novo item na tabela de preços"""
@@ -5076,10 +5099,18 @@ async def create_service_price(data: ServicePriceCreate):
                 detail="Já existe um serviço com essa descrição, unidade e categoria"
             )
         
+        # Gerar código automático se não fornecido
+        service_code = None
+        if data.code:
+            service_code = data.code.strip().upper()
+        else:
+            # Código automático
+            service_code = await gerar_codigo_servico(data.company_id)
+        
         # Criar item
         item = ServicePrice(
             company_id=data.company_id,
-            code=data.code.strip().upper() if data.code else None,
+            code=service_code,
             description=description,
             category=data.category.strip() if data.category else None,
             unit=data.unit,
