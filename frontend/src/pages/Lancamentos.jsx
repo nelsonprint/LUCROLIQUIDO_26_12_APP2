@@ -82,34 +82,44 @@ const Lancamentos = ({ user, onLogout }) => {
 
   // Atualizar categorias disponíveis quando o tipo mudar
   const updateAvailableCategories = (type, categoriesData = categories) => {
+    console.log('🔄 updateAvailableCategories chamado:', { type, categoriesData });
+    
     if (type === 'receita') {
-      setAvailableCategories(categoriesData.receita || []);
+      const receitaCats = categoriesData.receita || [];
+      console.log('✅ Definindo categorias de RECEITA:', receitaCats.length);
+      setAvailableCategories(receitaCats);
     } else if (type === 'custo') {
-      setAvailableCategories(categoriesData.custo || []);
+      const custoCats = categoriesData.custo || [];
+      console.log('✅ Definindo categorias de CUSTO:', custoCats.length);
+      setAvailableCategories(custoCats);
     } else if (type === 'despesa') {
-      setAvailableCategories(categoriesData.despesa || []);
+      const despesaCats = categoriesData.despesa || [];
+      console.log('✅ Definindo categorias de DESPESA:', despesaCats.length);
+      setAvailableCategories(despesaCats);
     } else {
+      console.log('⚠️ Tipo desconhecido, limpando categorias');
       setAvailableCategories([]);
     }
   };
 
   // Handler para mudança de tipo - limpa categoria e atualiza opções
   const handleTypeChange = (newType) => {
+    console.log('🎯 handleTypeChange:', newType);
     setFormData({
       ...formData,
       type: newType,
       category_id: '' // Limpar categoria ao mudar tipo
     });
-    updateAvailableCategories(newType);
+    updateAvailableCategories(newType, categories);
   };
 
   // Atualizar categorias disponíveis quando o modal abrir
   useEffect(() => {
-    if (showDialog && categories) {
-      // Atualizar categorias disponíveis baseado no tipo atual
+    if (showDialog && Object.keys(categories).length > 0) {
+      console.log('🚀 Modal aberto, atualizando categorias para tipo:', formData.type);
       updateAvailableCategories(formData.type, categories);
     }
-  }, [showDialog, categories, formData.type]);
+  }, [showDialog]);
 
   const fetchTransactions = async () => {
     if (!company.id) return;
