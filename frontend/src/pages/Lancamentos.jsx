@@ -52,13 +52,23 @@ const Lancamentos = ({ user, onLogout }) => {
 
   const fetchCategories = async () => {
     try {
-      const url = company.id ? `/categories?company_id=${company.id}` : '/categories';
-      const response = await axiosInstance.get(url);
-      setCategories(response.data);
+      // Buscar categorias do Plano de Contas
+      const response = await axiosInstance.get(`/expense-categories/${company.id}?active_only=true`);
+      const planoCategorias = response.data.categories || [];
+      
+      // Organizar por tipo
+      const organized = {
+        receita: planoCategorias.filter(c => c.type === 'receita'),
+        custo: planoCategorias.filter(c => c.type === 'custo'),
+        despesa: planoCategorias.filter(c => c.type === 'despesa'),
+      };
+      
+      setCategories(organized);
       // Inicializar categorias disponíveis baseado no tipo inicial
-      updateAvailableCategories('receita', response.data);
+      updateAvailableCategories('receita', organized);
     } catch (error) {
-      toast.error('Erro ao carregar categorias');
+      console.error('Erro ao carregar categorias:', error);
+      toast.error('Erro ao carregar categorias do Plano de Contas');
     }
   };
 
@@ -80,7 +90,7 @@ const Lancamentos = ({ user, onLogout }) => {
     setFormData({
       ...formData,
       type: newType,
-      category: '' // Limpar categoria ao mudar tipo
+      category_id: '' // Limpar categoria ao mudar tipo
     });
     updateAvailableCategories(newType);
   };
