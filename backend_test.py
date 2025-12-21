@@ -20,7 +20,7 @@ from datetime import datetime
 import math
 
 # Configuration
-BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://budget-wizard-72.preview.emergentagent.com')
+BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://markupcalc-1.preview.emergentagent.com')
 API_BASE = f"{BACKEND_URL}/api"
 
 class ServicePriceTableTester:
