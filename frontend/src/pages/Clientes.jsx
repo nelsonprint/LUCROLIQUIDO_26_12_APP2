@@ -441,7 +441,11 @@ export const Clientes = ({ user, onLogout }) => {
                       <Label className="text-white">CNPJ *</Label>
                       <CNPJInput
                         value={formData.cnpj}
-                        onChange={(value) => setFormData({...formData, cnpj: value})}
+                        onChange={(value) => {
+                          setFormData({...formData, cnpj: value});
+                          setCnpjValido(true); // Reset validação ao digitar
+                        }}
+                        onValidation={(isValid) => setCnpjValido(isValid)}
                         required
                         className="glass border-white/10 text-white"
                       />
