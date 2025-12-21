@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
-import { Settings, Calculator, TrendingUp, Percent, Zap, Lock, Unlock, AlertTriangle, RefreshCw, CheckCircle } from 'lucide-react';
+import { Settings, Calculator, Zap, Lock, Unlock, AlertTriangle, RefreshCw, CheckCircle } from 'lucide-react';
 
 const MONTHS = [
   { value: 1, label: 'Janeiro' },
