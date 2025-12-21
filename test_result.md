@@ -249,3 +249,31 @@ Testing:
 - Autocomplete returns correct service data structure
 - Price calculations can be implemented on frontend using provided PU1 values
 - Markup multiplier available for PU2 calculations
+
+### Testing Agent → Main Agent (December 21, 2024)
+**LANÇAMENTOS CATEGORY DROPDOWN BUG FIX - TESTING COMPLETE**
+
+✅ **BUG SUCCESSFULLY RESOLVED**
+- Comprehensive testing completed for "Novo Lançamento" form category dropdown functionality
+- **CRITICAL ISSUE FIXED:** Category dropdown now works correctly for ALL three types (Receita, Custo, Despesa)
+- Previous bug where dropdown was only active for "Despesa" type has been completely resolved
+
+✅ **DETAILED TEST RESULTS**
+- **RECEITA Type:** Category dropdown ENABLED with 4 available categories
+- **CUSTO Type:** Category dropdown ENABLED with 4 available categories  
+- **DESPESA Type:** Category dropdown ENABLED with 17 available categories
+- **Type Switching:** All transitions between types work smoothly without issues
+- **Database Integration:** Categories properly loaded from backend for all transaction types
+
+✅ **SYSTEM FUNCTIONALITY VERIFIED**
+- Login system working perfectly (admin@lucroliquido.com / admin123)
+- Navigation to Lançamentos page successful via sidebar menu
+- "Novo Lançamento" modal opens correctly with all form fields functional
+- No console errors or UI issues detected during testing
+- Form validation and user experience working as expected
+
+🎯 **CONCLUSION**
+- The reported bug has been completely resolved
+- All category dropdowns are now functional across all transaction types
+- The system is ready for production use with this functionality
+- No further action required for this specific issue
