@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { CPFInput, CNPJInput } from '@/components/ui/cpf-cnpj-input';
+import { maskPhone, isValidCPF, isValidCNPJ, onlyDigits } from '@/lib/formatters';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { Users, Plus, Edit, Trash2, Phone } from 'lucide-react';
