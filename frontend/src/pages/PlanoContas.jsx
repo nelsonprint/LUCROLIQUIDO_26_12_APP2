@@ -216,7 +216,7 @@ const PlanoContas = ({ user, onLogout }) => {
                 <div>
                   <p className="font-medium text-orange-300">Sobre "Direta de Obra"</p>
                   <p className="text-sm text-zinc-400 mt-1">
-                    Categorias do grupo "Direta de Obra" <strong>NÃO</strong> entram no cálculo do X_real para evitar dupla contagem. 
+                    Categorias do grupo &quot;Direta de Obra&quot; <strong>NÃO</strong> entram no cálculo do X_real para evitar dupla contagem. 
                     Esses custos devem ser tratados como custo direto do serviço (no orçamento).
                   </p>
                 </div>
