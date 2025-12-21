@@ -66,7 +66,6 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
   // Calculate markup on form change
   useEffect(() => {
     calculateMarkup();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData]);
 
   // Load existing profile when month/year changes
@@ -77,7 +76,6 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
         fetchXReal();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, companyId, selectedYear, selectedMonth]);
 
   // Fetch X_real when mode changes to AUTO
@@ -85,8 +83,7 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
     if (open && companyId && mode === 'AUTO_MODEL2') {
       fetchXReal();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, [mode, open, companyId]);
 
   const calculateMarkup = () => {
     const I = (formData.simplesEffectiveRate + formData.issRate) / 100;
