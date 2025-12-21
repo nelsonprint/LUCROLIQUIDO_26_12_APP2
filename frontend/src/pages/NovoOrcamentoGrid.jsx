@@ -474,14 +474,14 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
 
                   <div className="flex justify-end">
                     <Button onClick={() => setActiveTab('itens')} className="bg-purple-600 hover:bg-purple-700">
-                      Próximo: Itens
+                      Próximo: Serviços
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Tab: Itens */}
+            {/* Tab: Itens/Serviços */}
             <TabsContent value="itens" className="space-y-4 mt-4">
               <OrcamentoItemsGrid
                 companyId={company.id}
@@ -494,6 +494,49 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
               <div className="flex justify-between">
                 <Button variant="outline" onClick={() => setActiveTab('cliente')} className="border-zinc-700">
                   Voltar: Cliente
+                </Button>
+                <Button onClick={() => setActiveTab('materiais')} className="bg-purple-600 hover:bg-purple-700">
+                  Próximo: Materiais
+                </Button>
+              </div>
+            </TabsContent>
+
+            {/* Tab: Materiais */}
+            <TabsContent value="materiais" className="space-y-4 mt-4">
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="w-5 h-5 text-orange-400" />
+                    Materiais para Revenda
+                  </CardTitle>
+                  <CardDescription className="text-zinc-400">
+                    Adicione materiais que serão revendidos ao cliente com margem de lucro
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <OrcamentoMateriais 
+                    orcamentoId={null}
+                    onTotalChange={(total) => setTotalMateriais(total)}
+                  />
+                </CardContent>
+              </Card>
+
+              {totalMateriais > 0 && (
+                <Card className="bg-zinc-800 border-zinc-700">
+                  <CardContent className="pt-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-zinc-400">Total dos Materiais:</span>
+                      <span className="text-xl font-bold text-orange-400">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalMateriais)}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setActiveTab('itens')} className="border-zinc-700">
+                  Voltar: Serviços
                 </Button>
                 <Button onClick={() => setActiveTab('condicoes')} className="bg-purple-600 hover:bg-purple-700">
                   Próximo: Condições
