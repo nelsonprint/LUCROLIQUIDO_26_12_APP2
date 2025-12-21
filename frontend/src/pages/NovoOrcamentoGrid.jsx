@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CPFInput, CNPJInput } from '@/components/ui/cpf-cnpj-input';
+import { maskPhone, isValidCPF, isValidCNPJ, formatBRL, parseBRL } from '@/lib/formatters';
 import { 
   FileText, Users, Calendar, CreditCard, Save, ArrowLeft, 
   Plus, UserPlus, Loader2, Calculator, Package, AlertTriangle
