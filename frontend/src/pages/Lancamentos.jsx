@@ -211,7 +211,7 @@ const Lancamentos = ({ user, onLogout }) => {
     setFormData({
       type: transaction.type,
       description: transaction.description,
-      amount: transaction.amount.toString(),
+      amount: parseFloat(transaction.amount) || 0,  // Valor numérico
       category_id: transaction.category_id || '',
       competence_month: transaction.competence_month || new Date().toISOString().slice(0, 7),
       date: transaction.date,
@@ -225,7 +225,7 @@ const Lancamentos = ({ user, onLogout }) => {
     setFormData({
       type: 'receita',
       description: '',
-      amount: '',
+      amount: 0,  // Valor numérico
       category_id: '',
       competence_month: new Date().toISOString().slice(0, 7),
       date: new Date().toISOString().slice(0, 10),
