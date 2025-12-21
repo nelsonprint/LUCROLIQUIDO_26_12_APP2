@@ -664,11 +664,10 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                     </div>
                     <div>
                       <Label>CPF</Label>
-                      <Input
+                      <CPFInput
                         value={novoClienteForm.cpf}
-                        onChange={(e) => setNovoClienteForm({...novoClienteForm, cpf: maskCPF(e.target.value)})}
+                        onChange={(value) => setNovoClienteForm({...novoClienteForm, cpf: value})}
                         className="bg-zinc-800 border-zinc-700"
-                        placeholder="000.000.000-00"
                       />
                     </div>
                   </div>
@@ -685,11 +684,10 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                     </div>
                     <div>
                       <Label>CNPJ</Label>
-                      <Input
+                      <CNPJInput
                         value={novoClienteForm.cnpj}
-                        onChange={(e) => setNovoClienteForm({...novoClienteForm, cnpj: maskCNPJ(e.target.value)})}
+                        onChange={(value) => setNovoClienteForm({...novoClienteForm, cnpj: value})}
                         className="bg-zinc-800 border-zinc-700"
-                        placeholder="00.000.000/0000-00"
                       />
                     </div>
                   </div>
