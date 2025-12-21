@@ -236,9 +236,7 @@ const MarkupConfigModal = ({ open, onClose, companyId, onSave }) => {
     }
   };
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  };
+  const formatCurrency = (value) => formatBRL(value);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
