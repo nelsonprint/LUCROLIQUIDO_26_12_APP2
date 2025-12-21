@@ -224,6 +224,16 @@ function App() {
             )
           }
         />
+        <Route
+          path="/plano-contas"
+          element={
+            user ? (
+              <PlanoContas user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
 
         <Route
           path="/config-orcamento"
