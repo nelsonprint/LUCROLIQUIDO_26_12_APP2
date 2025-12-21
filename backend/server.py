@@ -3191,10 +3191,24 @@ async def create_or_update_markup_profile(data: MarkupProfileCreate):
             "markup_multiplier": markup_multiplier,
             "bdi_percentage": bdi_percentage,
             "notes": data.notes,
+            # Campos do Modelo 2
+            "mode": data.mode,
+            "x_real_applied": data.x_real_applied,
+            "x_real_base_month": data.x_real_base_month,
+            "x_real_indirects_total": data.x_real_indirects_total,
+            "x_real_revenue_base": data.x_real_revenue_base,
+            "x_real_calculated_at": data.x_real_calculated_at,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
         
         if existing:
+            # Verificar se o mês está fechado
+            if existing.get("is_closed"):
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Este mês está fechado. Reabra o mês para editar."
+                )
+            
             # Atualizar existente
             await db.markup_profiles.update_one(
                 {"id": existing["id"]},
@@ -3204,6 +3218,7 @@ async def create_or_update_markup_profile(data: MarkupProfileCreate):
                 "message": "Perfil de markup atualizado com sucesso!",
                 "markup_multiplier": markup_multiplier,
                 "bdi_percentage": bdi_percentage,
+                "mode": data.mode,
                 "updated": True
             }
         else:
@@ -3218,7 +3233,13 @@ async def create_or_update_markup_profile(data: MarkupProfileCreate):
                 profit_rate=data.profit_rate,
                 markup_multiplier=markup_multiplier,
                 bdi_percentage=bdi_percentage,
-                notes=data.notes
+                notes=data.notes,
+                mode=data.mode,
+                x_real_applied=data.x_real_applied,
+                x_real_base_month=data.x_real_base_month,
+                x_real_indirects_total=data.x_real_indirects_total,
+                x_real_revenue_base=data.x_real_revenue_base,
+                x_real_calculated_at=data.x_real_calculated_at
             )
             
             doc = profile.model_dump()
