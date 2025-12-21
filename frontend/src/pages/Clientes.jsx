@@ -132,6 +132,21 @@ export const Clientes = ({ user, onLogout }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validação de CPF/CNPJ antes de enviar
+    if (tipoCliente === 'PF' && formData.cpf) {
+      if (!isValidCPF(formData.cpf)) {
+        toast.error('CPF inválido. Por favor, verifique o número informado.');
+        return;
+      }
+    }
+    
+    if (tipoCliente === 'PJ' && formData.cnpj) {
+      if (!isValidCNPJ(formData.cnpj)) {
+        toast.error('CNPJ inválido. Por favor, verifique o número informado.');
+        return;
+      }
+    }
+    
     try {
       const data = {
         ...formData,
