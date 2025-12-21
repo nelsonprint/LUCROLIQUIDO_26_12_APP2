@@ -200,13 +200,8 @@ const OrcamentoItemsGrid = ({
   // Calcular total geral
   const totalGeral = localItems.reduce((acc, item) => acc + (item.line_total || 0), 0);
 
-  // Formatar número
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+  // Formatar número - usando utilitário centralizado
+  const formatCurrency = (value) => formatBRL(value);
 
   return (
     <Card className="bg-zinc-900 border-zinc-800">
