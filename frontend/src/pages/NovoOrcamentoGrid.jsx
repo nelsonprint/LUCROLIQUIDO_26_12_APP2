@@ -218,8 +218,8 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
       return;
     }
 
-    if (orcamentoItems.length === 0) {
-      toast.error('Adicione pelo menos um item ao orçamento');
+    if (orcamentoItems.length === 0 && totalMateriais === 0) {
+      toast.error('Adicione pelo menos um item ou material ao orçamento');
       setActiveTab('itens');
       return;
     }
@@ -246,17 +246,17 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
         // Tipo e descrição
         tipo: 'servico_itens',
         descricao_servico_ou_produto: orcamentoItems.map(i => i.description).join(', ').substring(0, 200),
-        // Valores calculados
+        // Valores calculados (agora incluindo materiais)
         custo_total: orcamentoItems.reduce((acc, item) => acc + (item.pu1_used * item.quantity), 0),
-        preco_minimo: totalServicos,
-        preco_sugerido: totalServicos,
-        preco_praticado: totalServicos,
+        preco_minimo: totalGeral,
+        preco_sugerido: totalGeral,
+        preco_praticado: totalGeral,
         // Condições
         validade_proposta: orcamentoData.validade_proposta,
         condicoes_pagamento: orcamentoData.condicoes_pagamento,
         prazo_execucao: orcamentoData.prazo_execucao,
         observacoes: orcamentoData.observacoes,
-        // Itens com snapshot (novidade!)
+        // Itens com snapshot
         detalhes_itens: {
           items: orcamentoItems.map(item => ({
             item_number: item.item_number,
@@ -276,6 +276,8 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
           },
           totals: {
             services_total: totalServicos,
+            materials_total: totalMateriais,
+            grand_total: totalGeral,
           }
         }
       };
