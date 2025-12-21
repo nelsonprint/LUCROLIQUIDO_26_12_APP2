@@ -596,23 +596,31 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                   <Card className="bg-zinc-800 border-zinc-700">
                     <CardContent className="pt-4">
                       <div className="flex justify-between items-center">
-                        <div>
-                          <p className="text-zinc-400">Itens: {orcamentoItems.length}</p>
+                        <div className="space-y-1">
+                          <p className="text-zinc-400">Serviços: {orcamentoItems.length} itens</p>
+                          {totalMateriais > 0 && (
+                            <p className="text-zinc-400">Materiais: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalMateriais)}</p>
+                          )}
                           <p className="text-zinc-400">Markup: {currentMarkup.toFixed(4)}x</p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-zinc-400">Total do Orçamento</p>
                           <p className="text-3xl font-bold text-green-400">
-                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalServicos)}
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalGeral)}
                           </p>
+                          {totalMateriais > 0 && (
+                            <p className="text-xs text-zinc-500">
+                              (Serviços: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalServicos)})
+                            </p>
+                          )}
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
                   <div className="flex justify-between">
-                    <Button variant="outline" onClick={() => setActiveTab('itens')} className="border-zinc-700">
-                      Voltar: Itens
+                    <Button variant="outline" onClick={() => setActiveTab('materiais')} className="border-zinc-700">
+                      Voltar: Materiais
                     </Button>
                     <Button 
                       onClick={handleSalvarOrcamento} 
