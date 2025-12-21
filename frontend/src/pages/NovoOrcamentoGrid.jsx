@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,12 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   FileText, Users, Calendar, CreditCard, Save, ArrowLeft, 
-  Plus, UserPlus, Loader2, Calculator
+  Plus, UserPlus, Loader2, Calculator, Package, AlertTriangle
 } from 'lucide-react';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import OrcamentoItemsGrid from '@/components/OrcamentoItemsGrid';
+import OrcamentoMateriais from '@/components/OrcamentoMateriais';
 
 const NovoOrcamentoGrid = ({ user, onLogout }) => {
   const navigate = useNavigate();
