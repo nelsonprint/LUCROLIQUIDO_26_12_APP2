@@ -10,6 +10,39 @@ Testing:
 2. Modal de Custos Internos (Fase C) - ✅ PARTIALLY COMPLETED
 3. **Tabela de Preços (PU1)** - 🔄 NEW - NEEDS TESTING
 4. **Grid de Itens no Orçamento (PU1/PU2)** - 🔄 NEW - NEEDS TESTING
+5. **Lançamentos - Category Dropdown Bug Fix** - ✅ COMPLETED
+
+## NEW TEST RESULTS - LUCRO LÍQUIDO SYSTEM
+
+### ✅ LANÇAMENTOS - CATEGORY DROPDOWN BUG FIX - WORKING
+**Status:** Bug successfully resolved - All functionality working correctly
+**Test Date:** December 21, 2024
+**Tested by:** Testing Agent
+**Bug Context:** Category dropdown was only active for "Despesa" type, disabled for "Receita" and "Custo"
+
+#### Test Results Summary:
+✅ **ALL CRITICAL FUNCTIONALITY WORKING:**
+1. **Login System** - Working perfectly with admin@lucroliquido.com / admin123
+2. **Navigation to Lançamentos** - Working correctly via sidebar menu
+3. **"Novo Lançamento" Modal** - Opens successfully with all form fields
+4. **Category Dropdown for RECEITA** - ✅ ENABLED with 4 available categories
+5. **Category Dropdown for CUSTO** - ✅ ENABLED with 4 available categories  
+6. **Category Dropdown for DESPESA** - ✅ ENABLED with 17 available categories
+7. **Type Switching** - All transitions between types work smoothly
+8. **Category Reset** - Categories properly update when switching types
+
+#### Detailed Test Results:
+- **RECEITA Categories Found:** 4 options including "Outras Receitas", "Receitas Financeiras", "Serviços Prestados"
+- **CUSTO Categories Found:** 4 options including "Custos de Produção", "Matéria-Prima", "Mão de Obra Direta"
+- **DESPESA Categories Found:** 17 options including "Aluguel(Markup)", "Aluguel Equipamentos", etc.
+- **Dropdown State:** Never disabled, always responsive to clicks
+- **Form Validation:** All required fields present and functional
+
+#### Bug Resolution Confirmed:
+- ❌ **Previous Issue:** Category dropdown disabled for Receita and Custo types
+- ✅ **Current Status:** Category dropdown ENABLED and functional for ALL three types
+- ✅ **Database Integration:** Categories properly loaded from backend for all types
+- ✅ **UI Responsiveness:** Smooth transitions and no loading issues
 
 ## Test Results Summary
 
