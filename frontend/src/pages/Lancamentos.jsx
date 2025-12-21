@@ -82,19 +82,29 @@ const Lancamentos = ({ user, onLogout }) => {
 
   // Atualizar categorias disponíveis quando o tipo mudar
   const updateAvailableCategories = (type, categoriesData = categories) => {
-    console.log('🔄 updateAvailableCategories chamado:', { type, categoriesData });
+    console.log('🔄 updateAvailableCategories chamado:', { 
+      type, 
+      hasCategoriesData: !!categoriesData,
+      keys: categoriesData ? Object.keys(categoriesData) : []
+    });
+    
+    if (!categoriesData) {
+      console.log('❌ categoriesData está vazio!');
+      setAvailableCategories([]);
+      return;
+    }
     
     if (type === 'receita') {
       const receitaCats = categoriesData.receita || [];
-      console.log('✅ Definindo categorias de RECEITA:', receitaCats.length);
+      console.log('✅ Definindo categorias de RECEITA:', receitaCats.length, receitaCats);
       setAvailableCategories(receitaCats);
     } else if (type === 'custo') {
       const custoCats = categoriesData.custo || [];
-      console.log('✅ Definindo categorias de CUSTO:', custoCats.length);
+      console.log('✅ Definindo categorias de CUSTO:', custoCats.length, custoCats);
       setAvailableCategories(custoCats);
     } else if (type === 'despesa') {
       const despesaCats = categoriesData.despesa || [];
-      console.log('✅ Definindo categorias de DESPESA:', despesaCats.length);
+      console.log('✅ Definindo categorias de DESPESA:', despesaCats.length, despesaCats);
       setAvailableCategories(despesaCats);
     } else {
       console.log('⚠️ Tipo desconhecido, limpando categorias');
