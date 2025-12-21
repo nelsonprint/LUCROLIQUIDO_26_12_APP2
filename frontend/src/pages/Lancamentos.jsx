@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { MoneyInput } from '@/components/ui/money-input';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Filter } from 'lucide-react';
