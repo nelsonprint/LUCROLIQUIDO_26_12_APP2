@@ -190,12 +190,13 @@ const Lancamentos = ({ user, onLogout }) => {
   const handleEdit = (transaction) => {
     setEditingTransaction(transaction);
     // Atualizar categorias disponíveis baseado no tipo da transação
-    updateAvailableCategories(transaction.type);
+    updateAvailableCategories(transaction.type, categories);
     setFormData({
       type: transaction.type,
       description: transaction.description,
       amount: transaction.amount.toString(),
-      category: transaction.category,
+      category_id: transaction.category_id || '',
+      competence_month: transaction.competence_month || new Date().toISOString().slice(0, 7),
       date: transaction.date,
       status: transaction.status,
       notes: transaction.notes || '',
