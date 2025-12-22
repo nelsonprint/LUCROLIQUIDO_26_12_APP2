@@ -1422,6 +1422,45 @@ async def create_orcamento(orcamento_data: OrcamentoCreate):
     
     return {"message": "Orçamento criado com sucesso!", "orcamento_id": orcamento.id, "numero_orcamento": numero_orcamento}
 
+
+# ========== URL AMIGÁVEL DO ORÇAMENTO ==========
+
+@api_router.get("/orcamento/view/{numero}")
+async def get_orcamento_by_numero_html(numero: str):
+    """
+    URL amigável para visualização do orçamento
+    Aceita: /api/orcamento/view/LL-2024-0001 ou /api/orcamento/view/0001
+    Exemplo: https://lucroliquido.com/api/orcamento/view/LL-2025-0002
+    """
+    from fastapi.responses import RedirectResponse
+    
+    # Tentar encontrar o orçamento pelo número
+    # Primeiro, tenta encontrar pelo número completo (ex: LL-2024-0001)
+    orcamento = await db.orcamentos.find_one({"numero_orcamento": numero}, {"_id": 0, "id": 1})
+    
+    if not orcamento:
+        # Tenta encontrar apenas pelo número final (ex: 0001)
+        # Busca orçamentos que terminam com esse número
+        orcamento = await db.orcamentos.find_one(
+            {"numero_orcamento": {"$regex": f"-{numero}$"}},
+            {"_id": 0, "id": 1}
+        )
+    
+    if not orcamento:
+        # Tenta buscar removendo zeros à esquerda (ex: 1 encontra 0001)
+        numero_padded = numero.zfill(4)
+        orcamento = await db.orcamentos.find_one(
+            {"numero_orcamento": {"$regex": f"-{numero_padded}$"}},
+            {"_id": 0, "id": 1}
+        )
+    
+    if not orcamento:
+        raise HTTPException(status_code=404, detail=f"Orçamento {numero} não encontrado")
+    
+    # Redireciona para o endpoint HTML existente
+    return RedirectResponse(url=f"/api/orcamento/{orcamento['id']}/html", status_code=302)
+
+
 @api_router.get("/orcamentos/{empresa_id}")
 async def get_orcamentos(
     empresa_id: str,
