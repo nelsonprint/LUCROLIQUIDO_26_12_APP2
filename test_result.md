@@ -11,6 +11,7 @@ Testing:
 3. **Tabela de Preços (PU1)** - 🔄 NEW - NEEDS TESTING
 4. **Grid de Itens no Orçamento (PU1/PU2)** - 🔄 NEW - NEEDS TESTING
 5. **Lançamentos - Category Dropdown Bug Fix** - ✅ COMPLETED
+6. **NOVA IMPLEMENTAÇÃO - FORMA DE PAGAMENTO COM PARCELAMENTO** - ✅ COMPLETED
 
 ## NEW TEST RESULTS - LUCRO LÍQUIDO SYSTEM
 
