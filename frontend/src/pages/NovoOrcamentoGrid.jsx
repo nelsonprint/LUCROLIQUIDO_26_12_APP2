@@ -586,7 +586,7 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                   <CardTitle>Condições Comerciais</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Validade da Proposta *</Label>
                       <Input
@@ -594,15 +594,6 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                         value={orcamentoData.validade_proposta}
                         onChange={(e) => setOrcamentoData({...orcamentoData, validade_proposta: e.target.value})}
                         className="bg-zinc-800 border-zinc-700"
-                      />
-                    </div>
-                    <div>
-                      <Label>Condições de Pagamento *</Label>
-                      <Input
-                        value={orcamentoData.condicoes_pagamento}
-                        onChange={(e) => setOrcamentoData({...orcamentoData, condicoes_pagamento: e.target.value})}
-                        className="bg-zinc-800 border-zinc-700"
-                        placeholder="Ex: 50% entrada + 50% na entrega"
                       />
                     </div>
                     <div>
@@ -615,6 +606,110 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                       />
                     </div>
                   </div>
+
+                  {/* Forma de Pagamento */}
+                  <Card className="bg-zinc-800/50 border-zinc-700">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Banknote className="w-5 h-5 text-green-400" />
+                        Forma de Pagamento
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <RadioGroup 
+                        value={orcamentoData.forma_pagamento} 
+                        onValueChange={(value) => setOrcamentoData({
+                          ...orcamentoData, 
+                          forma_pagamento: value,
+                          num_parcelas: value === 'avista' ? 1 : orcamentoData.num_parcelas,
+                          valor_entrada: value === 'parcelado' ? 0 : orcamentoData.valor_entrada
+                        })}
+                        className="grid grid-cols-3 gap-4"
+                      >
+                        <div className="flex items-center space-x-2 p-3 rounded-lg border border-zinc-700 hover:border-green-500/50 transition-colors">
+                          <RadioGroupItem value="avista" id="avista" />
+                          <Label htmlFor="avista" className="cursor-pointer flex-1">
+                            <span className="font-medium">À Vista</span>
+                            <p className="text-xs text-zinc-400">Pagamento único</p>
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2 p-3 rounded-lg border border-zinc-700 hover:border-green-500/50 transition-colors">
+                          <RadioGroupItem value="parcelado" id="parcelado" />
+                          <Label htmlFor="parcelado" className="cursor-pointer flex-1">
+                            <span className="font-medium">Parcelado</span>
+                            <p className="text-xs text-zinc-400">Sem entrada</p>
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2 p-3 rounded-lg border border-zinc-700 hover:border-green-500/50 transition-colors">
+                          <RadioGroupItem value="entrada_parcelas" id="entrada_parcelas" />
+                          <Label htmlFor="entrada_parcelas" className="cursor-pointer flex-1">
+                            <span className="font-medium">Entrada + Parcelas</span>
+                            <p className="text-xs text-zinc-400">Com entrada</p>
+                          </Label>
+                        </div>
+                      </RadioGroup>
+
+                      {/* Campos de parcelamento */}
+                      {orcamentoData.forma_pagamento !== 'avista' && (
+                        <div className="grid grid-cols-2 gap-4 pt-2">
+                          {orcamentoData.forma_pagamento === 'entrada_parcelas' && (
+                            <div>
+                              <Label>Valor da Entrada</Label>
+                              <MoneyInput
+                                value={orcamentoData.valor_entrada}
+                                onChange={(value) => setOrcamentoData({...orcamentoData, valor_entrada: value})}
+                                className="bg-zinc-800 border-zinc-700"
+                              />
+                              <p className="text-xs text-zinc-500 mt-1">
+                                Restante: {formatBRL(totalGeral - orcamentoData.valor_entrada)}
+                              </p>
+                            </div>
+                          )}
+                          <div>
+                            <Label>Número de Parcelas</Label>
+                            <Select
+                              value={String(orcamentoData.num_parcelas)}
+                              onValueChange={(value) => setOrcamentoData({...orcamentoData, num_parcelas: parseInt(value)})}
+                            >
+                              <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-zinc-800 border-zinc-700">
+                                {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
+                                  <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {orcamentoData.num_parcelas > 1 && (
+                              <p className="text-xs text-green-400 mt-1">
+                                {orcamentoData.forma_pagamento === 'entrada_parcelas' 
+                                  ? `${orcamentoData.num_parcelas}x de ${formatBRL((totalGeral - orcamentoData.valor_entrada) / orcamentoData.num_parcelas)}`
+                                  : `${orcamentoData.num_parcelas}x de ${formatBRL(totalGeral / orcamentoData.num_parcelas)}`
+                                }
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Preview da condição de pagamento */}
+                      <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-700">
+                        <Label className="text-xs text-zinc-400">Condição gerada:</Label>
+                        <p className="font-medium text-green-400 mt-1">{orcamentoData.condicoes_pagamento || 'Selecione a forma de pagamento'}</p>
+                      </div>
+
+                      {/* Campo para personalizar */}
+                      <div>
+                        <Label className="text-zinc-400 text-sm">Personalizar condição (opcional)</Label>
+                        <Input
+                          value={orcamentoData.condicoes_pagamento}
+                          onChange={(e) => setOrcamentoData({...orcamentoData, condicoes_pagamento: e.target.value, forma_pagamento: 'personalizado'})}
+                          className="bg-zinc-800 border-zinc-700"
+                          placeholder="Ex: 30% entrada, 30% na metade, 40% na entrega"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
 
                   <div>
                     <Label>Observações</Label>
@@ -634,18 +729,18 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                         <div className="space-y-1">
                           <p className="text-zinc-400">Serviços: {orcamentoItems.length} itens</p>
                           {totalMateriais > 0 && (
-                            <p className="text-zinc-400">Materiais: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalMateriais)}</p>
+                            <p className="text-zinc-400">Materiais: {formatBRL(totalMateriais)}</p>
                           )}
                           <p className="text-zinc-400">Markup: {currentMarkup.toFixed(4)}x</p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-zinc-400">Total do Orçamento</p>
                           <p className="text-3xl font-bold text-green-400">
-                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalGeral)}
+                            {formatBRL(totalGeral)}
                           </p>
                           {totalMateriais > 0 && (
                             <p className="text-xs text-zinc-500">
-                              (Serviços: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalServicos)})
+                              (Serviços: {formatBRL(totalServicos)})
                             </p>
                           )}
                         </div>
