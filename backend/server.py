@@ -2439,43 +2439,6 @@ async def generate_orcamento_html(orcamento_id: str):
     return HTMLResponse(content=html_content)
 
 
-# ========== URL AMIGÁVEL DO ORÇAMENTO ==========
-
-@api_router.get("/orcamento/{numero}.html")
-async def get_orcamento_by_numero_html(numero: str):
-    """
-    URL amigável para visualização do orçamento
-    Aceita: /api/orcamento/LL-2024-0001.html ou /api/orcamento/0001.html
-    """
-    from fastapi.responses import RedirectResponse
-    
-    # Tentar encontrar o orçamento pelo número
-    # Primeiro, tenta encontrar pelo número completo (ex: LL-2024-0001)
-    orcamento = await db.orcamentos.find_one({"numero_orcamento": numero}, {"_id": 0, "id": 1})
-    
-    if not orcamento:
-        # Tenta encontrar apenas pelo número final (ex: 0001)
-        # Busca orçamentos que terminam com esse número
-        orcamento = await db.orcamentos.find_one(
-            {"numero_orcamento": {"$regex": f"-{numero}$"}},
-            {"_id": 0, "id": 1}
-        )
-    
-    if not orcamento:
-        # Tenta buscar removendo zeros à esquerda (ex: 1 encontra 0001)
-        numero_padded = numero.zfill(4)
-        orcamento = await db.orcamentos.find_one(
-            {"numero_orcamento": {"$regex": f"-{numero_padded}$"}},
-            {"_id": 0, "id": 1}
-        )
-    
-    if not orcamento:
-        raise HTTPException(status_code=404, detail=f"Orçamento {numero} não encontrado")
-    
-    # Redireciona para o endpoint HTML existente
-    return RedirectResponse(url=f"/api/orcamento/{orcamento['id']}/html", status_code=302)
-
-
 # ========== ANÁLISE IA (CHATGPT) ==========
 
 @api_router.post("/orcamento/{orcamento_id}/whatsapp")
