@@ -303,6 +303,56 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
 
   // Máscaras importadas de @/lib/formatters
 
+  // Função para calcular parcelas
+  const calcularParcelas = useCallback((valorTotal, numParcelas, valorEntrada = 0, formaPagamento) => {
+    if (formaPagamento === 'avista') {
+      return {
+        parcelas: [],
+        texto: `À vista: ${formatBRL(valorTotal)}`
+      };
+    }
+
+    const valorRestante = valorTotal - valorEntrada;
+    const valorParcela = valorRestante / numParcelas;
+    
+    const parcelas = [];
+    for (let i = 1; i <= numParcelas; i++) {
+      parcelas.push({
+        numero: i,
+        valor: valorParcela,
+        vencimento: '' // Pode ser preenchido depois
+      });
+    }
+
+    let texto = '';
+    if (formaPagamento === 'entrada_parcelas' && valorEntrada > 0) {
+      texto = `Entrada: ${formatBRL(valorEntrada)} + ${numParcelas}x de ${formatBRL(valorParcela)}`;
+    } else {
+      texto = `${numParcelas}x de ${formatBRL(valorParcela)}`;
+    }
+
+    return { parcelas, texto };
+  }, []);
+
+  // Atualizar condições de pagamento quando mudar forma de pagamento
+  useEffect(() => {
+    const valorTotal = totalGeral;
+    const { texto } = calcularParcelas(
+      valorTotal,
+      orcamentoData.num_parcelas,
+      orcamentoData.valor_entrada,
+      orcamentoData.forma_pagamento
+    );
+    
+    // Só atualiza se o texto for diferente para evitar loop infinito
+    if (texto !== orcamentoData.condicoes_pagamento && orcamentoData.forma_pagamento !== 'personalizado') {
+      setOrcamentoData(prev => ({
+        ...prev,
+        condicoes_pagamento: texto
+      }));
+    }
+  }, [orcamentoData.forma_pagamento, orcamentoData.num_parcelas, orcamentoData.valor_entrada, totalGeral, calcularParcelas]);
+
   return (
     <div className="flex min-h-screen bg-zinc-950 text-white">
       <Sidebar user={user} onLogout={onLogout} activePage="orcamentos" onNavigate={handleNavigate} />
