@@ -81,28 +81,34 @@ const Orcamentos = ({ user, onLogout }) => {
 
   const handleEnviarWhatsApp = async (orcamento) => {
     try {
+      // Usar o endpoint que gera o link do HTML
+      toast.info('Gerando link do orçamento...');
+      
+      const response = await axiosInstance.post(`/orcamento/${orcamento.id}/whatsapp`);
+      const { whatsapp_url } = response.data;
+      
       // Atualizar status para ENVIADO
       await axiosInstance.patch(`/orcamento/${orcamento.id}/status`, {
         status: 'ENVIADO',
         canal_envio: 'WhatsApp',
       });
 
-      // Montar mensagem
+      // Abrir WhatsApp com mensagem + link do orçamento
+      window.open(whatsapp_url, '_blank');
+      
+      toast.success('✅ WhatsApp aberto com link do orçamento!');
+      fetchOrcamentos();
+    } catch (error) {
+      console.error('Erro ao enviar por WhatsApp:', error);
+      
+      // Fallback: verificar se cliente tem WhatsApp
       const whatsapp = orcamento.cliente_whatsapp?.replace(/\D/g, '');
       if (!whatsapp) {
         toast.error('Cliente não possui WhatsApp cadastrado');
         return;
       }
-
-      const mensagem = `Olá ${orcamento.cliente_nome}!\n\nSegue o orçamento ${orcamento.numero_orcamento} para sua análise.\n\n*${orcamento.descricao_servico_ou_produto}*\n\n💰 Valor: R$ ${parseFloat(orcamento.preco_praticado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\nValidade: ${orcamento.validade_proposta}\nPrazo: ${orcamento.prazo_execucao}\n\nQualquer dúvida, estou à disposição!`;
       
-      const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
-      window.open(url, '_blank');
-      
-      toast.success('Orçamento marcado como enviado!');
-      fetchOrcamentos();
-    } catch (error) {
-      toast.error('Erro ao enviar por WhatsApp');
+      toast.error('Erro ao preparar envio por WhatsApp');
     }
   };
 
