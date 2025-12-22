@@ -2482,7 +2482,7 @@ async def get_orcamento_by_numero_html(numero: str):
 async def enviar_orcamento_whatsapp(orcamento_id: str):
     """
     Prepara o orçamento para envio via WhatsApp
-    Retorna uma URL pública temporária do PDF
+    Retorna uma URL amigável do orçamento (usando número ao invés de UUID)
     """
     import secrets
     import time
@@ -2510,9 +2510,12 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
         }}
     )
     
-    # Retornar URL pública do HTML
+    # Gerar URL amigável com número do orçamento
     base_url = os.environ.get('BACKEND_URL', 'https://budget-markup-flow.preview.emergentagent.com')
-    html_url = f"{base_url}/api/orcamento/{orcamento_id}/html"
+    numero_orcamento = orcamento.get('numero_orcamento', '')
+    
+    # URL amigável: /api/orcamento/LL-2024-0001.html
+    html_url = f"{base_url}/api/orcamento/{numero_orcamento}.html"
     
     # Preparar dados para WhatsApp
     import re
@@ -2520,7 +2523,7 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
     
     whatsapp_number = re.sub(r'\D', '', orcamento.get('cliente_whatsapp', ''))
     
-    mensagem = f"""Olá! Segue o orçamento de {nome_empresa} n. {orcamento.get('numero_orcamento')}
+    mensagem = f"""Olá! Segue o orçamento de {nome_empresa} nº {numero_orcamento}
 
 {html_url}"""
     
@@ -2528,7 +2531,8 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
         "pdf_url": html_url,
         "whatsapp_url": f"https://wa.me/55{whatsapp_number}?text={quote(mensagem)}",
         "token": token,
-        "expires_in": "Permanente"
+        "expires_in": "Permanente",
+        "numero_orcamento": numero_orcamento
     }
 
 @api_router.get("/orcamento/share/{token}")
