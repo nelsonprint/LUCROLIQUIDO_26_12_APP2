@@ -9,11 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { CPFInput, CNPJInput } from '@/components/ui/cpf-cnpj-input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { maskPhone, isValidCPF, isValidCNPJ, formatBRL, parseBRL } from '@/lib/formatters';
 import { 
   FileText, Users, Calendar, CreditCard, Save, ArrowLeft, 
-  Plus, UserPlus, Loader2, Calculator, Package, AlertTriangle
+  Plus, UserPlus, Loader2, Calculator, Package, AlertTriangle, Banknote
 } from 'lucide-react';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
