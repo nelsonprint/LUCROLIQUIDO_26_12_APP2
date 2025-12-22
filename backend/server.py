@@ -2516,8 +2516,8 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
     base_url = os.environ.get('BACKEND_URL', 'https://budget-markup-flow.preview.emergentagent.com')
     numero_orcamento = orcamento.get('numero_orcamento', '')
     
-    # URL amigável: /api/orcamento/LL-2024-0001.html
-    html_url = f"{base_url}/api/orcamento/{numero_orcamento}.html"
+    # URL amigável: /api/orcamento/view/LL-2025-0001
+    html_url = f"{base_url}/api/orcamento/view/{numero_orcamento}"
     
     # Preparar dados para WhatsApp
     import re
