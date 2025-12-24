@@ -2068,6 +2068,128 @@ async def generate_orcamento_pdf(orcamento_id: str):
     )
 
 
+# Funções auxiliares para gerar HTML de parcelas e botão de aceite
+def gerar_html_parcelas(orcamento: dict, valor_total: float) -> str:
+    """Gera o HTML das parcelas de pagamento"""
+    forma_pagamento = orcamento.get('forma_pagamento', 'avista')
+    valor_entrada = orcamento.get('valor_entrada', 0)
+    entrada_percentual = orcamento.get('entrada_percentual', 0)
+    parcelas = orcamento.get('parcelas', [])
+    
+    def format_money(val):
+        return f"R$ {val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    
+    if forma_pagamento == 'avista':
+        return f'''
+        <div style="padding:10px 0;">
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--border);">
+                <span>À Vista</span>
+                <strong style="color:var(--green);">{format_money(valor_total)}</strong>
+            </div>
+        </div>
+        '''
+    
+    # Entrada + Parcelas
+    html = '<div style="padding:10px 0;">'
+    
+    if valor_entrada > 0:
+        html += f'''
+        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--border);">
+            <span>Entrada ({entrada_percentual}%)</span>
+            <strong style="color:var(--green);">{format_money(valor_entrada)}</strong>
+        </div>
+        '''
+    
+    for i, parcela in enumerate(parcelas):
+        html += f'''
+        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--border);">
+            <span>Parcela {i+1}</span>
+            <strong>{format_money(parcela.get('valor', 0))}</strong>
+        </div>
+        '''
+    
+    html += f'''
+        <div style="display:flex; justify-content:space-between; padding:12px 0; margin-top:8px; border-top:2px solid var(--green);">
+            <span style="font-weight:700;">Total</span>
+            <strong style="color:var(--green); font-size:1.2em;">{format_money(valor_total)}</strong>
+        </div>
+    </div>
+    '''
+    
+    return html
+
+
+def gerar_botao_fechar_negocio(orcamento: dict) -> str:
+    """Gera o botão de 'Fechar Negócio' se o orçamento ainda não foi aceito"""
+    status = orcamento.get('status', 'RASCUNHO')
+    orcamento_id = orcamento.get('id', '')
+    
+    if status == 'APROVADO':
+        return '''
+        <div style="background:#22c55e20; border:2px solid #22c55e; border-radius:12px; padding:20px; text-align:center; margin-top:20px;">
+            <span style="font-size:2em;">✅</span>
+            <p style="margin:10px 0 0; font-weight:700; color:#22c55e;">Orçamento já foi aceito!</p>
+        </div>
+        '''
+    
+    return f'''
+    <button class="btn" onclick="fecharNegocio()" style="background:linear-gradient(135deg, #22c55e, #16a34a); font-size:1.1em; padding:15px 30px;">
+        ✅ Fechar Negócio
+    </button>
+    <div id="modal-aceite" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#1e1e1e; border-radius:16px; padding:30px; max-width:500px; text-align:center; border:2px solid #22c55e;">
+            <span style="font-size:3em;">📋</span>
+            <h2 style="color:white; margin:15px 0;">Confirmar Aceite</h2>
+            <p style="color:#888; margin-bottom:20px;">Ao clicar em confirmar, você aceita as condições deste orçamento e as parcelas serão geradas automaticamente.</p>
+            <div style="display:flex; gap:15px; justify-content:center;">
+                <button onclick="cancelarAceite()" style="padding:12px 30px; border-radius:8px; background:#333; color:white; border:none; cursor:pointer;">Cancelar</button>
+                <button onclick="confirmarAceite()" style="padding:12px 30px; border-radius:8px; background:#22c55e; color:white; border:none; cursor:pointer; font-weight:700;">✅ Confirmar Aceite</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const orcamentoId = "{orcamento_id}";
+        
+        function fecharNegocio() {{
+            document.getElementById('modal-aceite').style.display = 'flex';
+        }}
+        
+        function cancelarAceite() {{
+            document.getElementById('modal-aceite').style.display = 'none';
+        }}
+        
+        async function confirmarAceite() {{
+            try {{
+                const response = await fetch('/api/orcamento/' + orcamentoId + '/aceitar', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }}
+                }});
+                
+                const data = await response.json();
+                
+                if (response.ok) {{
+                    document.getElementById('modal-aceite').innerHTML = `
+                        <div style="background:#1e1e1e; border-radius:16px; padding:40px; max-width:500px; text-align:center; border:2px solid #22c55e;">
+                            <span style="font-size:4em;">🎉</span>
+                            <h2 style="color:#22c55e; margin:20px 0;">Orçamento Aceito!</h2>
+                            <p style="color:#888;">Obrigado! As parcelas foram geradas e a empresa foi notificada.</p>
+                            <p style="color:#22c55e; font-weight:700;">${{data.contas_geradas}} parcela(s) criada(s)</p>
+                            <button onclick="location.reload()" style="margin-top:20px; padding:12px 30px; border-radius:8px; background:#22c55e; color:white; border:none; cursor:pointer;">OK</button>
+                        </div>
+                    `;
+                }} else {{
+                    alert('Erro: ' + (data.detail || 'Erro ao aceitar orçamento'));
+                    cancelarAceite();
+                }}
+            }} catch (error) {{
+                alert('Erro de conexão: ' + error.message);
+                cancelarAceite();
+            }}
+        }}
+    </script>
+    '''
+
+
 @api_router.get("/orcamento/{orcamento_id}/html")
 async def generate_orcamento_html(orcamento_id: str):
     """Gerar visualização HTML do orçamento para impressão e download de PDF"""
