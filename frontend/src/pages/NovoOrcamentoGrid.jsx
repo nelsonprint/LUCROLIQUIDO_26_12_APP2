@@ -701,15 +701,17 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      {/* Tipo de Pagamento */}
                       <RadioGroup 
                         value={orcamentoData.forma_pagamento} 
                         onValueChange={(value) => setOrcamentoData({
                           ...orcamentoData, 
                           forma_pagamento: value,
-                          num_parcelas: value === 'avista' ? 1 : orcamentoData.num_parcelas,
-                          valor_entrada: value === 'parcelado' ? 0 : orcamentoData.valor_entrada
+                          entrada_percentual: value === 'avista' ? 100 : 30,
+                          num_parcelas: value === 'avista' ? 0 : 2,
+                          parcelas: []
                         })}
-                        className="grid grid-cols-3 gap-4"
+                        className="grid grid-cols-2 gap-4"
                       >
                         <div className="flex items-center space-x-2 p-3 rounded-lg border border-zinc-700 hover:border-green-500/50 transition-colors">
                           <RadioGroupItem value="avista" id="avista" />
@@ -719,80 +721,139 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2 p-3 rounded-lg border border-zinc-700 hover:border-green-500/50 transition-colors">
-                          <RadioGroupItem value="parcelado" id="parcelado" />
-                          <Label htmlFor="parcelado" className="cursor-pointer flex-1">
-                            <span className="font-medium">Parcelado</span>
-                            <p className="text-xs text-zinc-400">Sem entrada</p>
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2 p-3 rounded-lg border border-zinc-700 hover:border-green-500/50 transition-colors">
                           <RadioGroupItem value="entrada_parcelas" id="entrada_parcelas" />
                           <Label htmlFor="entrada_parcelas" className="cursor-pointer flex-1">
                             <span className="font-medium">Entrada + Parcelas</span>
-                            <p className="text-xs text-zinc-400">Com entrada</p>
+                            <p className="text-xs text-zinc-400">Pagamento parcelado</p>
                           </Label>
                         </div>
                       </RadioGroup>
 
-                      {/* Campos de parcelamento */}
-                      {orcamentoData.forma_pagamento !== 'avista' && (
-                        <div className="grid grid-cols-2 gap-4 pt-2">
-                          {orcamentoData.forma_pagamento === 'entrada_parcelas' && (
+                      {/* Configuração de Entrada e Parcelas */}
+                      {orcamentoData.forma_pagamento === 'entrada_parcelas' && (
+                        <div className="space-y-4 pt-2 border-t border-zinc-700">
+                          {/* Entrada */}
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <Label>Entrada (%)</Label>
+                              <Select
+                                value={String(orcamentoData.entrada_percentual)}
+                                onValueChange={(value) => setOrcamentoData({
+                                  ...orcamentoData, 
+                                  entrada_percentual: parseInt(value),
+                                  parcelas: [] // Reset parcelas editadas
+                                })}
+                              >
+                                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-zinc-800 border-zinc-700">
+                                  {[0, 10, 15, 20, 25, 30, 35, 40, 45, 50].map(n => (
+                                    <SelectItem key={n} value={String(n)}>{n}%</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                             <div>
                               <Label>Valor da Entrada</Label>
-                              <MoneyInput
-                                value={orcamentoData.valor_entrada}
-                                onChange={(value) => setOrcamentoData({...orcamentoData, valor_entrada: value})}
-                                className="bg-zinc-800 border-zinc-700"
-                              />
-                              <p className="text-xs text-zinc-500 mt-1">
-                                Restante: {formatBRL(totalGeral - orcamentoData.valor_entrada)}
+                              <div className="flex items-center gap-2">
+                                <MoneyInput
+                                  value={orcamentoData.valor_entrada}
+                                  onChange={(value) => {
+                                    const newPercentual = totalGeral > 0 ? Math.round((value / totalGeral) * 100) : 0;
+                                    setOrcamentoData({
+                                      ...orcamentoData, 
+                                      valor_entrada: value,
+                                      entrada_percentual: newPercentual,
+                                      parcelas: []
+                                    });
+                                  }}
+                                  className="bg-zinc-800 border-zinc-700"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Nº de Parcelas</Label>
+                              <Select
+                                value={String(orcamentoData.num_parcelas)}
+                                onValueChange={(value) => setOrcamentoData({
+                                  ...orcamentoData, 
+                                  num_parcelas: parseInt(value),
+                                  parcelas: []
+                                })}
+                              >
+                                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-zinc-800 border-zinc-700">
+                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
+                                    <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          {/* Lista de Parcelas Editáveis */}
+                          {orcamentoData.parcelas.length > 0 && (
+                            <div className="space-y-2">
+                              <Label className="text-sm text-zinc-400">Parcelas (clique para editar)</Label>
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                {orcamentoData.parcelas.map((parcela, index) => (
+                                  <div 
+                                    key={index} 
+                                    className={`p-3 rounded-lg border ${parcela.editado ? 'border-orange-500 bg-orange-500/10' : 'border-zinc-700 bg-zinc-900'}`}
+                                  >
+                                    <p className="text-xs text-zinc-400 mb-1">Parcela {parcela.numero}</p>
+                                    <MoneyInput
+                                      value={parcela.valor}
+                                      onChange={(value) => atualizarValorParcela(index, value)}
+                                      showSymbol={false}
+                                      className="bg-transparent border-none p-0 h-auto text-lg font-semibold text-white"
+                                    />
+                                    {parcela.editado && (
+                                      <span className="text-xs text-orange-400">editado</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              <p className="text-xs text-zinc-500">
+                                * Ao editar uma parcela, as demais são recalculadas automaticamente
                               </p>
                             </div>
                           )}
-                          <div>
-                            <Label>Número de Parcelas</Label>
-                            <Select
-                              value={String(orcamentoData.num_parcelas)}
-                              onValueChange={(value) => setOrcamentoData({...orcamentoData, num_parcelas: parseInt(value)})}
-                            >
-                              <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="bg-zinc-800 border-zinc-700">
-                                {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
-                                  <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {orcamentoData.num_parcelas > 1 && (
-                              <p className="text-xs text-green-400 mt-1">
-                                {orcamentoData.forma_pagamento === 'entrada_parcelas' 
-                                  ? `${orcamentoData.num_parcelas}x de ${formatBRL((totalGeral - orcamentoData.valor_entrada) / orcamentoData.num_parcelas)}`
-                                  : `${orcamentoData.num_parcelas}x de ${formatBRL(totalGeral / orcamentoData.num_parcelas)}`
-                                }
-                              </p>
-                            )}
+
+                          {/* Resumo do Parcelamento */}
+                          <div className="p-4 rounded-lg bg-zinc-900 border border-green-500/30">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="text-zinc-400">Valor Total</span>
+                              <span className="text-xl font-bold text-white">{formatBRL(totalGeral)}</span>
+                            </div>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-zinc-400">Entrada ({orcamentoData.entrada_percentual}%)</span>
+                              <span className="text-green-400 font-semibold">{formatBRL(orcamentoData.valor_entrada)}</span>
+                            </div>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-zinc-400">Restante ({orcamentoData.num_parcelas}x)</span>
+                              <span className="text-white">{formatBRL(totalGeral - orcamentoData.valor_entrada)}</span>
+                            </div>
+                            <div className="border-t border-zinc-700 pt-2 mt-2">
+                              <p className="text-sm text-zinc-400">Condição:</p>
+                              <p className="text-green-400 font-medium">{orcamentoData.condicoes_pagamento}</p>
+                            </div>
                           </div>
                         </div>
                       )}
 
-                      {/* Preview da condição de pagamento */}
-                      <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-700">
-                        <Label className="text-xs text-zinc-400">Condição gerada:</Label>
-                        <p className="font-medium text-green-400 mt-1">{orcamentoData.condicoes_pagamento || 'Selecione a forma de pagamento'}</p>
-                      </div>
-
-                      {/* Campo para personalizar */}
-                      <div>
-                        <Label className="text-zinc-400 text-sm">Personalizar condição (opcional)</Label>
-                        <Input
-                          value={orcamentoData.condicoes_pagamento}
-                          onChange={(e) => setOrcamentoData({...orcamentoData, condicoes_pagamento: e.target.value, forma_pagamento: 'personalizado'})}
-                          className="bg-zinc-800 border-zinc-700"
-                          placeholder="Ex: 30% entrada, 30% na metade, 40% na entrega"
-                        />
-                      </div>
+                      {/* À Vista */}
+                      {orcamentoData.forma_pagamento === 'avista' && (
+                        <div className="p-4 rounded-lg bg-zinc-900 border border-green-500/30">
+                          <div className="flex justify-between items-center">
+                            <span className="text-zinc-400">Valor à Vista</span>
+                            <span className="text-2xl font-bold text-green-400">{formatBRL(totalGeral)}</span>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
 
