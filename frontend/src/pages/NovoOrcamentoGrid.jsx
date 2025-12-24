@@ -266,6 +266,16 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
         condicoes_pagamento: orcamentoData.condicoes_pagamento,
         prazo_execucao: orcamentoData.prazo_execucao,
         observacoes: orcamentoData.observacoes,
+        // Forma de Pagamento Detalhada
+        forma_pagamento: orcamentoData.forma_pagamento,
+        entrada_percentual: orcamentoData.entrada_percentual,
+        valor_entrada: orcamentoData.valor_entrada,
+        num_parcelas: orcamentoData.num_parcelas,
+        parcelas: orcamentoData.parcelas.map((p, idx) => ({
+          numero: p.numero,
+          valor: p.valor,
+          editado: p.editado || false
+        })),
         // Itens com snapshot
         detalhes_itens: {
           items: orcamentoItems.map(item => ({
