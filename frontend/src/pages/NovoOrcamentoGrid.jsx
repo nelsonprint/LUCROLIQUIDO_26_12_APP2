@@ -534,8 +534,12 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                 Voltar
               </Button>
               <div>
-                <h1 className="text-3xl font-bold">Novo Orçamento</h1>
-                <p className="text-zinc-400">Crie um orçamento com itens detalhados</p>
+                <h1 className="text-3xl font-bold">
+                  {modoEdicao ? 'Editar Orçamento' : 'Novo Orçamento'}
+                </h1>
+                <p className="text-zinc-400">
+                  {modoEdicao ? 'Edite os dados do orçamento' : 'Crie um orçamento com itens detalhados'}
+                </p>
               </div>
             </div>
 
@@ -544,12 +548,12 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
               <div className="text-right">
                 <p className="text-xs text-zinc-400">Total do Orçamento</p>
                 <p className="text-2xl font-bold text-green-400">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalGeral)}
+                  {formatBRL(totalGeral)}
                 </p>
                 {totalMateriais > 0 && (
                   <p className="text-xs text-zinc-500">
-                    Serviços: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalServicos)} | 
-                    Materiais: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalMateriais)}
+                    Serviços: {formatBRL(totalServicos)} | 
+                    Materiais: {formatBRL(totalMateriais)}
                   </p>
                 )}
               </div>
