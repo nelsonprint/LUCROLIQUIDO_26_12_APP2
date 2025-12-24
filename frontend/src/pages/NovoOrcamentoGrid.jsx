@@ -488,6 +488,18 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
     }
   }, [totalGeral, orcamentoData.forma_pagamento, orcamentoData.entrada_percentual, orcamentoData.num_parcelas, recalcularParcelas]);
 
+  // Debug: Log quando os dados mudam (remover em produção)
+  useEffect(() => {
+    console.log('📊 Dados de parcelamento atualizados:', {
+      forma_pagamento: orcamentoData.forma_pagamento,
+      entrada_percentual: orcamentoData.entrada_percentual,
+      valor_entrada: orcamentoData.valor_entrada,
+      num_parcelas: orcamentoData.num_parcelas,
+      parcelas: orcamentoData.parcelas,
+      totalGeral
+    });
+  }, [orcamentoData.forma_pagamento, orcamentoData.entrada_percentual, orcamentoData.valor_entrada, orcamentoData.num_parcelas, orcamentoData.parcelas, totalGeral]);
+
   // Função para atualizar valor de uma parcela específica
   const atualizarValorParcela = (index, novoValor) => {
     setOrcamentoData(prev => {
