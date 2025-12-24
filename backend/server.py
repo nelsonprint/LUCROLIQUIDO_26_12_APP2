@@ -373,12 +373,22 @@ class Orcamento(BaseModel):
     condicoes_pagamento: str
     prazo_execucao: str
     observacoes: Optional[str] = None
+    # Forma de Pagamento Detalhada
+    forma_pagamento: Optional[str] = "avista"  # avista ou entrada_parcelas
+    entrada_percentual: Optional[float] = 0
+    valor_entrada: Optional[float] = 0
+    num_parcelas: Optional[int] = 0
+    parcelas: Optional[list] = []  # [{numero, valor, editado}]
     # Status e envio
     status: str = "RASCUNHO"  # RASCUNHO, ENVIADO, APROVADO, NAO_APROVADO
     enviado_em: Optional[datetime] = None
     aprovado_em: Optional[datetime] = None
     nao_aprovado_em: Optional[datetime] = None
     canal_envio: Optional[str] = None
+    # Aceite do cliente
+    aceito_em: Optional[datetime] = None
+    aceito_por_ip: Optional[str] = None
+    contas_receber_geradas: Optional[list] = []  # IDs das contas geradas
     # Auditoria
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
