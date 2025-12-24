@@ -335,24 +335,108 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
     return { parcelas, texto };
   }, []);
 
-  // Atualizar condições de pagamento quando mudar forma de pagamento
-  useEffect(() => {
-    const valorTotal = totalGeral;
-    const { texto } = calcularParcelas(
-      valorTotal,
-      orcamentoData.num_parcelas,
-      orcamentoData.valor_entrada,
-      orcamentoData.forma_pagamento
-    );
+  // Função para recalcular parcelas quando valores mudam
+  const recalcularParcelas = useCallback((valorTotal, entradaPercentual, numParcelas, parcelasAtuais = []) => {
+    if (valorTotal <= 0) return { valorEntrada: 0, parcelas: [], texto: '' };
+
+    const valorEntrada = (valorTotal * entradaPercentual) / 100;
+    const valorRestante = valorTotal - valorEntrada;
     
-    // Só atualiza se o texto for diferente para evitar loop infinito
-    if (texto !== orcamentoData.condicoes_pagamento && orcamentoData.forma_pagamento !== 'personalizado') {
+    // Calcular valor base de cada parcela
+    const valorParcelaBase = valorRestante / numParcelas;
+    
+    // Criar array de parcelas
+    const parcelas = [];
+    let somaParcelasEditadas = 0;
+    let parcelasNaoEditadas = 0;
+    
+    // Primeiro, identificar parcelas editadas manualmente
+    for (let i = 0; i < numParcelas; i++) {
+      const parcelaExistente = parcelasAtuais[i];
+      if (parcelaExistente && parcelaExistente.editado) {
+        somaParcelasEditadas += parcelaExistente.valor;
+        parcelas.push({ ...parcelaExistente });
+      } else {
+        parcelasNaoEditadas++;
+        parcelas.push({ numero: i + 1, valor: 0, editado: false });
+      }
+    }
+    
+    // Distribuir o restante entre parcelas não editadas
+    const valorRestanteParaNaoEditadas = valorRestante - somaParcelasEditadas;
+    const valorParcelaNaoEditada = parcelasNaoEditadas > 0 ? valorRestanteParaNaoEditadas / parcelasNaoEditadas : 0;
+    
+    parcelas.forEach((p, i) => {
+      if (!p.editado) {
+        parcelas[i].valor = Math.max(0, valorParcelaNaoEditada);
+      }
+    });
+    
+    // Gerar texto das condições
+    let texto = '';
+    if (entradaPercentual > 0) {
+      texto = `Entrada (${entradaPercentual}%): ${formatBRL(valorEntrada)}`;
+      if (numParcelas > 0) {
+        texto += ` + ${numParcelas} parcela(s)`;
+      }
+    } else {
+      texto = `${numParcelas}x de ${formatBRL(valorParcelaBase)}`;
+    }
+
+    return { valorEntrada, parcelas, texto };
+  }, []);
+
+  // Atualizar parcelas quando valores relevantes mudam
+  useEffect(() => {
+    if (orcamentoData.forma_pagamento === 'avista') {
       setOrcamentoData(prev => ({
         ...prev,
+        valor_entrada: totalGeral,
+        parcelas: [],
+        condicoes_pagamento: `À vista: ${formatBRL(totalGeral)}`
+      }));
+    } else {
+      const { valorEntrada, parcelas, texto } = recalcularParcelas(
+        totalGeral,
+        orcamentoData.entrada_percentual,
+        orcamentoData.num_parcelas,
+        orcamentoData.parcelas
+      );
+      
+      setOrcamentoData(prev => ({
+        ...prev,
+        valor_entrada: valorEntrada,
+        parcelas: parcelas,
         condicoes_pagamento: texto
       }));
     }
-  }, [orcamentoData.forma_pagamento, orcamentoData.num_parcelas, orcamentoData.valor_entrada, totalGeral, calcularParcelas]);
+  }, [totalGeral, orcamentoData.forma_pagamento, orcamentoData.entrada_percentual, orcamentoData.num_parcelas, recalcularParcelas]);
+
+  // Função para atualizar valor de uma parcela específica
+  const atualizarValorParcela = (index, novoValor) => {
+    setOrcamentoData(prev => {
+      const novasParcelas = [...prev.parcelas];
+      novasParcelas[index] = {
+        ...novasParcelas[index],
+        valor: novoValor,
+        editado: true
+      };
+      
+      // Recalcular as outras parcelas
+      const valorRestante = totalGeral - prev.valor_entrada;
+      const somaEditadas = novasParcelas.reduce((acc, p) => p.editado ? acc + p.valor : acc, 0);
+      const naoEditadas = novasParcelas.filter(p => !p.editado).length;
+      const valorParaNaoEditadas = (valorRestante - somaEditadas) / naoEditadas;
+      
+      novasParcelas.forEach((p, i) => {
+        if (!p.editado) {
+          novasParcelas[i].valor = Math.max(0, valorParaNaoEditadas);
+        }
+      });
+      
+      return { ...prev, parcelas: novasParcelas };
+    });
+  };
 
   return (
     <div className="flex min-h-screen bg-zinc-950 text-white">
