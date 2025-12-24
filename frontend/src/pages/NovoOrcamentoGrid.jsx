@@ -360,11 +360,19 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
         }
       };
 
-      const response = await axiosInstance.post('/orcamentos', data);
-      toast.success(`Orçamento ${response.data.numero_orcamento} criado com sucesso!`);
+      let response;
+      if (modoEdicao && orcamentoId) {
+        // Modo edição - PUT
+        response = await axiosInstance.put(`/orcamento/${orcamentoId}`, data);
+        toast.success(`Orçamento atualizado com sucesso!`);
+      } else {
+        // Novo orçamento - POST
+        response = await axiosInstance.post('/orcamentos', data);
+        toast.success(`Orçamento ${response.data.numero_orcamento} criado com sucesso!`);
+      }
       navigate('/orcamentos');
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao criar orçamento');
+      toast.error(error.response?.data?.detail || 'Erro ao salvar orçamento');
     } finally {
       setLoading(false);
     }
