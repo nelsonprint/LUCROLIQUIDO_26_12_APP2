@@ -344,6 +344,12 @@ class OrcamentoCreate(BaseModel):
     condicoes_pagamento: str
     prazo_execucao: str
     observacoes: Optional[str] = None
+    # Forma de Pagamento Detalhada
+    forma_pagamento: Optional[str] = "avista"  # avista ou entrada_parcelas
+    entrada_percentual: Optional[float] = 0
+    valor_entrada: Optional[float] = 0
+    num_parcelas: Optional[int] = 0
+    parcelas: Optional[list] = []  # [{numero, valor, editado}]
 
 class Orcamento(BaseModel):
     model_config = ConfigDict(extra="ignore")
