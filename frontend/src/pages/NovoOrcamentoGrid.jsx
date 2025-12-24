@@ -991,7 +991,7 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                       ) : (
                         <>
                           <Save className="w-4 h-4 mr-2" />
-                          Salvar Orçamento
+                          {modoEdicao ? 'Atualizar Orçamento' : 'Criar Orçamento'}
                         </>
                       )}
                     </Button>
