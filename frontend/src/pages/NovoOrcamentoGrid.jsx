@@ -69,11 +69,12 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
     condicoes_pagamento: '',
     prazo_execucao: '',
     observacoes: '',
-    // Forma de pagamento
-    forma_pagamento: 'avista', // 'avista', 'parcelado', 'entrada_parcelas'
-    num_parcelas: 1,
-    valor_entrada: 0,
-    parcelas_info: [], // Array com detalhes de cada parcela
+    // Forma de pagamento avançada
+    forma_pagamento: 'entrada_parcelas', // 'avista' ou 'entrada_parcelas'
+    entrada_percentual: 30, // Percentual de entrada
+    valor_entrada: 0, // Valor calculado da entrada
+    num_parcelas: 2, // Número de parcelas após entrada
+    parcelas: [], // Array com detalhes de cada parcela [{numero, valor, editado}]
   });
 
   // Itens do orçamento (Grid)
