@@ -272,7 +272,7 @@ const Orcamentos = ({ user, onLogout }) => {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => navigate(`/orcamento/${orcamento.id}/editar`)}
+                                onClick={() => navigate(`/orcamentos/novo?id=${orcamento.id}`)}
                                 className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
                                 title="Editar"
                               >
