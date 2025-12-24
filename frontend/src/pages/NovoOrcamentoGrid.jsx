@@ -131,6 +131,57 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
     setPendingNavigation(null);
   };
 
+  // Carregar orçamento existente para edição
+  useEffect(() => {
+    const carregarOrcamentoParaEdicao = async () => {
+      if (!orcamentoId || !company?.id) return;
+      
+      setLoadingOrcamento(true);
+      try {
+        // Buscar dados do orçamento
+        const response = await axiosInstance.get(`/orcamento/${orcamentoId}`);
+        const orc = response.data;
+        
+        // Preencher dados do cliente e condições
+        setOrcamentoData({
+          cliente_nome: orc.cliente_nome || '',
+          cliente_documento: orc.cliente_documento || '',
+          cliente_email: orc.cliente_email || '',
+          cliente_telefone: orc.cliente_telefone || '',
+          cliente_whatsapp: orc.cliente_whatsapp || '',
+          cliente_endereco: orc.cliente_endereco || '',
+          validade_proposta: orc.validade_proposta || '',
+          condicoes_pagamento: orc.condicoes_pagamento || '',
+          prazo_execucao: orc.prazo_execucao || '',
+          observacoes: orc.observacoes || '',
+          // Forma de pagamento
+          forma_pagamento: orc.forma_pagamento || 'avista',
+          entrada_percentual: orc.entrada_percentual || 0,
+          valor_entrada: orc.valor_entrada || 0,
+          num_parcelas: orc.num_parcelas || 0,
+          parcelas: orc.parcelas || [],
+        });
+        
+        // Carregar itens do orçamento (se existir)
+        if (orc.detalhes_itens?.items) {
+          setOrcamentoItems(orc.detalhes_itens.items);
+        }
+        
+        // Carregar materiais é feito pelo componente OrcamentoMateriais
+        
+        toast.success(`Orçamento ${orc.numero_orcamento} carregado para edição`);
+      } catch (error) {
+        console.error('Erro ao carregar orçamento:', error);
+        toast.error('Erro ao carregar orçamento para edição');
+        navigate('/orcamentos');
+      } finally {
+        setLoadingOrcamento(false);
+      }
+    };
+    
+    carregarOrcamentoParaEdicao();
+  }, [orcamentoId, company?.id]);
+
   // Buscar markup atual
   useEffect(() => {
     const fetchMarkup = async () => {
