@@ -25,7 +25,14 @@ import OrcamentoMateriais from '@/components/OrcamentoMateriais';
 
 const NovoOrcamentoGrid = ({ user, onLogout }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const company = JSON.parse(localStorage.getItem('company') || '{}');
+
+  // Verificar se é modo edição (ID passado na URL ou state)
+  const orcamentoIdParam = new URLSearchParams(location.search).get('id');
+  const [orcamentoId, setOrcamentoId] = useState(orcamentoIdParam);
+  const [modoEdicao, setModoEdicao] = useState(!!orcamentoIdParam);
+  const [loadingOrcamento, setLoadingOrcamento] = useState(false);
 
   // Estados principais
   const [loading, setLoading] = useState(false);
