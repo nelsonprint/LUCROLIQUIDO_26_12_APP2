@@ -2547,6 +2547,172 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
         "numero_orcamento": numero_orcamento
     }
 
+
+# ========== ACEITE DE ORÇAMENTO ==========
+
+@api_router.post("/orcamento/{orcamento_id}/aceitar")
+async def aceitar_orcamento(orcamento_id: str, request: Request):
+    """
+    Cliente aceita o orçamento e gera automaticamente as parcelas no Contas a Receber.
+    Também envia notificação para a empresa.
+    """
+    from datetime import timedelta
+    import re
+    from urllib.parse import quote
+    
+    # Buscar orçamento
+    orcamento = await db.orcamentos.find_one({"id": orcamento_id}, {"_id": 0})
+    
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    if orcamento.get('status') == 'APROVADO':
+        return {"message": "Orçamento já foi aceito anteriormente", "already_accepted": True}
+    
+    # Buscar empresa
+    empresa = await db.companies.find_one({"id": orcamento['empresa_id']}, {"_id": 0})
+    if not empresa:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    
+    # IP do cliente
+    client_ip = request.client.host if request.client else "unknown"
+    
+    # Data atual
+    agora = datetime.now(timezone.utc)
+    
+    # Gerar parcelas no Contas a Receber
+    contas_geradas = []
+    
+    forma_pagamento = orcamento.get('forma_pagamento', 'avista')
+    valor_total = orcamento.get('preco_praticado', 0)
+    valor_entrada = orcamento.get('valor_entrada', 0)
+    parcelas = orcamento.get('parcelas', [])
+    
+    # Data base para vencimentos (5 dias após o aceite)
+    data_entrada = agora + timedelta(days=5)
+    
+    if forma_pagamento == 'avista':
+        # Pagamento único
+        conta = {
+            "id": str(uuid.uuid4()),
+            "company_id": orcamento['empresa_id'],
+            "user_id": orcamento['usuario_id'],
+            "tipo": "RECEBER",
+            "descricao": f"Orçamento {orcamento['numero_orcamento']} - {orcamento['cliente_nome']} (À Vista)",
+            "categoria": "Serviços",
+            "data_emissao": agora.strftime("%Y-%m-%d"),
+            "data_vencimento": data_entrada.strftime("%Y-%m-%d"),
+            "valor": valor_total,
+            "forma_pagamento": "Transferência",
+            "observacoes": f"Gerado automaticamente pelo aceite do orçamento {orcamento['numero_orcamento']}",
+            "status": "PENDENTE",
+            "orcamento_id": orcamento_id,
+            "created_at": agora.isoformat(),
+            "updated_at": agora.isoformat()
+        }
+        await db.contas.insert_one(conta)
+        contas_geradas.append(conta['id'])
+    else:
+        # Entrada + Parcelas
+        if valor_entrada > 0:
+            conta_entrada = {
+                "id": str(uuid.uuid4()),
+                "company_id": orcamento['empresa_id'],
+                "user_id": orcamento['usuario_id'],
+                "tipo": "RECEBER",
+                "descricao": f"Orçamento {orcamento['numero_orcamento']} - {orcamento['cliente_nome']} (Entrada)",
+                "categoria": "Serviços",
+                "data_emissao": agora.strftime("%Y-%m-%d"),
+                "data_vencimento": data_entrada.strftime("%Y-%m-%d"),
+                "valor": valor_entrada,
+                "forma_pagamento": "Transferência",
+                "observacoes": f"Entrada - Orçamento {orcamento['numero_orcamento']}",
+                "status": "PENDENTE",
+                "orcamento_id": orcamento_id,
+                "created_at": agora.isoformat(),
+                "updated_at": agora.isoformat()
+            }
+            await db.contas.insert_one(conta_entrada)
+            contas_geradas.append(conta_entrada['id'])
+        
+        # Criar cada parcela
+        for i, parcela in enumerate(parcelas):
+            # Vencimento: 30 dias * (número da parcela) após a entrada
+            data_vencimento = data_entrada + timedelta(days=30 * (i + 1))
+            
+            conta_parcela = {
+                "id": str(uuid.uuid4()),
+                "company_id": orcamento['empresa_id'],
+                "user_id": orcamento['usuario_id'],
+                "tipo": "RECEBER",
+                "descricao": f"Orçamento {orcamento['numero_orcamento']} - {orcamento['cliente_nome']} (Parcela {i+1}/{len(parcelas)})",
+                "categoria": "Serviços",
+                "data_emissao": agora.strftime("%Y-%m-%d"),
+                "data_vencimento": data_vencimento.strftime("%Y-%m-%d"),
+                "valor": parcela.get('valor', 0),
+                "forma_pagamento": "Transferência",
+                "observacoes": f"Parcela {i+1} - Orçamento {orcamento['numero_orcamento']}",
+                "status": "PENDENTE",
+                "orcamento_id": orcamento_id,
+                "created_at": agora.isoformat(),
+                "updated_at": agora.isoformat()
+            }
+            await db.contas.insert_one(conta_parcela)
+            contas_geradas.append(conta_parcela['id'])
+    
+    # Atualizar status do orçamento
+    await db.orcamentos.update_one(
+        {"id": orcamento_id},
+        {"$set": {
+            "status": "APROVADO",
+            "aprovado_em": agora.isoformat(),
+            "aceito_em": agora.isoformat(),
+            "aceito_por_ip": client_ip,
+            "contas_receber_geradas": contas_geradas,
+            "updated_at": agora.isoformat()
+        }}
+    )
+    
+    # Criar notificação no sistema
+    notificacao = {
+        "id": str(uuid.uuid4()),
+        "company_id": orcamento['empresa_id'],
+        "user_id": orcamento['usuario_id'],
+        "tipo": "ORCAMENTO_ACEITO",
+        "titulo": f"🎉 Orçamento {orcamento['numero_orcamento']} Aceito!",
+        "mensagem": f"O cliente {orcamento['cliente_nome']} aceitou o orçamento no valor de R$ {valor_total:,.2f}. {len(contas_geradas)} parcela(s) foram geradas no Contas a Receber.",
+        "lida": False,
+        "orcamento_id": orcamento_id,
+        "created_at": agora.isoformat()
+    }
+    await db.notificacoes.insert_one(notificacao)
+    
+    # Preparar mensagem WhatsApp para a empresa
+    whatsapp_empresa = empresa.get('celular_whatsapp') or empresa.get('telefone', '')
+    whatsapp_numero = re.sub(r'\D', '', whatsapp_empresa)
+    
+    mensagem_whatsapp = f"""🎉 *ORÇAMENTO ACEITO!*
+
+Cliente: {orcamento['cliente_nome']}
+Orçamento: {orcamento['numero_orcamento']}
+Valor: R$ {valor_total:,.2f}
+
+✅ {len(contas_geradas)} parcela(s) gerada(s) no Contas a Receber
+
+Acesse o sistema para mais detalhes."""
+    
+    whatsapp_url = f"https://wa.me/55{whatsapp_numero}?text={quote(mensagem_whatsapp)}" if whatsapp_numero else None
+    
+    return {
+        "message": "Orçamento aceito com sucesso!",
+        "orcamento_id": orcamento_id,
+        "numero_orcamento": orcamento['numero_orcamento'],
+        "contas_geradas": len(contas_geradas),
+        "contas_ids": contas_geradas,
+        "notificacao_whatsapp_url": whatsapp_url
+    }
+
+
 @api_router.get("/orcamento/share/{token}")
 async def share_orcamento_pdf(token: str):
     """Endpoint público para compartilhar PDF via token temporário"""
