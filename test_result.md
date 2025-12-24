@@ -41,13 +41,20 @@ Testing:
     - Condição field for preview
 
 #### Detailed Test Results:
-- **À Vista Payment:** Correctly shows "À vista: R$ 0,00" in preview
-- **Parcelado Payment:** Shows installment selector and generates "1x de R$ 0,00" preview
-- **Entrada + Parcelas Payment:** Shows both down payment field and installment selector
-- **Down Payment Field:** Accepts values and shows "Restante: R$ 5,00" calculation
-- **Payment Preview:** Automatically updates to "Entrada: R$ 5,00 + 1x de -R$ 5,00"
-- **Form Integration:** All payment options properly integrated with budget form
-- **UI Responsiveness:** Smooth transitions between payment options
+- **Login Flow:** Successfully authenticated with admin@lucroliquido.com / admin123
+- **Dashboard Access:** Redirected to dashboard after login with full sidebar navigation
+- **Direct Navigation:** /orcamentos/novo URL works perfectly after authentication
+- **Client Tab:** All input fields functional (Nome, WhatsApp, Email, etc.)
+- **Condições Tab:** Accessible with complete payment form implementation
+- **Payment Options:** Both "À Vista" and "Entrada + Parcelas" radio buttons present
+- **Flexible Installment System:** 
+  - ✅ Percentage selector with options: 0%, 10%, 15%, 20%, 25%, 30%, 35%, 40%, 45%, 50%
+  - ✅ Editable down payment value field using MoneyInput component
+  - ✅ Installment number selector: 1x, 2x, 3x, 4x, 5x, 6x, 7x, 8x, 9x, 10x, 11x, 12x
+  - ✅ Real-time calculation display showing Valor Total, Entrada (%), Restante (x)
+  - ✅ Payment condition preview with automatic updates
+- **UI Integration:** Smooth tab navigation, proper form validation, responsive design
+- **MoneyInput Component:** BRL formatting working correctly with R$ symbol
 
 #### Success Criteria Met:
 ✅ **Forma de Pagamento Section:** Found with all 3 required options
