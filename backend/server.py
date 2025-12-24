@@ -2394,7 +2394,7 @@ async def generate_orcamento_html(orcamento_id: str):
 
           <div class="panel col-6 is-orange" style="z-index:2;">
             <h3>Condições de Pagamento</h3>
-            <p style="margin:0;">{orcamento.get('condicoes_pagamento', '')}</p>
+            {gerar_html_parcelas(orcamento, valor_total)}
           </div>
         </section>
       </div>
@@ -2440,6 +2440,7 @@ async def generate_orcamento_html(orcamento_id: str):
   <div class="actions" data-html2canvas-ignore>
     <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
     <button class="btn orange" onclick="baixarPDF()">⬇️ Baixar PDF</button>
+    {gerar_botao_fechar_negocio(orcamento)}
   </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
