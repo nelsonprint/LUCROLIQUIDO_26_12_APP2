@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, FileText, Target, Calculator, CreditCard, Shield, LogOut, BookOpen, Receipt, ChevronDown, ChevronRight, Package, Settings, Users, Layers, FolderTree } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import NotificacoesPanel from '@/components/NotificacoesPanel';
 
 export const Sidebar = ({ user, onLogout, onNavigate }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [contasMenuOpen, setContasMenuOpen] = useState(false);
+  const company = JSON.parse(localStorage.getItem('company') || '{}');
 
   // Função para navegar (usa onNavigate se disponível, senão usa navigate diretamente)
   const handleNavigation = (path) => {
