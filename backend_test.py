@@ -23,13 +23,15 @@ import math
 BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://orcastream.preview.emergentagent.com')
 API_BASE = f"{BACKEND_URL}/api"
 
-class ServicePriceTableTester:
+class WhatsAppBudgetFlowTester:
     def __init__(self):
         self.session = requests.Session()
         self.user_data = None
         self.company_id = "cf901b3e-0eca-429c-9b8e-d723b31ecbd4"  # Company ID from test_result.md
         self.test_results = {}
-        self.created_service_id = None
+        self.created_budget_id = None
+        self.created_notification_id = None
+        self.created_accounts_ids = []
         
     def log(self, message, level="INFO"):
         """Log with timestamp"""
