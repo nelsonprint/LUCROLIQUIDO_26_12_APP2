@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 
 # Configuration
-BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://budget-markup-flow.preview.emergentagent.com')
+BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://orcastream.preview.emergentagent.com')
 API_BASE = f"{BACKEND_URL}/api"
 COMPANY_ID = "cf901b3e-0eca-429c-9b8e-d723b31ecbd4"
 

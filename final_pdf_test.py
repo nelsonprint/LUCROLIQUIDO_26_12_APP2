@@ -15,7 +15,7 @@ import os
 from datetime import datetime
 
 # Configuração da URL base
-BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://budget-markup-flow.preview.emergentagent.com')
+BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://orcastream.preview.emergentagent.com')
 API_BASE = f"{BACKEND_URL}/api"
 
 def log(message, level="INFO"):

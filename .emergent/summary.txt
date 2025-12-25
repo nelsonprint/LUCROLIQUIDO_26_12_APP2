@@ -1,138 +1,210 @@
-<analysis>
-**original_problem_statement:**
-O usuário solicitou um sistema de gestão financeira SaaS (Lucro Líquido). O escopo evoluiu para incluir a sincronização com um repositório GitHub, um módulo de Materiais, uma página de Configuração de Orçamento para personalizar PDFs, precificação de assinatura dinâmica e uma reformulação completa da geração de PDF.
+<analysis>**original_problem_statement:**
+O usuário solicitou uma série de melhorias e correções no sistema de orçamentos e finanças. As principais solicitações incluem:
 
-Durante esta sessão, o usuário solicitou múltiplas iterações e refinamentos no layout do PDF gerado (modelo clássico via ReportLab), incluindo:
-1.  Remoção de dados da empresa do rodapé.
-2.  Ajuste da espessura das bordas dos cards.
-3.  Reestruturação completa da seção VALORES para detalhar serviços, materiais e o total somado.
-4.  Remoção do nome do cliente de uma saudação.
-5.  Recentemente, o usuário reportou um bloqueio crítico: o login e o cadastro não funcionam no ambiente de produção (deploy), embora funcionem localmente.
+1.  **Formatação Monetária e Validação (P0):**
+    *   Aplicar o padrão monetário brasileiro (BRL, ex: R$ 1.234,56) em todos os campos de valor.
+    *   Implementar validação real (algoritmo) para CPF/CNPJ nos formulários, com bloqueio de submissão em caso de dados inválidos.
+
+2.  **Melhorias no Orçamento e Pagamento (P0):**
+    *   **Edição de Orçamento:** Ao editar um orçamento, o sistema deve carregar todos os dados existentes (itens, materiais, etc.), como se estivesse sendo criado novamente.
+    *   **Parcelamento Flexível:** Implementar um sistema de pagamento que permita uma entrada (em % ou valor) e parcelas restantes, com valores editáveis.
+    *   **Botão Fechar Negócio:** No HTML do orçamento enviado ao cliente, adicionar um botão Fechar Negócio.
+    *   **Automação do Contas a Receber:** Ao clicar em Fechar Negócio, o sistema deve aprovar o orçamento e lançar automaticamente a entrada e as parcelas no módulo Contas a Receber com as datas de vencimento corretas.
+
+3.  **Fluxo de Notificações via WhatsApp (P1):**
+    *   O botão de Enviar WhatsApp na listagem de orçamentos deve enviar o link do HTML do orçamento, não apenas um texto.
+    *   Quem envia é o WhatsApp da empresa; quem recebe é o WhatsApp do cliente.
+    *   Quando o cliente aceita o orçamento (Fechar Negócio), uma notificação persistente (que não some sozinha) deve aparecer no sistema web e uma notificação automática deve ser enviada para o WhatsApp da empresa.
+
+4.  **URL Amigável:**
+    *   Personalizar a URL do orçamento para usar o número sequencial em vez do UUID (ex: ).
 
 **User's preferred language**: Português
 
 **what currently exists?**
-A aplicação SaaS financeira está funcionalmente completa no ambiente de desenvolvimento local, com backend em FastAPI e frontend em React. Todas as funcionalidades, incluindo materiais, configuração de orçamento e preço dinâmico, estão implementadas. A geração de PDF foi consolidada para usar um único modelo clássico baseado em ReportLab, após múltiplas rodadas de feedback do usuário. No entanto, a versão em produção (deploy) está quebrada, impedindo o login e o cadastro de novos usuários.
+-   Aplicação full-stack (FastAPI + React) funcional.
+-   O bug crítico no dropdown de Categoria da página de Lançamentos foi **resolvido**.
+-   Foram criados e parcialmente implementados componentes reutilizáveis e utilitários centralizados para:
+    -   **Formatação Monetária BRL** (, ).
+    -   **Validação de CPF/CNPJ** (, ).
+-   O fluxo de **orçamento foi significativamente melhorado**:
+    -   O formulário  foi unificado para lidar com a **criação e edição** de orçamentos.
+    -   Foi implementado um **sistema de pagamento flexível** com entrada e parcelas editáveis.
+    -   O backend salva os dados de parcelamento e possui um endpoint () que **gera as contas a receber automaticamente** quando um orçamento é aprovado.
+    -   O HTML do orçamento agora exibe as parcelas e o botão Fechar Negócio.
+    -   Foi criada uma **URL amigável** para visualização do orçamento ().
+-   A base para um **sistema de notificações persistente** foi criada (componente  e endpoints no backend).
 
 **Last working item**:
--   **Last item agent was working:** Diagnosticar e resolver uma falha crítica no ambiente de produção onde as funcionalidades de login e cadastro não funcionam. O agente identificou que o problema provavelmente está relacionado a variáveis de ambiente (, ) ou configuração de CORS/Ingress, uma vez que a aplicação funciona perfeitamente no ambiente de desenvolvimento.
+-   **Last item agent was working:** O agente estava realizando uma auditoria completa no fluxo de envio e aceite de orçamentos via WhatsApp, conforme solicitado pelo usuário. Ele identificou que a notificação de aceite para a empresa não era enviada automaticamente (apenas a URL era gerada) e que a notificação no sistema web não era persistente. Para corrigir isso, o agente começou a construir um sistema de notificações completo.
 -   **Status:** IN PROGRESS
--   **Agent Testing Done:** N (O agente não pode testar o ambiente de produção do usuário diretamente).
--   **Which testing method agent to use?** Manual testing. O agente solicitou que o usuário utilize as ferramentas de desenvolvedor do navegador (aba Network) para inspecionar a requisição de login, e reporte a URL, o status HTTP e a resposta do erro.
--   **User Testing Done:** N (Aguardando o usuário fornecer as informações de depuração solicitadas).
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** Frontend testing agent para validar a integração e funcionalidade do novo painel de notificações, e  para testar os novos endpoints de notificação no backend.
+-   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: (P0) Falha de Login/Cadastro no Ambiente de Produção (Deploy)**
-    -   **Description:** A aplicação está inacessível para os usuários no ambiente de produção, pois as funcionalidades de login e cadastro não funcionam. Este é um bloqueador crítico.
-    -   **Attempted fixes:** Nenhuma correção foi tentada ainda. O agente está na fase de diagnóstico, aguardando informações do usuário.
+-   **Issue 1: (P0) Finalizar o fluxo de notificações de aceite de orçamento.**
+-   **Issue 2: (P0) Problema no salvamento e processamento do parcelamento.**
+-   **Issue 3: (P1) Edição de orçamento não carrega todos os dados.**
+
+**Issues Detail:**
+-   **Issue 1:**
+    -   **Description:** O fluxo de notificação quando um cliente aceita um orçamento está incompleto. A notificação para a empresa via WhatsApp não é enviada automaticamente, e o novo painel de notificações no sistema web ainda não está integrado à interface do usuário.
+    -   **Attempted fixes:** O agente criou o componente  e os endpoints de backend para criar, listar e marcar notificações como lidas (). O endpoint de aceite foi atualizado para criar um registro de notificação no banco.
     -   **Next debug checklist:**
-        1.  Analisar a resposta da requisição de login/cadastro na aba Network do navegador do usuário (URL, Status, Response).
-        2.  Verificar o valor da variável de ambiente  na configuração de deploy do frontend.
-        3.  Verificar o valor da variável  na configuração de deploy do backend.
-        4.  Inspecionar os logs do backend no ambiente de produção para identificar possíveis erros de inicialização ou falhas de conexão com o banco de dados.
-    -   **Why fix this issue and what will be achieved with the fix?** A correção é essencial para tornar a aplicação utilizável em produção.
+        1.  Integrar o componente  em um local visível da UI (ex: header ou sidebar).
+        2.  Fazer o painel buscar e exibir as notificações não lidas da API.
+        3.  Implementar a ação de marcar como lida ao clicar no 'x' da notificação.
+        4.  **No backend**, no endpoint , adicionar a lógica para **enviar efetivamente** a mensagem de notificação para o WhatsApp da empresa, utilizando a URL  que já é gerada.
     -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** Y (Problemas de deploy foram mencionados no fork anterior).
+    -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** Both
-    -   **Blocked on other issue:** Não. Este é o principal bloqueador.
+    -   **Blocked on other issue:** Não.
+
+-   **Issue 2:**
+    -   **Description:** O usuário relatou que, após o cliente aprovar um orçamento com parcelamento, o sistema registra como À Vista e gera apenas uma parcela no Contas a Receber.
+    -   **Attempted fixes:** O agente identificou que o modelo  no backend não continha os campos para o parcelamento e corrigiu isso. Testes via API confirmaram que, ao enviar os dados corretos, o backend salva e processa todas as parcelas corretamente.
+    -   **Next debug checklist:**
+        1.  Revisar o  em  para garantir que os dados do parcelamento (, , etc.) estão sendo enviados corretamente no corpo da requisição POST/PUT, especialmente quando o usuário seleciona as opções de parcelamento.
+        2.  Adicionar  antes da chamada  ou  para inspecionar o payload exato que está sendo enviado.
+        3.  Verificar se algum  está resetando o estado do  para o padrão (avista) antes da submissão.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Both
+    -   **Blocked on other issue:** Não.
+
+-   **Issue 3:**
+    -   **Description:** O usuário informou que a funcionalidade de editar um orçamento não carrega todos os dados (itens, materiais, etc.), impedindo uma edição completa.
+    -   **Attempted fixes:** O agente refatorou  para buscar os dados do orçamento quando um uid=0(root) gid=0(root) groups=0(root) é passado na URL. A função  foi criada para popular o estado do formulário.
+    -   **Next debug checklist:**
+        1.  Auditar a função  em . Garantir que ela está populando **todos** os estados necessários:  (incluindo o parcelamento), , e .
+        2.  Verificar se os dados de parcelas (, , etc.) estão sendo corretamente setados no estado  ao carregar um orçamento para edição.
+        3.  Confirmar que o endpoint  está retornando todos os campos necessários para a edição.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Both
+    -   **Blocked on other issue:** Não.
 
 **In progress Task List**:
-Nenhum.
+-   **Task 1:** Integração do Painel de Notificações na UI
+    -   **Where to resume:** Em  ou em um componente de layout compartilhado, renderizar o  e conectá-lo aos endpoints da API.
+    -   **What will be achieved with this?** Uma interface de notificações persistentes e funcionais dentro do sistema.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on something:** Não.
 
 **Upcoming and Future Tasks**
 *   **Upcoming Tasks:**
-    *   (P1) **Integrar Novos Dados com Módulos de IA:** Atualizar os recursos de IA (Score de Saúde, Alertas Inteligentes) para levar em conta os dados das collections  e .
+    *   (P2) **Implementar importação de serviços via CSV** na página .
 *   **Future Tasks:**
-    *   (P2) **Refatorar :** O arquivo monolítico do backend precisa ser refatorado em uma estrutura modular (, , ) para melhorar a manutenibilidade.
+    *   (P3) **Refatorar **: Desmembrar o arquivo monolítico em uma estrutura de , , .
+    *   (P4) **Remover o arquivo obsoleto ** e limpar a rota associada em .
+    *   (P5) **Implementar Tela do Vendedor**.
 
 **Completed work in this session**
--   **Reversão e Consolidação do PDF:** O sistema de geração de PDF foi revertido para usar exclusivamente o modelo clássico (baseado em ReportLab), desativando o template HTML/WeasyPrint, conforme solicitado pelo usuário.
--   **Refinamento Iterativo do PDF:** Realizados múltiplos ajustes de layout e lógica no PDF gerado via ReportLab:
-    -   Removida a linha de dados da empresa do rodapé.
-    -   Ajustada a espessura da borda lateral de todos os cards para 1mm.
-    -   A seção VALORES foi reescrita para espelhar a lógica da UI, detalhando Valor do Serviço, Valor dos Materiais e o Valor Total somado.
-    -   Removido o nome do cliente da saudação inicial do documento.
+-   **Correção Crítica:** Resolvido o bug no  onde o dropdown Categoria ficava inativo.
+-   **Validação e Formatação:** Criados utilitários centralizados para formatação de moeda BRL e validação de CPF/CNPJ.
+-   **Sistema de Parcelamento Flexível:** Implementado no formulário de orçamento, permitindo entrada e parcelas editáveis.
+-   **Automação Financeira:** Criado o fluxo Fechar Negócio que aprova o orçamento e lança as parcelas automaticamente no Contas a Receber.
+-   **Melhora na Experiência do Usuário:**
+    -   Criada URL amigável para compartilhamento de orçamentos.
+    -   Unificada a experiência de criação e edição de orçamentos na mesma tela ().
+    -   Corrigido o botão de envio por WhatsApp na listagem de orçamentos.
+-   **Início do Sistema de Notificações:** Criado o backend e o componente frontend para notificações persistentes.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Refatoração do **
-    -   **Debug checklist:** O arquivo  continua sendo um monolito com mais de 1500 linhas.
-    -   **Why to solve this issue and what will be achieved with this?** A refatoração é crucial para a manutenibilidade e escalabilidade do projeto.
+    -   **Debug checklist:** O arquivo  é um monolito com quase 5000 linhas.
+    -   **Why to solve this issue and what will be achieved with this?** Melhora a manutenibilidade e escalabilidade do backend.
     -   **Should Test frontend/backend/both after fix:** Backend
     -   **Is recurring issue?** Y
 
 **Known issue recurrence from previous fork**
--   **Deployment:** O fork anterior mencionou que o  não refletia as alterações, sugerindo um problema de cache da plataforma. O problema atual (falha de login/cadastro) é uma manifestação mais grave de instabilidade no ambiente de produção, indicando uma questão fundamental de configuração de ambiente.
+-   Nenhum.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI
--   **Frontend:** React
--   **Database:** MongoDB
--   **PDF Generation:** ReportLab (exclusivamente)
+-   Componentização em React com .
+-   Centralização de lógica de negócio no frontend (utilitários em ).
+-   Endpoints de API RESTful com FastAPI para operações CRUD e ações de negócio.
+-   Denormalização de dados (armazenar  dentro do documento ).
+-   Automação de processos (geração de contas a receber a partir do aceite do orçamento).
 
 **key DB schema**
--   : Dados da empresa.
--   : Usuários.
--   : Orçamentos gerados.
--   : Lista de materiais.
--   : Configurações de personalização do PDF por empresa.
--   : Configurações globais do sistema.
+-   : **(ATUALIZADO)** Adicionados campos:  (str),  (float),  (float),  (int),  (array de dicts: ),  ('APROVADO').
+-   : **(UTILIZADO)** O Contas a Receber é populado pelo endpoint de aceite de orçamento.
+-   : **(NOVO)** Coleção para armazenar notificações persistentes com os campos , , , , .
 
 **changes in tech stack**
-Nenhum.
-
+-   Nenhuma.
 
 **All files of reference**
--   **/app/backend/server.py**: Arquivo mais modificado nesta sessão. A rota  foi alterada para forçar o uso da função . A função  foi iterativamente ajustada para layout, texto e lógica de cálculo de valores.
--   **/app/frontend/src/App.js**: Arquivo chave para a depuração do problema de deploy, pois consome a variável .
--   **/app/frontend/src/pages/Auth/Login.jsx**: Componente cuja funcionalidade está quebrada no ambiente de produção.
+-   **/app/backend/server.py**: Contém toda a lógica de backend, incluindo os novos endpoints e modelos.
+-   **/app/frontend/src/pages/NovoOrcamentoGrid.jsx**: Componente central para criação, edição e parcelamento de orçamentos.
+-   **/app/frontend/src/lib/formatters.js**: Contém as novas funções de validação e formatação.
+-   **/app/frontend/src/components/NotificacoesPanel.jsx**: Novo componente da UI para notificações.
 
 **Areas that need refactoring**:
--    permanece como um monolito que necessita urgentemente de refatoração.
+-   ****: A refatoração para uma arquitetura modular (MVC/Services) é um débito técnico crítico.
+-   ****: Este arquivo tornou-se obsoleto e deve ser removido para evitar confusão. A rota correspondente em  também deve ser removida.
+-   ****: É um componente muito grande e complexo. Poderia ser dividido em subcomponentes menores para gerenciar a lógica de cliente, itens, materiais e pagamento separadamente.
 
 **key api endpoints**
--    (Falhando em produção)
--    (Falhando em produção)
--    (Fortemente modificado)
+-   : **(NOVO)** Aprova um orçamento, cria as contas a receber e gera uma notificação.
+-   : **(NOVO)** Retorna a versão HTML de um orçamento usando seu número sequencial.
+-   : **(ATUALIZADO)** Endpoint de edição que agora suporta os novos campos de parcelamento.
+-   : **(NOVO)** Lista as notificações não lidas.
+-   : **(NOVO)** Marca uma notificação como lida.
 
 **Critical Info for New Agent**
--   **PRIORIDADE MÁXIMA:** A aplicação está quebrada em produção. O login e o cadastro não funcionam. A causa mais provável é uma configuração incorreta das variáveis de ambiente ( no frontend ou  no backend). O próximo passo é obter os logs da requisição de login (via aba Network) do navegador do usuário para confirmar a causa raiz.
--   **PDFs:** O usuário rejeitou o template moderno (HTML/WeasyPrint) e quer usar **apenas** a versão clássica gerada com . Qualquer alteração no PDF deve ser feita na função  em .
+-   **FOCO NOS PROBLEMAS DO USUÁRIO:** A prioridade máxima é corrigir os dois bugs relatados pelo usuário: **1)** o parcelamento não ser salvo corretamente no aceite e **2)** a edição de orçamentos não carregar todos os dados. O agente anterior confirmou que o backend funciona com dados corretos, então a causa provável está no frontend (payload da API ou gerenciamento de estado).
+-   **FINALIZAR O SISTEMA DE NOTIFICAÇÕES:** A tarefa de auditoria do WhatsApp está em andamento. É preciso integrar o painel de notificações na UI e, crucialmente, implementar o envio **automático** da mensagem de WhatsApp para a empresa no backend.
+-   **TESTAR O FLUXO DE EDIÇÃO:** Teste o fluxo completo de edição de um orçamento (criado com o novo sistema de parcelas). Carregue a página, verifique se todos os campos (itens, materiais, forma de pagamento, parcelas) estão preenchidos, faça uma alteração e salve.
+-   **LIMPEZA DE CÓDIGO:** O arquivo  é obsoleto e deve ser removido.
 
-**documents created in this job**
-Nenhum.
+**documents and test_reports created in this job**
+-   Nenhum.
 
-**Last 10 User Messages and any pending user messages**
-1.  **User:** Pede para simplificar a seção VALORES do PDF. (Feito, mas a lógica estava errada)
-2.  **User:** Corrige a lógica: a seção VALORES deve detalhar  +  = . (Feito)
-3.  **User:** Confirma que a nova lógica de valores no PDF está correta. (Concluído)
-4.  **User:** Pede para remover o nome do cliente da saudação no PDF. (Feito)
-5.  **User:** Confirma que a saudação está correta. (Concluído)
-6.  **User:** **(NOVO PROBLEMA CRÍTICO)** Reporta que o login e o cadastro não funcionam após o deploy. (Em andamento)
-7.  **Agent:** Diagnostica o problema como sendo de configuração de ambiente e pede ao usuário para verificar a aba Network do navegador. (Aguardando resposta)
+**Last 10 User Messages and any pending HUMAN messages**
+-   faça uma auditoria no orçamento, quanto questao do envio do orçamento via whatsapp. Pontos a considerar: Quem envia é o Whatsapp da empresa que criou o orçamento. Quem recebe o orçamento é o cliente, ou seja, para o numero de whatsapp do cliente que consta em seu cadastro. Quando o cliente, após receber o orçamento pelo Whatsapp, clicar em Aceitar orçamento, a notificação, além de aparecer no sistema web, deve: aparecer a notificação com mais detalhes e não sumir, a menos que quem usa o sistema clique em um [x] na notificação. Deve ser enviado para o whastapp no cadastro da empresa essa mesma notificação.
+-   vou salvar esta versao do sistema, mas preciso ter certeza que tudo o que fizemos está com o comando commit para eu salvar ele com toda a sua integralidade.
+-   SOBRE O PARCELAMENTO, FAÇO TUDO CORRETO, MAS QUANDO O CLIENTE APROVA, APARECE A VISTA E 1 PARCELA. PEÇO QUE FAÇA UMA AUDITORIA NESSE PROCESSO, POIS ENTRA NO CONTAS A RECEBER TAMBEM SOMENTE UMA PARCELA. OUTRO PONTO INTERESSANTE É QUE, AO EDITAR O ORÇAMENTO, DEVE CARREGA-LO COMPLETO, POIS EU POSSO, DE REPENTE AUMENTAR MANTERIAIS OU ITENS E PRECISO DELE COMO SE EU ESTIVESSE ELABORANDO O MESMO. ANALISE COMPLETO OS DOIS MODELOS DE ORÇAMENTO DO SISTEMA.
+-   quero que analise o seguinte: é Possivel que, no orçamento que é enviado para o cliente, que tenha um botão, além dos dois que já existem, com o nome 'Fechar Negócio'. Se a pessoa clicar nesse botão, dentro do sistema recebe a confirmação e o plano de pagamento delineado no orçamento já entre automaticamente no contas a receber.
+-   sim
+-   Responda-me o seguinte: Quanto ao link do orçamento, é possivel personalizar para ir mascarado? De: [URL com UUID] Para: [URL com ID e domínio personalizado].
+-   uma pergunt antes. o redeploy consome credito?
+-   aqui continua sem o separador de dezenas e milhar. os campos de cpf e cnpj devem travar a continuação. nao deve avançar se estiver com os numeros errados:
+-   Futuras tarefas alinhadas: Antes, preciso desses ajustes Ajustar máscara/formatos monetários (BRL) + validar CPF/CNPJ (com regra real)
+-   ja fiz todos os testes e realmente nao ativa Categoria, somente apara a Despesa
 
 **Project Health Check:**
--   **Working (Localmente):** A aplicação está totalmente funcional no ambiente de desenvolvimento.
--   **Broken (Produção):** A aplicação está inutilizável no ambiente de produção devido à falha no login/cadastro.
--   **Mocked:** Nenhuma.
+-   **Broken:**
+    -   O fluxo de salvamento de orçamentos com parcelas está falhando para o usuário.
+    -   A funcionalidade de edição de orçamentos está incompleta.
+    -   O envio automático de notificação via WhatsApp para a empresa (após aceite do cliente) não está implementado.
+-   **Working:**
+    -   O bug do dropdown de Categoria em Lançamentos está corrigido.
+    -   O backend está tecnicamente capaz de salvar orçamentos com parcelas e gerar as contas a receber.
+    -   A UI para o novo sistema de parcelamento e os utilitários de formatação/validação estão implementados.
+-   **Mocked:** Nenhum.
 
 **3rd Party Integrations**
 -   Mercado Pago — requer User API Key
 -   OpenAI GPT-4o-mini — usa Emergent LLM Key
+-    — Integrado no frontend para gerar PDFs.
 
 **Testing status**
--   Testing agent used after significant changes: NO
+-   Testing agent used after significant changes: YES (usado para validar a UI do novo formulário de pagamento e o conserto do bug no dropdown).
 -   Troubleshoot agent used after agent stuck in loop: NO
 -   Test files created: []
--   Known regressions: A funcionalidade de login/cadastro regrediu para um estado quebrado no ambiente de produção.
+-   Known regressions: A funcionalidade de salvar parcelamentos e editar orçamentos está quebrada do ponto de vista do usuário.
 
 **Credentials to test flow:**
 -   **Admin User:**  / 
 
 **What agent forgot to execute**
--   O agente inicialmente confundiu qual método de geração de PDF (ReportLab vs. WeasyPrint) deveria ser modificado, mas corrigiu o curso após o feedback do usuário. A principal tarefa não executada é a resolução do problema de deploy, que está atualmente em fase de diagnóstico.
-Observação.:
- A IA anterior nao conseguiu resolver o problema de, após o Deploy, nao funcionar o app web, pois não consigo fazer login e nem cadastrar novo usuário
-</analysis>
+-   Implementar o **envio automático** da notificação por WhatsApp para a empresa. Atualmente, o backend apenas gera a URL da mensagem.
+-   Remover o arquivo obsoleto .
+-   A tarefa de **importação de serviços via CSV**, mencionada em Upcoming Tasks, ainda não foi iniciada.</analysis>

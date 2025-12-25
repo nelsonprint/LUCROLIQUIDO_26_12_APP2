@@ -2652,7 +2652,7 @@ async def enviar_orcamento_whatsapp(orcamento_id: str):
     )
     
     # Gerar URL amigável com número do orçamento
-    base_url = os.environ.get('BACKEND_URL', 'https://budget-markup-flow.preview.emergentagent.com')
+    base_url = os.environ.get('BACKEND_URL', 'https://orcastream.preview.emergentagent.com')
     numero_orcamento = orcamento.get('numero_orcamento', '')
     
     # URL amigável: /api/orcamento/view/LL-2025-0001
