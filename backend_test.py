@@ -389,19 +389,18 @@ class WhatsAppBudgetFlowTester:
             return False
     
     def run_all_tests(self):
-        """Execute all Service Price Table tests"""
-        self.log("🚀 Starting Service Price Table API endpoint tests")
+        """Execute all WhatsApp Budget Flow tests"""
+        self.log("🚀 Starting WhatsApp Budget Flow API endpoint tests")
         self.log("=" * 70)
         
         tests = [
             ("Login", self.test_login),
-            ("Get Units List", self.test_get_units_list),
-            ("Create Service Price", self.test_create_service_price),
-            ("Get Service Price Table", self.test_get_service_price_table),
-            ("Autocomplete Service Price", self.test_autocomplete_service_price),
-            ("Get Categories", self.test_get_categories),
-            ("Update Service Price", self.test_update_service_price),
-            ("Toggle Service Active", self.test_toggle_service_active)
+            ("Create Budget with Installments", self.test_create_budget_with_installments),
+            ("WhatsApp Budget Endpoint", self.test_whatsapp_budget_endpoint),
+            ("Budget Acceptance Endpoint", self.test_budget_acceptance_endpoint),
+            ("Notifications Created", self.test_notifications_created),
+            ("Accounts Receivable Generated", self.test_accounts_receivable_generated),
+            ("Notification Management", self.test_notification_management)
         ]
         
         results = {}
@@ -422,7 +421,7 @@ class WhatsAppBudgetFlowTester:
         
         # Test summary
         self.log("\n" + "=" * 70)
-        self.log("📊 SERVICE PRICE TABLE API TEST SUMMARY")
+        self.log("📊 WHATSAPP BUDGET FLOW TEST SUMMARY")
         self.log("=" * 70)
         
         passed = 0
@@ -437,7 +436,7 @@ class WhatsAppBudgetFlowTester:
         self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
         
         if passed == total:
-            self.log("🎉 ALL SERVICE PRICE TABLE TESTS PASSED! API endpoints working correctly.")
+            self.log("🎉 ALL WHATSAPP BUDGET FLOW TESTS PASSED! System working correctly.")
             return True
         else:
             self.log("⚠️ SOME TESTS FAILED! Check logs above for details.")
@@ -445,7 +444,7 @@ class WhatsAppBudgetFlowTester:
 
 def main():
     """Main function"""
-    tester = ServicePriceTableTester()
+    tester = WhatsAppBudgetFlowTester()
     success = tester.run_all_tests()
     
     # Exit code
