@@ -7,7 +7,6 @@ import { Bell, X, CheckCircle, AlertCircle, Info, ExternalLink } from 'lucide-re
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { axiosInstance } from '../App';
-import { formatBRL } from '@/lib/formatters';
 
 const NotificacoesPanel = ({ companyId, userId }) => {
   const [notificacoes, setNotificacoes] = useState([]);
