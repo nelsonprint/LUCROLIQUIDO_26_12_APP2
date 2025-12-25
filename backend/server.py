@@ -2802,31 +2802,50 @@ async def aceitar_orcamento(orcamento_id: str, request: Request):
         }}
     )
     
-    # Criar notificação no sistema
+    # Preparar mensagem WhatsApp para a empresa
+    whatsapp_empresa = empresa.get('celular_whatsapp') or empresa.get('telefone', '')
+    whatsapp_numero = re.sub(r'\D', '', whatsapp_empresa)
+    
+    # Formatar detalhes das parcelas
+    detalhes_parcelas = ""
+    if forma_pagamento == 'avista':
+        detalhes_parcelas = f"💰 Pagamento à vista: R$ {valor_total:,.2f}"
+    else:
+        detalhes_parcelas = f"💰 Entrada: R$ {valor_entrada:,.2f}\n"
+        for i, parcela in enumerate(parcelas):
+            detalhes_parcelas += f"📅 Parcela {i+1}: R$ {parcela.get('valor', 0):,.2f}\n"
+    
+    mensagem_whatsapp = f"""🎉 *ORÇAMENTO ACEITO!*
+
+📋 *{orcamento['numero_orcamento']}*
+👤 Cliente: {orcamento['cliente_nome']}
+💵 Valor Total: R$ {valor_total:,.2f}
+
+{detalhes_parcelas}
+✅ {len(contas_geradas)} parcela(s) gerada(s) no Contas a Receber
+
+Acesse o sistema para mais detalhes."""
+    
+    whatsapp_url = f"https://wa.me/55{whatsapp_numero}?text={quote(mensagem_whatsapp)}" if whatsapp_numero else None
+    
+    # Criar notificação no sistema com mais detalhes
     notificacao = {
         "id": str(uuid.uuid4()),
         "company_id": orcamento['empresa_id'],
         "user_id": orcamento['usuario_id'],
         "tipo": "ORCAMENTO_ACEITO",
         "titulo": f"🎉 Orçamento {orcamento['numero_orcamento']} Aceito!",
-        "mensagem": f"O cliente {orcamento['cliente_nome']} aceitou o orçamento no valor de R$ {valor_total:,.2f}. {len(contas_geradas)} parcela(s) foram geradas no Contas a Receber.",
+        "mensagem": f"""O cliente {orcamento['cliente_nome']} aceitou o orçamento!
+
+💵 Valor Total: R$ {valor_total:,.2f}
+{detalhes_parcelas}
+✅ {len(contas_geradas)} parcela(s) criada(s) no Contas a Receber""",
         "lida": False,
         "orcamento_id": orcamento_id,
+        "whatsapp_url": whatsapp_url,
         "created_at": agora.isoformat()
     }
     await db.notificacoes.insert_one(notificacao)
-    
-    # Preparar mensagem WhatsApp para a empresa
-    whatsapp_empresa = empresa.get('celular_whatsapp') or empresa.get('telefone', '')
-    whatsapp_numero = re.sub(r'\D', '', whatsapp_empresa)
-    
-    mensagem_whatsapp = f"""🎉 *ORÇAMENTO ACEITO!*
-
-Cliente: {orcamento['cliente_nome']}
-Orçamento: {orcamento['numero_orcamento']}
-Valor: R$ {valor_total:,.2f}
-
-✅ {len(contas_geradas)} parcela(s) gerada(s) no Contas a Receber
 
 Acesse o sistema para mais detalhes."""
     
