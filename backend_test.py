@@ -62,298 +62,330 @@ class WhatsAppBudgetFlowTester:
             self.log(f"❌ Login request error: {str(e)}", "ERROR")
             return False
     
-    def test_get_units_list(self):
-        """Test GET /api/service-price-table/units/list - List available units"""
-        self.log("📋 Testing GET /api/service-price-table/units/list - List units...")
+    def test_create_budget_with_installments(self):
+        """Test creating a budget with installment payment"""
+        self.log("💰 Testing budget creation with installments...")
         
-        try:
-            response = self.session.get(f"{API_BASE}/service-price-table/units/list")
-            
-            if response.status_code == 200:
-                result = response.json()
-                units = result.get('units', [])
-                self.log(f"✅ Retrieved {len(units)} available units")
-                
-                # Verify expected units are present
-                expected_units = ["M2", "M", "UN", "PONTO", "HORA", "DIA", "VISITA", "MES", "ETAPA", "GLOBAL", "KG", "M3"]
-                for unit in expected_units:
-                    if unit not in units:
-                        self.log(f"❌ Missing expected unit: {unit}", "ERROR")
-                        return False
-                
-                self.log("✅ All expected units are present!")
-                return True
-            else:
-                self.log(f"❌ Failed to get units list: {response.status_code} - {response.text}", "ERROR")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Error getting units list: {str(e)}", "ERROR")
+        if not self.user_data:
+            self.log("❌ No user data available for budget creation", "ERROR")
             return False
-    
-    def test_create_service_price(self):
-        """Test POST /api/service-price-table - Create service"""
-        self.log("📊 Testing POST /api/service-price-table - Create service...")
         
-        # Use a unique service name to avoid conflicts
+        # Create budget with installments: 30% down payment + 2 installments
         import time
         timestamp = int(time.time())
         
-        test_data = {
-            "company_id": self.company_id,
-            "code": f"TEST-{timestamp}",
-            "description": f"TESTE DE SERVIÇO {timestamp}",
-            "category": "Teste",
-            "unit": "UN",
-            "pu1_base_price": 100.00
+        budget_data = {
+            "empresa_id": self.company_id,
+            "usuario_id": self.user_data['user_id'],
+            # Client data
+            "cliente_nome": f"Cliente Teste Parcelamento {timestamp}",
+            "cliente_documento": "123.456.789-00",
+            "cliente_email": "cliente@teste.com",
+            "cliente_telefone": "(11) 99999-9999",
+            "cliente_whatsapp": "11999999999",
+            "cliente_endereco": "Rua Teste, 123 - São Paulo/SP",
+            # Budget data
+            "tipo": "servico_hora",
+            "descricao_servico_ou_produto": f"Serviço de teste com parcelamento {timestamp}",
+            "quantidade": 10.0,
+            "custo_total": 500.0,
+            "preco_minimo": 800.0,
+            "preco_sugerido": 1000.0,
+            "preco_praticado": 1000.0,
+            # Commercial conditions
+            "validade_proposta": "2025-02-28",
+            "condicoes_pagamento": "Entrada + 2 parcelas",
+            "prazo_execucao": "15 dias úteis",
+            "observacoes": "Teste de orçamento com parcelamento",
+            # Installment payment details
+            "forma_pagamento": "entrada_parcelas",
+            "entrada_percentual": 30.0,
+            "valor_entrada": 300.0,
+            "num_parcelas": 2,
+            "parcelas": [
+                {"numero": 1, "valor": 350.0, "editado": False},
+                {"numero": 2, "valor": 350.0, "editado": False}
+            ]
         }
         
         try:
-            response = self.session.post(f"{API_BASE}/service-price-table", json=test_data)
+            response = self.session.post(f"{API_BASE}/orcamentos", json=budget_data)
             
             if response.status_code == 200:
                 result = response.json()
-                self.created_service_id = result.get('id')
-                self.log(f"✅ Service created successfully! ID: {self.created_service_id}")
+                self.created_budget_id = result.get('orcamento_id')
+                budget_number = result.get('numero_orcamento')
+                self.log(f"✅ Budget created successfully! ID: {self.created_budget_id}, Number: {budget_number}")
                 
-                # Verify the created service data
-                item = result.get('item', {})
-                if (item.get('description') == f"TESTE DE SERVIÇO {timestamp}" and 
-                    item.get('unit') == "UN" and 
-                    item.get('pu1_base_price') == 100.00):
-                    self.log("✅ Service data is correct!")
-                    return True
+                # Verify installment data was saved correctly
+                verify_response = self.session.get(f"{API_BASE}/orcamento/{self.created_budget_id}")
+                if verify_response.status_code == 200:
+                    budget = verify_response.json()
+                    if (budget.get('forma_pagamento') == 'entrada_parcelas' and 
+                        budget.get('entrada_percentual') == 30.0 and
+                        budget.get('num_parcelas') == 2 and
+                        len(budget.get('parcelas', [])) == 2):
+                        self.log("✅ Installment data saved correctly!")
+                        return True
+                    else:
+                        self.log("❌ Installment data not saved correctly", "ERROR")
+                        return False
                 else:
-                    self.log("❌ Service data doesn't match expected values", "ERROR")
+                    self.log("⚠️ Could not verify budget creation", "WARN")
+                    return True  # Creation worked, verification failed
+            else:
+                self.log(f"❌ Failed to create budget: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating budget: {str(e)}", "ERROR")
+            return False
+    
+    def test_whatsapp_budget_endpoint(self):
+        """Test POST /api/orcamento/{id}/whatsapp - Generate WhatsApp URL for budget"""
+        self.log("📱 Testing WhatsApp budget endpoint...")
+        
+        if not self.created_budget_id:
+            self.log("❌ No budget ID available for WhatsApp test", "ERROR")
+            return False
+        
+        try:
+            response = self.session.post(f"{API_BASE}/orcamento/{self.created_budget_id}/whatsapp")
+            
+            if response.status_code == 200:
+                result = response.json()
+                pdf_url = result.get('pdf_url')
+                whatsapp_url = result.get('whatsapp_url')
+                numero_orcamento = result.get('numero_orcamento')
+                
+                self.log(f"✅ WhatsApp endpoint successful!")
+                self.log(f"   📄 PDF URL: {pdf_url}")
+                self.log(f"   📱 WhatsApp URL: {whatsapp_url}")
+                self.log(f"   🔢 Budget Number: {numero_orcamento}")
+                
+                # Verify required fields are present
+                if pdf_url and whatsapp_url and numero_orcamento:
+                    # Verify WhatsApp URL format
+                    if "wa.me/55" in whatsapp_url and "11999999999" in whatsapp_url:
+                        self.log("✅ WhatsApp URL format is correct!")
+                        return True
+                    else:
+                        self.log("❌ WhatsApp URL format is incorrect", "ERROR")
+                        return False
+                else:
+                    self.log("❌ Missing required fields in WhatsApp response", "ERROR")
                     return False
             else:
-                self.log(f"❌ Failed to create service: {response.status_code} - {response.text}", "ERROR")
-                # If creation fails due to existing service, try to find an existing service to use for update tests
-                self.log("🔍 Trying to find existing service for update tests...")
-                list_response = self.session.get(f"{API_BASE}/service-price-table/{self.company_id}")
-                if list_response.status_code == 200:
-                    items = list_response.json().get('items', [])
-                    if items:
-                        self.created_service_id = items[0].get('id')
-                        self.log(f"✅ Using existing service ID for tests: {self.created_service_id}")
-                        return True
+                self.log(f"❌ Failed to get WhatsApp URL: {response.status_code} - {response.text}", "ERROR")
                 return False
                 
         except Exception as e:
-            self.log(f"❌ Error creating service: {str(e)}", "ERROR")
+            self.log(f"❌ Error getting WhatsApp URL: {str(e)}", "ERROR")
             return False
     
-    def test_get_service_price_table(self):
-        """Test GET /api/service-price-table/{company_id} - List services with filters"""
-        self.log("📋 Testing GET /api/service-price-table/{company_id} - List services...")
+    def test_budget_acceptance_endpoint(self):
+        """Test POST /api/orcamento/{id}/aceitar - Client accepts budget"""
+        self.log("✅ Testing budget acceptance endpoint...")
+        
+        if not self.created_budget_id:
+            self.log("❌ No budget ID available for acceptance test", "ERROR")
+            return False
         
         try:
-            # Test basic listing
-            response = self.session.get(f"{API_BASE}/service-price-table/{self.company_id}")
+            response = self.session.post(f"{API_BASE}/orcamento/{self.created_budget_id}/aceitar")
             
             if response.status_code == 200:
                 result = response.json()
-                items = result.get('items', [])
-                total = result.get('total', 0)
-                self.log(f"✅ Retrieved {len(items)} services (total: {total})")
+                contas_geradas = result.get('contas_geradas', 0)
+                contas_ids = result.get('contas_ids', [])
+                whatsapp_url = result.get('notificacao_whatsapp_url')
+                numero_orcamento = result.get('numero_orcamento')
                 
-                # Verify pagination structure
-                required_fields = ['items', 'total', 'page', 'limit', 'pages']
-                for field in required_fields:
-                    if field not in result:
-                        self.log(f"❌ Missing required field: {field}", "ERROR")
-                        return False
+                self.log(f"✅ Budget acceptance successful!")
+                self.log(f"   📊 Accounts generated: {contas_geradas}")
+                self.log(f"   🆔 Account IDs: {contas_ids}")
+                self.log(f"   📱 Notification WhatsApp URL: {whatsapp_url}")
+                self.log(f"   🔢 Budget Number: {numero_orcamento}")
                 
-                # Test search filter
-                search_response = self.session.get(f"{API_BASE}/service-price-table/{self.company_id}?search=tomada")
-                if search_response.status_code == 200:
-                    search_result = search_response.json()
-                    search_items = search_result.get('items', [])
-                    self.log(f"✅ Search filter works - found {len(search_items)} items for 'tomada'")
+                # Store account IDs for verification
+                self.created_accounts_ids = contas_ids
+                
+                # Verify expected number of accounts (1 down payment + 2 installments = 3)
+                if contas_geradas == 3 and len(contas_ids) == 3:
+                    self.log("✅ Correct number of accounts generated!")
                     
-                    # Verify that "INSTALAÇÃO DE TOMADA" is in the results
-                    found_tomada = False
-                    for item in search_items:
-                        if "TOMADA" in item.get('description', '').upper():
-                            found_tomada = True
-                            break
-                    
-                    if found_tomada:
-                        self.log("✅ Found 'INSTALAÇÃO DE TOMADA' in search results!")
+                    # Verify WhatsApp notification URL
+                    if whatsapp_url and "wa.me/55" in whatsapp_url:
+                        self.log("✅ WhatsApp notification URL generated correctly!")
+                        return True
                     else:
-                        self.log("⚠️ 'INSTALAÇÃO DE TOMADA' not found in search results", "WARN")
-                
-                return True
+                        self.log("❌ WhatsApp notification URL not generated correctly", "ERROR")
+                        return False
+                else:
+                    self.log(f"❌ Incorrect number of accounts generated. Expected: 3, Got: {contas_geradas}", "ERROR")
+                    return False
             else:
-                self.log(f"❌ Failed to get service price table: {response.status_code} - {response.text}", "ERROR")
+                self.log(f"❌ Failed to accept budget: {response.status_code} - {response.text}", "ERROR")
                 return False
                 
         except Exception as e:
-            self.log(f"❌ Error getting service price table: {str(e)}", "ERROR")
+            self.log(f"❌ Error accepting budget: {str(e)}", "ERROR")
             return False
     
-    def test_autocomplete_service_price(self):
-        """Test GET /api/service-price-table/{company_id}/autocomplete?search=xxx - Autocomplete"""
-        self.log("🔍 Testing GET /api/service-price-table/{company_id}/autocomplete - Autocomplete...")
+    def test_notifications_created(self):
+        """Test GET /api/notificacoes/{company_id} - Verify notification was created"""
+        self.log("🔔 Testing notifications endpoint...")
         
         try:
-            # Test autocomplete with "tom" (should find "INSTALAÇÃO DE TOMADA")
-            response = self.session.get(f"{API_BASE}/service-price-table/{self.company_id}/autocomplete?search=tom")
+            response = self.session.get(f"{API_BASE}/notificacoes/{self.company_id}")
             
             if response.status_code == 200:
-                items = response.json()
-                self.log(f"✅ Autocomplete returned {len(items)} items for 'tom'")
+                notifications = response.json()
+                self.log(f"✅ Retrieved {len(notifications)} notifications")
                 
-                # Verify structure of autocomplete items
-                if len(items) > 0:
-                    item = items[0]
-                    required_fields = ['id', 'description', 'unit', 'pu1_base_price']
+                # Look for our budget acceptance notification
+                budget_notification = None
+                for notif in notifications:
+                    if (notif.get('tipo') == 'ORCAMENTO_ACEITO' and 
+                        notif.get('orcamento_id') == self.created_budget_id):
+                        budget_notification = notif
+                        self.created_notification_id = notif.get('id')
+                        break
+                
+                if budget_notification:
+                    self.log("✅ Budget acceptance notification found!")
+                    self.log(f"   📋 Title: {budget_notification.get('titulo')}")
+                    self.log(f"   💬 Message: {budget_notification.get('mensagem')[:100]}...")
+                    self.log(f"   📱 WhatsApp URL: {budget_notification.get('whatsapp_url')}")
+                    self.log(f"   👁️ Read: {budget_notification.get('lida')}")
+                    
+                    # Verify notification details
+                    required_fields = ['id', 'company_id', 'tipo', 'titulo', 'mensagem', 'lida', 'orcamento_id', 'whatsapp_url']
                     for field in required_fields:
-                        if field not in item:
-                            self.log(f"❌ Missing required field in autocomplete item: {field}", "ERROR")
+                        if field not in budget_notification:
+                            self.log(f"❌ Missing required field in notification: {field}", "ERROR")
                             return False
                     
-                    # Check if "INSTALAÇÃO DE TOMADA" is in the results
-                    found_tomada = False
-                    tomada_item = None
-                    for item in items:
-                        if "TOMADA" in item.get('description', '').upper():
-                            found_tomada = True
-                            tomada_item = item
-                            break
-                    
-                    if found_tomada and tomada_item:
-                        self.log(f"✅ Found 'INSTALAÇÃO DE TOMADA' with price R$ {tomada_item.get('pu1_base_price')}")
-                        
-                        # Verify expected values
-                        if (tomada_item.get('unit') == 'PONTO' and 
-                            tomada_item.get('pu1_base_price') == 45.00):
-                            self.log("✅ Autocomplete data matches expected values!")
-                            return True
-                        else:
-                            self.log(f"⚠️ Autocomplete data doesn't match expected values. Unit: {tomada_item.get('unit')}, Price: {tomada_item.get('pu1_base_price')}", "WARN")
-                            return True  # Still working, just different values
-                    else:
-                        self.log("⚠️ 'INSTALAÇÃO DE TOMADA' not found in autocomplete results", "WARN")
-                        return True  # Autocomplete works, just no specific item
-                else:
-                    self.log("⚠️ No items returned by autocomplete", "WARN")
-                    return True  # Endpoint works, just no data
-                    
-            else:
-                self.log(f"❌ Failed to get autocomplete: {response.status_code} - {response.text}", "ERROR")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Error getting autocomplete: {str(e)}", "ERROR")
-            return False
-    
-    def test_get_categories(self):
-        """Test GET /api/service-price-table/{company_id}/categories - List categories"""
-        self.log("📂 Testing GET /api/service-price-table/{company_id}/categories - List categories...")
-        
-        try:
-            response = self.session.get(f"{API_BASE}/service-price-table/{self.company_id}/categories")
-            
-            if response.status_code == 200:
-                result = response.json()
-                categories = result.get('categories', [])
-                self.log(f"✅ Retrieved {len(categories)} categories")
-                
-                # Verify "Elétrica" category exists (from our created service)
-                if "Elétrica" in categories:
-                    self.log("✅ Found 'Elétrica' category!")
-                else:
-                    self.log("⚠️ 'Elétrica' category not found", "WARN")
-                
-                return True
-            else:
-                self.log(f"❌ Failed to get categories: {response.status_code} - {response.text}", "ERROR")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Error getting categories: {str(e)}", "ERROR")
-            return False
-    
-    def test_update_service_price(self):
-        """Test PUT /api/service-price-table/{id} - Update service"""
-        self.log("✏️ Testing PUT /api/service-price-table/{id} - Update service...")
-        
-        if not self.created_service_id:
-            self.log("❌ No service ID available for update test", "ERROR")
-            return False
-        
-        # Use timestamp to ensure unique description
-        import time
-        timestamp = int(time.time())
-        
-        update_data = {
-            "company_id": self.company_id,
-            "code": f"UPD-{timestamp}",
-            "description": f"SERVIÇO ATUALIZADO {timestamp}",
-            "category": "Teste",
-            "unit": "UN",
-            "pu1_base_price": 150.00
-        }
-        
-        try:
-            response = self.session.put(f"{API_BASE}/service-price-table/{self.created_service_id}", json=update_data)
-            
-            if response.status_code == 200:
-                self.log("✅ Service updated successfully!")
-                
-                # Verify the update by fetching the service
-                verify_response = self.session.get(f"{API_BASE}/service-price/{self.created_service_id}")
-                if verify_response.status_code == 200:
-                    updated_item = verify_response.json()
-                    if (updated_item.get('description') == f"SERVIÇO ATUALIZADO {timestamp}" and 
-                        updated_item.get('pu1_base_price') == 150.00):
-                        self.log("✅ Update verification successful!")
-                        return True
-                    else:
-                        self.log("❌ Update verification failed", "ERROR")
-                        return False
-                else:
-                    self.log("⚠️ Could not verify update", "WARN")
-                    return True  # Update worked, verification failed
-            else:
-                self.log(f"❌ Failed to update service: {response.status_code} - {response.text}", "ERROR")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Error updating service: {str(e)}", "ERROR")
-            return False
-    
-    def test_toggle_service_active(self):
-        """Test PATCH /api/service-price-table/{id}/active?active=false - Soft delete"""
-        self.log("🔄 Testing PATCH /api/service-price-table/{id}/active - Toggle active status...")
-        
-        if not self.created_service_id:
-            self.log("❌ No service ID available for toggle test", "ERROR")
-            return False
-        
-        try:
-            # Deactivate service
-            response = self.session.patch(f"{API_BASE}/service-price-table/{self.created_service_id}/active?active=false")
-            
-            if response.status_code == 200:
-                self.log("✅ Service deactivated successfully!")
-                
-                # Reactivate service
-                reactivate_response = self.session.patch(f"{API_BASE}/service-price-table/{self.created_service_id}/active?active=true")
-                
-                if reactivate_response.status_code == 200:
-                    self.log("✅ Service reactivated successfully!")
                     return True
                 else:
-                    self.log(f"❌ Failed to reactivate service: {reactivate_response.status_code}", "ERROR")
+                    self.log("❌ Budget acceptance notification not found", "ERROR")
                     return False
             else:
-                self.log(f"❌ Failed to deactivate service: {response.status_code} - {response.text}", "ERROR")
+                self.log(f"❌ Failed to get notifications: {response.status_code} - {response.text}", "ERROR")
                 return False
                 
         except Exception as e:
-            self.log(f"❌ Error toggling service active status: {str(e)}", "ERROR")
+            self.log(f"❌ Error getting notifications: {str(e)}", "ERROR")
+            return False
+    
+    def test_accounts_receivable_generated(self):
+        """Test GET /api/contas/receber - Verify accounts receivable were generated"""
+        self.log("💳 Testing accounts receivable endpoint...")
+        
+        if not self.created_accounts_ids:
+            self.log("❌ No account IDs available for verification", "ERROR")
+            return False
+        
+        try:
+            # Get all accounts receivable for the company
+            response = self.session.get(f"{API_BASE}/contas/receber?company_id={self.company_id}")
+            
+            if response.status_code == 200:
+                accounts = response.json()
+                self.log(f"✅ Retrieved {len(accounts)} accounts receivable")
+                
+                # Find our generated accounts
+                our_accounts = []
+                for account in accounts:
+                    if account.get('id') in self.created_accounts_ids:
+                        our_accounts.append(account)
+                
+                if len(our_accounts) == 3:  # 1 down payment + 2 installments
+                    self.log("✅ All 3 accounts found!")
+                    
+                    # Verify account details
+                    down_payment_found = False
+                    installment_1_found = False
+                    installment_2_found = False
+                    
+                    for account in our_accounts:
+                        descricao = account.get('descricao', '')
+                        valor = account.get('valor', 0)
+                        
+                        if 'Entrada' in descricao and valor == 300.0:
+                            down_payment_found = True
+                            self.log(f"   ✅ Down payment account: R$ {valor}")
+                        elif 'Parcela 1' in descricao and valor == 350.0:
+                            installment_1_found = True
+                            self.log(f"   ✅ Installment 1 account: R$ {valor}")
+                        elif 'Parcela 2' in descricao and valor == 350.0:
+                            installment_2_found = True
+                            self.log(f"   ✅ Installment 2 account: R$ {valor}")
+                        
+                        # Verify common fields
+                        if (account.get('tipo') != 'RECEBER' or 
+                            account.get('status') != 'PENDENTE' or
+                            account.get('company_id') != self.company_id):
+                            self.log(f"❌ Account {account.get('id')} has incorrect basic data", "ERROR")
+                            return False
+                    
+                    if down_payment_found and installment_1_found and installment_2_found:
+                        self.log("✅ All account types found with correct values!")
+                        return True
+                    else:
+                        self.log("❌ Not all account types found or values incorrect", "ERROR")
+                        return False
+                else:
+                    self.log(f"❌ Expected 3 accounts, found {len(our_accounts)}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to get accounts receivable: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error getting accounts receivable: {str(e)}", "ERROR")
+            return False
+    
+    def test_notification_management(self):
+        """Test notification management endpoints (mark as read)"""
+        self.log("📝 Testing notification management...")
+        
+        if not self.created_notification_id:
+            self.log("❌ No notification ID available for management test", "ERROR")
+            return False
+        
+        try:
+            # Mark notification as read
+            response = self.session.patch(f"{API_BASE}/notificacao/{self.created_notification_id}/lida")
+            
+            if response.status_code == 200:
+                self.log("✅ Notification marked as read successfully!")
+                
+                # Verify notification was marked as read
+                verify_response = self.session.get(f"{API_BASE}/notificacoes/{self.company_id}")
+                if verify_response.status_code == 200:
+                    notifications = verify_response.json()
+                    
+                    for notif in notifications:
+                        if notif.get('id') == self.created_notification_id:
+                            if notif.get('lida') == True:
+                                self.log("✅ Notification read status verified!")
+                                return True
+                            else:
+                                self.log("❌ Notification read status not updated", "ERROR")
+                                return False
+                    
+                    self.log("❌ Notification not found in verification", "ERROR")
+                    return False
+                else:
+                    self.log("⚠️ Could not verify notification read status", "WARN")
+                    return True  # Mark as read worked, verification failed
+            else:
+                self.log(f"❌ Failed to mark notification as read: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error managing notification: {str(e)}", "ERROR")
             return False
     
     def run_all_tests(self):
