@@ -2842,6 +2842,44 @@ Acesse o sistema para mais detalhes."""
     }
 
 
+# ========== NOTIFICAÇÕES ==========
+
+@api_router.get("/notificacoes/{company_id}")
+async def listar_notificacoes(company_id: str):
+    """Listar notificações da empresa (não lidas primeiro)"""
+    notificacoes = await db.notificacoes.find(
+        {"company_id": company_id},
+        {"_id": 0}
+    ).sort([("lida", 1), ("created_at", -1)]).to_list(50)
+    
+    return notificacoes
+
+
+@api_router.patch("/notificacao/{notificacao_id}/lida")
+async def marcar_notificacao_lida(notificacao_id: str):
+    """Marcar notificação como lida"""
+    result = await db.notificacoes.update_one(
+        {"id": notificacao_id},
+        {"$set": {"lida": True, "lida_em": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Notificação não encontrada")
+    
+    return {"message": "Notificação marcada como lida"}
+
+
+@api_router.delete("/notificacao/{notificacao_id}")
+async def excluir_notificacao(notificacao_id: str):
+    """Excluir notificação"""
+    result = await db.notificacoes.delete_one({"id": notificacao_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Notificação não encontrada")
+    
+    return {"message": "Notificação excluída"}
+
+
 @api_router.get("/orcamento/share/{token}")
 async def share_orcamento_pdf(token: str):
     """Endpoint público para compartilhar PDF via token temporário"""
