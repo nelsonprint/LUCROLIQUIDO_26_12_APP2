@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Comprehensive test suite for Service Price Table (Tabela de Preços) API endpoints.
+Comprehensive test suite for Lucro Líquido WhatsApp Budget Flow.
 
-Tests all the Service Price Table endpoints:
-1. GET /api/service-price-table/{company_id} - List services with filters
-2. GET /api/service-price-table/{company_id}/autocomplete?search=xxx - Autocomplete
-3. POST /api/service-price-table - Create service
-4. PUT /api/service-price-table/{id} - Update service
-5. PATCH /api/service-price-table/{id}/active?active=false - Soft delete
-6. GET /api/service-price-table/units/list - List available units
-7. GET /api/service-price-table/{company_id}/categories - List categories
+Tests the complete WhatsApp budget flow:
+1. Login authentication
+2. Create budget with installments
+3. Test WhatsApp endpoint for budget
+4. Test budget acceptance endpoint
+5. Verify notifications created
+6. Verify accounts receivable generated
+7. Test notification management endpoints
 """
 
 import requests
