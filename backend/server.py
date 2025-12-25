@@ -2846,10 +2846,6 @@ Acesse o sistema para mais detalhes."""
         "created_at": agora.isoformat()
     }
     await db.notificacoes.insert_one(notificacao)
-
-Acesse o sistema para mais detalhes."""
-    
-    whatsapp_url = f"https://wa.me/55{whatsapp_numero}?text={quote(mensagem_whatsapp)}" if whatsapp_numero else None
     
     return {
         "message": "Orçamento aceito com sucesso!",
