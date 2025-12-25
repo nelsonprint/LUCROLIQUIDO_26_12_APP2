@@ -53,9 +53,13 @@ export const Sidebar = ({ user, onLogout, onNavigate }) => {
     <div className="w-64 min-h-screen glass border-r border-white/10 flex flex-col" data-testid="sidebar">
       {/* Logo */}
       <div className="p-6 border-b border-white/10">
-        <h1 className="text-2xl font-bold gradient-text" data-testid="sidebar-logo">
-          Lucro Líquido
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold gradient-text" data-testid="sidebar-logo">
+            Lucro Líquido
+          </h1>
+          {/* Painel de Notificações */}
+          <NotificacoesPanel companyId={company?.id} userId={user?.id} />
+        </div>
         <div className="flex items-center justify-between mt-3">
           <div className="flex-1">
             <p className="text-sm text-gray-400 mt-1" data-testid="sidebar-subtitle">Gestão Financeira</p>
