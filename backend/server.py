@@ -6624,6 +6624,20 @@ async def serve_cliente_app(token: str):
     return FileResponse(file_path, media_type="text/html")
 
 
+@api_router.get("/cliente/cronograma/{token}")
+async def serve_cliente_cronograma_html(token: str):
+    """Servir página PWA do cliente (rota alternativa para link clicável)"""
+    # Verificar se token existe
+    token_doc = await db.cliente_cronograma_tokens.find_one({"token": token}, {"_id": 0})
+    if not token_doc:
+        raise HTTPException(status_code=404, detail="Link inválido")
+    
+    file_path = static_dir / "cliente-cronograma.html"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+    return FileResponse(file_path, media_type="text/html")
+
+
 @api_router.get("/cliente/manifest.json")
 async def serve_cliente_manifest():
     """Servir manifest do cliente"""
