@@ -5960,6 +5960,234 @@ async def export_excel(company_id: str, month: str):
         headers={"Content-Disposition": f"attachment; filename=lancamentos_{month}.xlsx"}
     )
 
+
+# ========== ROTAS: FUNCIONÁRIOS ==========
+
+# Categorias padrão do sistema
+CATEGORIAS_FUNCIONARIO_PADRAO = [
+    {"nome": "Proprietário", "descricao": "Dono ou sócio da empresa"},
+    {"nome": "Gerente", "descricao": "Gerente de área ou geral"},
+    {"nome": "Administrativo", "descricao": "Funções administrativas"},
+    {"nome": "Supervisor", "descricao": "Supervisor de equipe"},
+    {"nome": "Operário", "descricao": "Trabalhador operacional"},
+    {"nome": "Vendedor", "descricao": "Responsável por vendas"},
+]
+
+
+@api_router.get("/funcionarios/categorias/{empresa_id}")
+async def listar_categorias_funcionario(empresa_id: str):
+    """Listar categorias de funcionários (padrão + personalizadas)"""
+    # Buscar categorias personalizadas da empresa
+    categorias_db = await db.categorias_funcionario.find(
+        {"empresa_id": empresa_id},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Se não houver categorias, criar as padrão
+    if not categorias_db:
+        for cat in CATEGORIAS_FUNCIONARIO_PADRAO:
+            nova_cat = {
+                "id": str(uuid.uuid4()),
+                "empresa_id": empresa_id,
+                "nome": cat["nome"],
+                "descricao": cat["descricao"],
+                "sistema": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.categorias_funcionario.insert_one(nova_cat)
+        
+        # Buscar novamente
+        categorias_db = await db.categorias_funcionario.find(
+            {"empresa_id": empresa_id},
+            {"_id": 0}
+        ).to_list(100)
+    
+    return categorias_db
+
+
+@api_router.post("/funcionarios/categorias")
+async def criar_categoria_funcionario(categoria: CategoriaFuncionarioCreate):
+    """Criar nova categoria de funcionário"""
+    # Verificar se já existe
+    existente = await db.categorias_funcionario.find_one({
+        "empresa_id": categoria.empresa_id,
+        "nome": {"$regex": f"^{categoria.nome}$", "$options": "i"}
+    })
+    
+    if existente:
+        raise HTTPException(status_code=400, detail="Categoria já existe")
+    
+    nova_categoria = CategoriaFuncionario(
+        empresa_id=categoria.empresa_id,
+        nome=categoria.nome,
+        descricao=categoria.descricao,
+        sistema=False
+    )
+    
+    await db.categorias_funcionario.insert_one(nova_categoria.model_dump())
+    
+    return {"message": "Categoria criada", "categoria": nova_categoria.model_dump()}
+
+
+@api_router.delete("/funcionarios/categorias/{categoria_id}")
+async def excluir_categoria_funcionario(categoria_id: str):
+    """Excluir categoria de funcionário (apenas personalizadas)"""
+    categoria = await db.categorias_funcionario.find_one({"id": categoria_id}, {"_id": 0})
+    
+    if not categoria:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    if categoria.get("sistema"):
+        raise HTTPException(status_code=400, detail="Não é possível excluir categorias do sistema")
+    
+    # Verificar se há funcionários usando esta categoria
+    funcionarios = await db.funcionarios.count_documents({"categoria_id": categoria_id})
+    if funcionarios > 0:
+        raise HTTPException(status_code=400, detail=f"Existem {funcionarios} funcionário(s) usando esta categoria")
+    
+    await db.categorias_funcionario.delete_one({"id": categoria_id})
+    
+    return {"message": "Categoria excluída"}
+
+
+@api_router.get("/funcionarios/{empresa_id}")
+async def listar_funcionarios(empresa_id: str, status: Optional[str] = None, categoria_id: Optional[str] = None):
+    """Listar funcionários da empresa"""
+    filtro = {"empresa_id": empresa_id}
+    
+    if status:
+        filtro["status"] = status
+    
+    if categoria_id:
+        filtro["categoria_id"] = categoria_id
+    
+    funcionarios = await db.funcionarios.find(filtro, {"_id": 0}).sort("nome_completo", 1).to_list(1000)
+    
+    return funcionarios
+
+
+@api_router.get("/funcionario/{funcionario_id}")
+async def buscar_funcionario(funcionario_id: str):
+    """Buscar funcionário por ID"""
+    funcionario = await db.funcionarios.find_one({"id": funcionario_id}, {"_id": 0})
+    
+    if not funcionario:
+        raise HTTPException(status_code=404, detail="Funcionário não encontrado")
+    
+    return funcionario
+
+
+@api_router.post("/funcionarios")
+async def criar_funcionario(funcionario: FuncionarioCreate):
+    """Criar novo funcionário"""
+    # Verificar CPF duplicado na mesma empresa
+    existente = await db.funcionarios.find_one({
+        "empresa_id": funcionario.empresa_id,
+        "cpf": funcionario.cpf
+    })
+    
+    if existente:
+        raise HTTPException(status_code=400, detail="Já existe um funcionário com este CPF")
+    
+    # Buscar nome da categoria
+    categoria_nome = None
+    if funcionario.categoria_id:
+        categoria = await db.categorias_funcionario.find_one({"id": funcionario.categoria_id}, {"_id": 0})
+        if categoria:
+            categoria_nome = categoria.get("nome")
+    
+    novo_funcionario = Funcionario(
+        empresa_id=funcionario.empresa_id,
+        nome_completo=funcionario.nome_completo,
+        cpf=funcionario.cpf,
+        endereco=funcionario.endereco,
+        cidade=funcionario.cidade,
+        uf=funcionario.uf,
+        telefone_celular=funcionario.telefone_celular,
+        whatsapp=funcionario.whatsapp,
+        email=funcionario.email,
+        salario=funcionario.salario,
+        categoria_id=funcionario.categoria_id,
+        categoria_nome=categoria_nome,
+        data_admissao=funcionario.data_admissao,
+        data_nascimento=funcionario.data_nascimento,
+        status=funcionario.status
+    )
+    
+    await db.funcionarios.insert_one(novo_funcionario.model_dump())
+    
+    return {"message": "Funcionário cadastrado", "funcionario": novo_funcionario.model_dump()}
+
+
+@api_router.put("/funcionarios/{funcionario_id}")
+async def atualizar_funcionario(funcionario_id: str, funcionario: FuncionarioCreate):
+    """Atualizar funcionário"""
+    existente = await db.funcionarios.find_one({"id": funcionario_id}, {"_id": 0})
+    
+    if not existente:
+        raise HTTPException(status_code=404, detail="Funcionário não encontrado")
+    
+    # Verificar CPF duplicado (exceto o próprio)
+    duplicado = await db.funcionarios.find_one({
+        "empresa_id": funcionario.empresa_id,
+        "cpf": funcionario.cpf,
+        "id": {"$ne": funcionario_id}
+    })
+    
+    if duplicado:
+        raise HTTPException(status_code=400, detail="Já existe outro funcionário com este CPF")
+    
+    # Buscar nome da categoria
+    categoria_nome = None
+    if funcionario.categoria_id:
+        categoria = await db.categorias_funcionario.find_one({"id": funcionario.categoria_id}, {"_id": 0})
+        if categoria:
+            categoria_nome = categoria.get("nome")
+    
+    dados_atualizados = {
+        **funcionario.model_dump(),
+        "categoria_nome": categoria_nome,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.funcionarios.update_one(
+        {"id": funcionario_id},
+        {"$set": dados_atualizados}
+    )
+    
+    return {"message": "Funcionário atualizado"}
+
+
+@api_router.patch("/funcionarios/{funcionario_id}/status")
+async def atualizar_status_funcionario(funcionario_id: str, status: str):
+    """Atualizar apenas o status do funcionário"""
+    status_validos = ["Ativo", "Inativo", "Férias", "Afastado"]
+    
+    if status not in status_validos:
+        raise HTTPException(status_code=400, detail=f"Status inválido. Valores aceitos: {', '.join(status_validos)}")
+    
+    result = await db.funcionarios.update_one(
+        {"id": funcionario_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Funcionário não encontrado")
+    
+    return {"message": "Status atualizado"}
+
+
+@api_router.delete("/funcionarios/{funcionario_id}")
+async def excluir_funcionario(funcionario_id: str):
+    """Excluir funcionário"""
+    result = await db.funcionarios.delete_one({"id": funcionario_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Funcionário não encontrado")
+    
+    return {"message": "Funcionário excluído"}
+
+
 # ========== INCLUIR ROUTER ==========
 
 app.include_router(api_router)
