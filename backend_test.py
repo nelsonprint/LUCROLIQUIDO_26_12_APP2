@@ -1683,6 +1683,10 @@ class SellerAppTester:
                 contas_pagar = response.json()
                 self.log(f"✅ Retrieved {len(contas_pagar)} contas a pagar")
                 
+                # Debug: Show all accounts to understand the structure
+                for i, conta in enumerate(contas_pagar):
+                    self.log(f"   Account {i+1}: {conta.get('descricao')} - Category: {conta.get('categoria')} - Type: {conta.get('tipo_comissao', 'N/A')}")
+                
                 # Look for commission account
                 commission_account = None
                 for conta in contas_pagar:
@@ -1711,6 +1715,10 @@ class SellerAppTester:
                         return False
                 else:
                     self.log("❌ Commission account not found", "ERROR")
+                    # Also check for any account with "Comissão" in description
+                    for conta in contas_pagar:
+                        if 'Comissão' in conta.get('descricao', '') or 'comissao' in conta.get('descricao', '').lower():
+                            self.log(f"   Found potential commission account: {conta.get('descricao')} - Category: {conta.get('categoria')}")
                     return False
             else:
                 self.log(f"❌ Failed to get contas a pagar: {response.status_code} - {response.text}", "ERROR")
