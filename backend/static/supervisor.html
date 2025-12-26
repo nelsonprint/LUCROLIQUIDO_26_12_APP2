@@ -699,7 +699,13 @@ function createMediaElement(etapa, media, mIdx) {
       if (!res.ok) throw new Error('Erro no servidor');
       
       const data = await res.json();
-      media.imagem_url = data.url;
+      // Garantir URL completa
+      let imageUrl = data.url;
+      if (imageUrl && !imageUrl.startsWith('http')) {
+        imageUrl = window.location.origin + imageUrl;
+      }
+      media.imagem_url = imageUrl;
+      console.log('Imagem URL:', imageUrl);
       renderStages();
       toast('Foto salva!');
     } catch (err) {
