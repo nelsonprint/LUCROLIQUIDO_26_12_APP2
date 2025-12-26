@@ -611,7 +611,7 @@ class SupervisorCronogramaTester:
                 else:
                     self.log("⚠️ No approved budgets found - will create one for testing", "WARN")
                     # Create a test budget for cronograma testing
-                    self.approved_budget_id = await self._create_test_budget()
+                    self.approved_budget_id = self._create_test_budget()
                 
                 return True
             else:
