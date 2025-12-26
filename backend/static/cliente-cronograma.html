@@ -342,7 +342,7 @@ async function showDetail(data) {
   }
 }
 
-// Normaliza URL para absoluta e corrige domínio
+// Normaliza URL para absoluta e corrige domínio e caminho
 function normalizeUrl(url) {
   if (!url) return null;
   
@@ -351,13 +351,21 @@ function normalizeUrl(url) {
     url = url.replace('orcastream.preview.emergentagent.com', window.location.host);
   }
   
-  // Se é URL absoluta, retorna
+  // Se é URL absoluta
   if (url.startsWith('http://') || url.startsWith('https://')) {
+    // Corrigir /uploads/ para /api/uploads/
+    if (url.includes('/uploads/') && !url.includes('/api/uploads/')) {
+      url = url.replace('/uploads/', '/api/uploads/');
+    }
     return url;
   }
   
-  // Se é URL relativa, converte para absoluta
+  // Se é URL relativa
   if (url.startsWith('/')) {
+    // Corrigir /uploads/ para /api/uploads/
+    if (url.startsWith('/uploads/')) {
+      url = '/api' + url;
+    }
     return window.location.origin + url;
   }
   
