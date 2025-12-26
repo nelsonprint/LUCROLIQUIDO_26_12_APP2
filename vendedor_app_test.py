@@ -502,13 +502,15 @@ class VendedorAppTester:
             return False
         
         update_data = {
+            "empresa_id": self.company_id,
             "cliente_nome": "Cliente Visita Atualizada",
-            "cliente_whatsapp": "11999999999",
-            "data_visita": "2025-01-16",
-            "hora_visita": "15:00",
-            "endereco": "Rua Teste Atualizada, 456 - São Paulo/SP",
-            "observacoes": "Visita reagendada",
-            "status": "reagendada"
+            "titulo": "Visita Comercial Reagendada",
+            "descricao": "Apresentação de proposta comercial - reagendada",
+            "data": "2025-01-16",
+            "hora_inicio": "15:00",
+            "hora_fim": "16:00",
+            "status": "Reagendado",
+            "observacoes": "Visita reagendada a pedido do cliente"
         }
         
         try:
