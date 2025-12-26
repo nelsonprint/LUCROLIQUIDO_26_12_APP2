@@ -721,24 +721,41 @@ function createMediaElement(etapa, media, mIdx) {
   micBtn.addEventListener('click', async () => {
     if (!recording) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        chunks = [];
+        audioStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { 
+            echoCancellation: true,
+            noiseSuppression: true 
+          } 
+        });
+        
+        // Usar formato mais compatível
+        const mimeType = MediaRecorder.isTypeSupported('audio/mp4') 
+          ? 'audio/mp4' 
+          : MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus'
+            : 'audio/webm';
+        
+        mediaRecorder = new MediaRecorder(audioStream, { mimeType });
+        audioChunks = [];
         
         mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) chunks.push(e.data);
+          if (e.data.size > 0) audioChunks.push(e.data);
         };
         
         mediaRecorder.onstop = async () => {
           clearInterval(timerInterval);
           
-          const blob = new Blob(chunks, { type: 'audio/webm' });
+          // Parar todas as tracks do stream
+          audioStream.getTracks().forEach(track => track.stop());
+          
+          const audioBlob = new Blob(audioChunks, { type: mimeType });
+          const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
           
           toast('Enviando áudio...');
           
           try {
             const formData = new FormData();
-            formData.append('file', blob, 'audio.webm');
+            formData.append('file', audioBlob, `audio.${ext}`);
             formData.append('tipo', 'audio');
             
             const res = await fetch(`${API_BASE}/supervisor/upload/media`, {
@@ -746,16 +763,19 @@ function createMediaElement(etapa, media, mIdx) {
               body: formData
             });
             
+            if (!res.ok) throw new Error('Erro no servidor');
+            
             const data = await res.json();
             media.audio_url = data.url;
             renderStages();
             toast('Áudio salvo!');
           } catch (err) {
+            console.error('Erro áudio:', err);
             toast('Erro ao enviar áudio');
           }
         };
         
-        mediaRecorder.start();
+        mediaRecorder.start(1000); // Capturar em chunks de 1s
         recording = true;
         startTime = Date.now();
         micBtn.classList.add('recording');
@@ -769,10 +789,13 @@ function createMediaElement(etapa, media, mIdx) {
         }, 1000);
         
       } catch (err) {
-        toast('Erro ao acessar microfone');
+        console.error('Erro microfone:', err);
+        toast('Permita o acesso ao microfone');
       }
     } else {
-      mediaRecorder.stop();
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
       recording = false;
       micBtn.classList.remove('recording');
       micBtn.textContent = '🎙️';
