@@ -247,6 +247,9 @@ class FuncionariosTester:
             self.log("❌ No employee ID available for update", "ERROR")
             return False
         
+        import time
+        timestamp = int(time.time())
+        
         update_data = {
             "empresa_id": self.company_id,
             "nome_completo": "Maria Santos Silva Oliveira",  # Updated name
