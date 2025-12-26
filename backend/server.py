@@ -1718,15 +1718,18 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
                 comissao_id = str(uuid.uuid4())
                 conta_pagar = {
                     "id": comissao_id,
-                    "empresa_id": orcamento['empresa_id'],
+                    "company_id": orcamento['empresa_id'],
+                    "user_id": orcamento.get('usuario_id'),
+                    "tipo": "PAGAR",
                     "descricao": f"Comissão - Orçamento #{orcamento.get('numero_orcamento', 'N/A')} - {orcamento.get('cliente_nome', '')}",
-                    "valor": valor_comissao,
-                    "data_vencimento": (datetime.now(timezone.utc) + timedelta(days=30)).strftime('%Y-%m-%d'),
-                    "data_pagamento": None,
-                    "status": "Pendente",
                     "categoria": "Comissão",
-                    "fornecedor": vendedor.get('nome_completo', 'Vendedor'),
+                    "data_emissao": datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                    "data_vencimento": (datetime.now(timezone.utc) + timedelta(days=30)).strftime('%Y-%m-%d'),
+                    "valor": valor_comissao,
+                    "status": "PENDENTE",
+                    "forma_pagamento": "PIX",
                     "observacoes": f"Comissão de {percentual}% sobre orçamento #{orcamento.get('numero_orcamento')}. Vendedor: {vendedor.get('nome_completo')}",
+                    # Additional fields for commission tracking
                     "tipo_comissao": "vendedor",
                     "vendedor_id": vendedor.get('id'),
                     "vendedor_nome": vendedor.get('nome_completo'),
@@ -1737,7 +1740,7 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
                     "created_at": datetime.now(timezone.utc).isoformat(),
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }
-                await db.contas_pagar.insert_one(conta_pagar)
+                await db.contas.insert_one(conta_pagar)
                 
                 update_fields['comissao_gerada'] = True
                 update_fields['comissao_id'] = comissao_id
