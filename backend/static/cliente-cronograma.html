@@ -304,7 +304,7 @@ function formatDate(dateStr) {
 // ===== Detail View =====
 async function showDetail(data) {
   try {
-    const res = await fetch(`${API_BASE}/cliente/cronograma/${TOKEN}/${data}`);
+    const res = await fetch(`${API_BASE}/cliente/cronograma/${TOKEN}/${data}/data`);
     
     if (!res.ok) {
       alert('Cronograma não encontrado');
