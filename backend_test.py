@@ -622,7 +622,7 @@ class SupervisorCronogramaTester:
             self.log(f"❌ Error listing approved budgets: {str(e)}", "ERROR")
             return False
     
-    async def _create_test_budget(self):
+    def _create_test_budget(self):
         """Helper method to create a test budget for cronograma testing"""
         self.log("📝 Creating test budget for cronograma testing...")
         
