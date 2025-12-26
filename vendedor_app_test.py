@@ -482,7 +482,7 @@ class VendedorAppTester:
                 
                 self.log(f"✅ Agenda visit created! ID: {self.created_agenda_id}")
                 self.log(f"   👤 Client: {agenda_data['cliente_nome']}")
-                self.log(f"   📅 Date: {agenda_data['data_visita']} at {agenda_data['hora_visita']}")
+                self.log(f"   📅 Date: {agenda_data['data']} from {agenda_data['hora_inicio']} to {agenda_data['hora_fim']}")
                 
                 return True
             else:
