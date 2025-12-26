@@ -651,78 +651,69 @@ function createMediaElement(etapa, media, mIdx) {
       <span style="color:var(--muted);font-size:.85rem">Mídia ${mIdx + 1}</span>
       <button class="icon-btn" data-delete-media>🗑️</button>
     </div>
-    <div class="photo-box">
+    <div class="photo-box" data-media-id="${media.id}">
       ${media.imagem_url 
-        ? `<img src="${media.imagem_url}" alt="Foto"/>`
-        : `<div class="photo-hint"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg><div>Toque para tirar foto</div></div>`
+        ? `<img src="${media.imagem_url}" alt="Foto" onerror="this.style.display='none'"/>`
+        : `<div class="photo-hint"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg><div>Toque para foto</div></div>`
       }
     </div>
-    <input type="file" accept="image/*" capture="environment" style="display:none" class="photo-input"/>
+    <input type="file" accept="image/*" capture="environment" style="display:none" class="photo-input" data-media-id="${media.id}"/>
     <div class="rec-bar">
-      <span class="timer">${media.audio_url ? '✓ Áudio' : 'REC'}</span>
-      <button class="mic-btn">🎙️</button>
+      <span class="timer" data-media-id="${media.id}">${media.audio_url ? '✓' : 'REC'}</span>
+      <button class="mic-btn" data-media-id="${media.id}">🎙️</button>
     </div>
-    ${media.audio_url ? `<audio class="audio-player" controls src="${media.audio_url}" preload="metadata"></audio>` : ''}
+    ${media.audio_url ? `<audio class="audio-player" controls src="${media.audio_url}" preload="auto"></audio>` : '<div class="audio-placeholder" data-media-id="' + media.id + '"></div>'}
     <textarea class="note" placeholder="Nota/Resumo...">${media.nota || ''}</textarea>
   `;
   
-  // Photo - usando abordagem mais leve para mobile
+  // === FOTO - Abordagem simplificada ===
   const photoBox = div.querySelector('.photo-box');
   const photoInput = div.querySelector('.photo-input');
   
-  photoBox.addEventListener('click', () => photoInput.click());
+  photoBox.onclick = () => photoInput.click();
   
-  photoInput.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
+  photoInput.onchange = async function(e) {
+    const file = e.target.files && e.target.files[0];
     if (!file) return;
     
-    // Limpar input para liberar memória
-    e.target.value = '';
-    
-    toast('Comprimindo foto...');
+    toast('Enviando foto...');
     
     try {
-      // Comprimir imagem (600px, qualidade 60%)
-      const compressedFile = await compressImage(file, 600, 0.6);
-      
-      toast('Enviando...');
-      
       const formData = new FormData();
-      formData.append('file', compressedFile);
+      formData.append('file', file);
       formData.append('tipo', 'image');
       
-      const res = await fetch(`${API_BASE}/supervisor/upload/media`, {
+      const res = await fetch(API_BASE + '/supervisor/upload/media', {
         method: 'POST',
         body: formData
       });
       
-      if (!res.ok) throw new Error('Erro no servidor');
-      
       const data = await res.json();
-      // Garantir URL completa
-      let imageUrl = data.url;
-      if (imageUrl && !imageUrl.startsWith('http')) {
-        imageUrl = window.location.origin + imageUrl;
+      if (data.url) {
+        media.imagem_url = data.url;
+        // Atualizar preview diretamente sem re-render completo
+        photoBox.innerHTML = '<img src="' + data.url + '" alt="Foto"/>';
+        toast('Foto OK!');
+      } else {
+        toast('Erro no upload');
       }
-      media.imagem_url = imageUrl;
-      console.log('Imagem URL:', imageUrl);
-      renderStages();
-      toast('Foto salva!');
     } catch (err) {
-      console.error('Erro:', err);
-      toast('Erro: ' + (err.message || 'Tente novamente'));
+      toast('Erro: ' + err.message);
     }
-  });
+    
+    // Limpar input
+    this.value = '';
+  };
   
-  // Audio - usando formato mais compatível
+  // === ÁUDIO - Abordagem simplificada ===
   const micBtn = div.querySelector('.mic-btn');
   const timerEl = div.querySelector('.timer');
-  let mediaRecorder = null;
-  let audioChunks = [];
-  let recording = false;
-  let startTime = 0;
-  let timerInterval = null;
-  let audioStream = null;
+  const audioPlaceholder = div.querySelector('.audio-placeholder');
+  let recorder = null;
+  let audioData = [];
+  let isRecording = false;
+  let recTimer = null;
+  let recStart = 0;
   
   micBtn.addEventListener('click', async () => {
     if (!recording) {
