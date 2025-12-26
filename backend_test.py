@@ -1373,7 +1373,7 @@ class WhatsAppBudgetFlowTester:
             return False
 
 def main():
-    """Main function - Run both WhatsApp and Funcionários tests"""
+    """Main function - Run WhatsApp, Funcionários, and Supervisor/Cronograma tests"""
     print("🚀 Starting Comprehensive Lucro Líquido System Tests")
     print("=" * 80)
     
@@ -1399,6 +1399,20 @@ def main():
     else:
         print("\n❌ Skipping Funcionários tests - no login data available")
     
+    # Run Supervisor and Cronograma tests if we have login data
+    supervisor_success = False
+    if whatsapp_tester.user_data:
+        print("\n\n🔥 PHASE 3: Supervisor and Cronograma de Obra Tests")
+        print("=" * 50)
+        supervisor_tester = SupervisorCronogramaTester(
+            whatsapp_tester.session, 
+            whatsapp_tester.user_data, 
+            whatsapp_tester.company_id
+        )
+        supervisor_success = supervisor_tester.run_all_tests()
+    else:
+        print("\n❌ Skipping Supervisor and Cronograma tests - no login data available")
+    
     # Final summary
     print("\n" + "=" * 80)
     print("🏁 COMPREHENSIVE TEST SUMMARY")
@@ -1406,11 +1420,13 @@ def main():
     
     whatsapp_status = "✅ PASSED" if whatsapp_success else "❌ FAILED"
     funcionarios_status = "✅ PASSED" if funcionarios_success else "❌ FAILED"
+    supervisor_status = "✅ PASSED" if supervisor_success else "❌ FAILED"
     
     print(f"WhatsApp Budget Flow: {whatsapp_status}")
     print(f"Funcionários Module: {funcionarios_status}")
+    print(f"Supervisor & Cronograma: {supervisor_status}")
     
-    overall_success = whatsapp_success and funcionarios_success
+    overall_success = whatsapp_success and funcionarios_success and supervisor_success
     
     if overall_success:
         print("\n🎉 ALL SYSTEM TESTS PASSED! Lucro Líquido system working correctly.")
