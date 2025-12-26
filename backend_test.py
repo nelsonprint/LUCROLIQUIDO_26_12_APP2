@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
-Comprehensive test suite for Lucro Líquido WhatsApp Budget Flow.
+Comprehensive test suite for Lucro Líquido System.
 
-Tests the complete WhatsApp budget flow:
-1. Login authentication
-2. Create budget with installments
-3. Test WhatsApp endpoint for budget
-4. Test budget acceptance endpoint
-5. Verify notifications created
-6. Verify accounts receivable generated
-7. Test notification management endpoints
+Tests multiple modules:
+1. WhatsApp Budget Flow (existing tests)
+2. Funcionários Module (new tests)
+   - Employee categories management
+   - Employee CRUD operations
+   - Status management
 """
 
 import requests
