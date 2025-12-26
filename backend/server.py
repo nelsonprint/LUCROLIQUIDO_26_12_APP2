@@ -6260,7 +6260,8 @@ async def criar_funcionario(funcionario: FuncionarioCreate):
         data_nascimento=funcionario.data_nascimento,
         status=funcionario.status,
         login_email=funcionario.login_email,
-        login_senha=funcionario.login_senha
+        login_senha=funcionario.login_senha,
+        percentual_comissao=funcionario.percentual_comissao
     )
     
     await db.funcionarios.insert_one(novo_funcionario.model_dump())
