@@ -1481,10 +1481,10 @@ class SellerAppTester:
         funcionario_data = {
             "empresa_id": self.company_id,
             "nome_completo": "Vendedor Teste Comissão",
-            "cpf": "12345678901",
+            "cpf": f"{timestamp % 100000000000:011d}",  # Generate unique CPF based on timestamp
             "categoria_id": self.vendedor_category_id,
             "status": "Ativo",
-            "login_email": "vendedor.teste@empresa.com",
+            "login_email": f"vendedor.teste{timestamp}@empresa.com",
             "login_senha": "senha123",
             "percentual_comissao": 5.0
         }
