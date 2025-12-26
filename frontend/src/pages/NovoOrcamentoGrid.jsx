@@ -724,14 +724,22 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                       Selecione o vendedor responsável por este orçamento (comissão será gerada automaticamente).
                     </p>
                     <Select 
-                      value={orcamentoData.vendedor_id} 
+                      value={orcamentoData.vendedor_id || 'none'} 
                       onValueChange={(vendedorId) => {
-                        const vendedor = vendedores.find(v => v.id === vendedorId);
-                        setOrcamentoData({
-                          ...orcamentoData, 
-                          vendedor_id: vendedorId,
-                          vendedor_nome: vendedor?.nome_completo || ''
-                        });
+                        if (vendedorId === 'none') {
+                          setOrcamentoData({
+                            ...orcamentoData, 
+                            vendedor_id: '',
+                            vendedor_nome: ''
+                          });
+                        } else {
+                          const vendedor = vendedores.find(v => v.id === vendedorId);
+                          setOrcamentoData({
+                            ...orcamentoData, 
+                            vendedor_id: vendedorId,
+                            vendedor_nome: vendedor?.nome_completo || ''
+                          });
+                        }
                       }}
                     >
                       <SelectTrigger className="bg-zinc-800 border-orange-700">
