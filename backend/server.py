@@ -1711,7 +1711,7 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
             vendedor = await db.funcionarios.find_one({"id": orcamento['vendedor_id']}, {"_id": 0})
             if vendedor and vendedor.get('percentual_comissao', 0) > 0:
                 # Calcular valor base da comissão (APENAS SERVIÇOS)
-                detalhes_itens = orcamento.get('detalhes_itens', {})
+                detalhes_itens = orcamento.get('detalhes_itens') or {}
                 totals = detalhes_itens.get('totals', {})
                 valor_servicos = totals.get('services_total', 0)
                 valor_materiais = totals.get('materials_total', 0)
