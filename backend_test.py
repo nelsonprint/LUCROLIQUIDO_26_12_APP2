@@ -854,7 +854,7 @@ class SupervisorCronogramaTester:
                 self.cliente_token = token
                 
                 # Verify URLs are properly formatted
-                if cliente_url and '/api/cliente/app/' in cliente_url and token in cliente_url:
+                if cliente_url and '/api/cliente/cronograma/' in cliente_url and token in cliente_url:
                     self.log("✅ Client URL format is correct")
                 else:
                     self.log("❌ Client URL format is incorrect", "ERROR")
