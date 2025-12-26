@@ -6560,7 +6560,7 @@ async def gerar_link_supervisor(funcionario_id: str):
     if not funcionario.get("login_email") or not funcionario.get("login_senha"):
         raise HTTPException(status_code=400, detail="Configure o login do supervisor primeiro")
     
-    base_url = os.environ.get("REACT_APP_BACKEND_URL", "")
+    base_url = os.environ.get("BACKEND_URL", os.environ.get("REACT_APP_BACKEND_URL", ""))
     supervisor_url = f"{base_url}/api/supervisor/app"
     
     whatsapp_numero = funcionario.get("whatsapp", "")
@@ -6570,14 +6570,14 @@ async def gerar_link_supervisor(funcionario_id: str):
 
 Olá {funcionario['nome_completo']}!
 
-Acesse o App do Supervisor pelo link:
+📲 *Acesse o App:*
 {supervisor_url}
 
-Suas credenciais de acesso:
+*Suas credenciais:*
 📧 Email: {funcionario['login_email']}
 🔑 Senha: {funcionario['login_senha']}
 
-Você pode instalar como um App no seu celular!"""
+💡 _Instale como App no celular!_"""
 
     whatsapp_url = f"https://wa.me/55{whatsapp_numero}?text={quote(mensagem)}"
     
