@@ -486,18 +486,33 @@ class SupervisorCronogramaTester:
         """Test POST /api/funcionarios - Create employee with supervisor login credentials"""
         self.log("👤 Testing create funcionário with supervisor login...")
         
+        # First, check if there's already a funcionário with supervisor login
+        try:
+            funcionarios_response = self.session.get(f"{API_BASE}/funcionarios/{self.company_id}")
+            if funcionarios_response.status_code == 200:
+                funcionarios = funcionarios_response.json()
+                for funcionario in funcionarios:
+                    if funcionario.get('login_email') and funcionario.get('login_senha'):
+                        self.log(f"✅ Found existing funcionário with supervisor login: {funcionario['nome_completo']}")
+                        self.created_funcionario_id = funcionario['id']
+                        self.supervisor_login_email = funcionario['login_email']
+                        self.supervisor_login_senha = funcionario['login_senha']
+                        return True
+        except Exception as e:
+            self.log(f"⚠️ Could not check existing funcionários: {str(e)}", "WARN")
+        
         import time
         timestamp = int(time.time())
         
         funcionario_data = {
             "empresa_id": self.company_id,
             "nome_completo": "Carlos Supervisor",
-            "cpf": "123.456.789-00",
+            "cpf": f"987.654.{timestamp % 1000:03d}-99",  # Generate unique CPF
             "whatsapp": "(11) 99999-1234",
-            "email": "carlos@teste.com",
+            "email": f"carlos{timestamp}@teste.com",
             "salario": 5000,
             "status": "Ativo",
-            "login_email": "supervisor@teste.com",
+            "login_email": f"supervisor{timestamp}@teste.com",
             "login_senha": "senha123"
         }
         
