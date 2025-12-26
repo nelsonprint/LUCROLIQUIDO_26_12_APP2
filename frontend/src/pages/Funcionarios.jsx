@@ -138,6 +138,18 @@ const Funcionarios = ({ user, onLogout }) => {
     }
   };
 
+  const handleEnviarLinkVendedor = async (funcionarioId) => {
+    try {
+      const response = await axiosInstance.get(`/funcionario/${funcionarioId}/link-vendedor`);
+      if (response.data.whatsapp_url) {
+        window.open(response.data.whatsapp_url, '_blank');
+        toast.success('Abrindo WhatsApp...');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao gerar link');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
