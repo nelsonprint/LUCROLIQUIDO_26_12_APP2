@@ -25,6 +25,7 @@ import PlanoContas from './pages/PlanoContas';
 import NovoOrcamentoGrid from './pages/NovoOrcamentoGrid';
 import Assinatura from './pages/Assinatura';
 import AdminPanel from './pages/AdminPanel';
+import Funcionarios from './pages/Funcionarios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
