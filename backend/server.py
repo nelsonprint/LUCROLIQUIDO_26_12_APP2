@@ -6653,11 +6653,11 @@ async def serve_cliente_manifest():
 
 app.include_router(api_router)
 
-# Servir arquivos de upload
+# Servir arquivos de upload com prefixo /api
 uploads_dir = Path(ROOT_DIR) / "uploads"
 uploads_dir.mkdir(exist_ok=True)
 
-@app.get("/uploads/{filename}")
+@api_router.get("/uploads/{filename}")
 async def serve_upload(filename: str):
     """Servir arquivos de upload com content-type correto"""
     file_path = uploads_dir / filename
