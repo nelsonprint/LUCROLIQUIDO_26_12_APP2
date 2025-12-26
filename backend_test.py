@@ -106,7 +106,7 @@ class FuncionariosTester:
                 verify_response = self.session.get(f"{API_BASE}/funcionarios/categorias/{self.company_id}")
                 if verify_response.status_code == 200:
                     categories = verify_response.json()
-                    tecnico_found = any(cat.get('nome') == 'Técnico' for cat in categories)
+                    tecnico_found = any(cat.get('nome') == f'Técnico {timestamp}' for cat in categories)
                     if tecnico_found:
                         self.log("✅ Custom category verified in list!")
                         return True
