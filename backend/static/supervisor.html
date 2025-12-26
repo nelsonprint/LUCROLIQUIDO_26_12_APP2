@@ -304,17 +304,35 @@ async function compressImageToBlob(file, { maxSide = 1280, quality = 0.75, mime 
 }
 
 /* ===== PWA Install ===== */
+// Capturar o evento de instalação quando disponível
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
+  console.log('PWA: beforeinstallprompt capturado!');
   document.getElementById('installBanner').classList.add('show');
   // Atualizar botão manual para usar o prompt nativo
-  document.getElementById('installBtnManual').textContent = '📲 Instalar App Agora';
+  const btn = document.getElementById('installBtnManual');
+  btn.textContent = '📲 Instalar App Agora';
+  btn.style.background = 'var(--neon)';
+  btn.style.color = '#fff';
+  btn.style.borderStyle = 'solid';
   document.getElementById('installInstructions').style.display = 'none';
 });
 
+// Detectar quando o app foi instalado
+window.addEventListener('appinstalled', () => {
+  console.log('PWA: App instalado com sucesso!');
+  deferredPrompt = null;
+  document.getElementById('installSection').style.display = 'none';
+  document.getElementById('installBanner').classList.remove('show');
+});
+
 document.getElementById('installBtn').onclick = async () => {
-  if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
+  if (deferredPrompt) { 
+    deferredPrompt.prompt(); 
+    await deferredPrompt.userChoice;
+    deferredPrompt = null; 
+  }
   document.getElementById('installBanner').classList.remove('show');
 };
 document.getElementById('closeBanner').onclick = () => document.getElementById('installBanner').classList.remove('show');
@@ -323,14 +341,17 @@ document.getElementById('closeBanner').onclick = () => document.getElementById('
 document.getElementById('installBtnManual').onclick = async () => {
   if (deferredPrompt) {
     // Se tiver o prompt nativo disponível, usa ele
+    console.log('PWA: Disparando prompt de instalação...');
     deferredPrompt.prompt();
     const result = await deferredPrompt.userChoice;
+    console.log('PWA: Resultado:', result.outcome);
     deferredPrompt = null;
     if (result.outcome === 'accepted') {
       document.getElementById('installSection').style.display = 'none';
     }
   } else {
     // Se não tiver, mostra as instruções manuais
+    console.log('PWA: Prompt não disponível, mostrando instruções');
     const instructions = document.getElementById('installInstructions');
     instructions.style.display = instructions.style.display === 'none' ? 'block' : 'none';
   }
@@ -338,7 +359,15 @@ document.getElementById('installBtnManual').onclick = async () => {
 
 // Detectar se já está instalado como PWA
 if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+  console.log('PWA: Já está rodando como app instalado');
   document.getElementById('installSection').style.display = 'none';
+}
+
+// Verificar se o navegador suporta PWA
+if ('serviceWorker' in navigator && 'BeforeInstallPromptEvent' in window) {
+  console.log('PWA: Navegador suporta instalação de PWA');
+} else {
+  console.log('PWA: Navegador NÃO suporta BeforeInstallPromptEvent');
 }
 
 /* ===== Login ===== */
