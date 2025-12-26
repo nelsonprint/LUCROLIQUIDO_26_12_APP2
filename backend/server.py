@@ -6483,8 +6483,8 @@ async def upload_media_cronograma(
     with open(file_path, "wb") as f:
         f.write(content)
     
-    # Retornar URL
-    base_url = os.environ.get("REACT_APP_BACKEND_URL", "")
+    # Retornar URL - usar BACKEND_URL do ambiente
+    base_url = os.environ.get("BACKEND_URL", os.environ.get("REACT_APP_BACKEND_URL", ""))
     file_url = f"{base_url}/uploads/{filename}"
     
     return {"url": file_url, "filename": filename}
