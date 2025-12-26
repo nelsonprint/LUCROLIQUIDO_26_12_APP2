@@ -995,3 +995,35 @@ Foi implementada uma correção para o problema de captura de fotos e áudios na
 - Nenhuma issue crítica encontrada - todas as funcionalidades operacionais
 
 **NOTA IMPORTANTE:** O teste foi realizado com sucesso, mas observei que a criação de etapas pode precisar de um fluxo mais claro para o usuário final. O sistema funciona, mas a interface pode ser melhorada para maior clareza na criação de etapas antes de adicionar mídia.
+
+### Main Agent → Testing Agent (December 26, 2024 - NOVA VERSÃO)
+**TESTE DE CAPTURA DE MÍDIA NO SUPERVISOR PWA - VERSÃO REESCRITA**
+
+**Contexto:**
+O código do `supervisor.html` foi completamente reescrito baseado no código funcional fornecido pelo usuário. A nova implementação usa:
+- IndexedDB para armazenar blobs de mídia (não no state)
+- Criação programática de elementos DOM (não innerHTML)
+- URLs de objeto gerenciadas individualmente por item
+- Compressão de imagem (1280px max, 75% qualidade JPEG)
+- Detecção de codec suportado para áudio
+
+**Credenciais de teste:**
+- Supervisor: `supervisor1766725736@teste.com` / `senha123`
+
+**URL do app supervisor:**
+- https://obrascope.preview.emergentagent.com/api/supervisor/app
+
+**Testar:**
+1. Login do supervisor
+2. Selecionar uma obra
+3. Adicionar uma etapa
+4. Adicionar mídia na etapa
+5. Tirar uma foto - verificar se aparece o preview
+6. Gravar um áudio - verificar se o player funciona
+7. Salvar o cronograma
+
+**Critério de sucesso:**
+- Foto aparece após captura (não quebrada)
+- Player de áudio funciona após gravação
+- Página estável (sem recarregamentos)
+- Salvamento funciona
