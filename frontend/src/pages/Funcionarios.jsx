@@ -97,7 +97,8 @@ const Funcionarios = ({ user, onLogout }) => {
         ...funcionario,
         salario: funcionario.salario || 0,
         login_email: funcionario.login_email || '',
-        login_senha: funcionario.login_senha || ''
+        login_senha: funcionario.login_senha || '',
+        percentual_comissao: funcionario.percentual_comissao || 0
       });
       setCpfValido(true);
     } else {
