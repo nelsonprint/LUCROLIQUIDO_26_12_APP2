@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="theme-color" content="#FF8C00"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Cronograma"/>
+<link rel="manifest" href="/api/cliente/manifest.json"/>
+<title>Cronograma de Obra</title>
+<style>
+  :root{
+    --neon:#FF8C00;
+    --neon-rgb:255,140,0;
+    --bg:#0f0f10; --card:#16171a; --muted:#9aa0a6; --text:#e8eaed;
+    --border:#2a2d33; --success:#22c55e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  
+  /* Install Banner */
+  .install-banner{display:none;position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#FF8C00,#FF6B00);color:#fff;padding:12px 16px;z-index:10000;text-align:center}
+  .install-banner.show{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+  .install-banner button{background:#fff;color:#FF8C00;border:none;padding:8px 16px;border-radius:8px;font-weight:700;cursor:pointer}
+  .install-banner .close{background:transparent;color:#fff;font-size:1.2rem}
+  
+  /* Header */
+  .header{background:var(--card);border-bottom:1px solid var(--border);padding:16px;text-align:center}
+  .header .logo{width:80px;height:80px;border-radius:50%;background:var(--border);margin:0 auto 12px;object-fit:cover}
+  .header h1{font-size:1.3rem;color:var(--text);margin-bottom:4px}
+  .header .supervisor{color:var(--muted);font-size:.9rem}
+  .header .install-btn{margin-top:12px;background:var(--neon);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:700;cursor:pointer}
+  
+  .container{max-width:800px;margin:0 auto;padding:16px}
+  
+  /* Card */
+  .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px}
+  .card-title{font-size:1rem;font-weight:700;margin-bottom:12px;color:var(--neon)}
+  
+  /* List */
+  .cronograma-list{list-style:none}
+  .cronograma-item{display:flex;align-items:center;justify-content:space-between;padding:14px;background:#0e0f12;border-radius:10px;margin-bottom:8px;border-left:3px solid var(--neon)}
+  .cronograma-item .info{flex:1}
+  .cronograma-item .data{font-weight:700;color:var(--text)}
+  .cronograma-item .desc{color:var(--muted);font-size:.9rem;margin-top:2px}
+  .cronograma-item .progress-badge{font-size:.8rem;background:var(--neon);color:#fff;padding:2px 8px;border-radius:4px;margin-left:8px}
+  .cronograma-item .btn{background:var(--neon);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer}
+  
+  /* Detail View */
+  .detail-view{display:none}
+  .detail-view.show{display:block}
+  
+  .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--neon);background:none;border:none;font-size:1rem;cursor:pointer;margin-bottom:16px}
+  
+  .resumo-header{background:linear-gradient(135deg,var(--neon),#FF6B00);color:#fff;padding:16px;border-radius:12px;margin-bottom:16px;text-align:center}
+  .resumo-header h2{font-size:1.1rem;margin-bottom:4px}
+  .resumo-header .data{font-size:1.3rem;font-weight:900}
+  
+  /* Progress */
+  .progress{position:relative;width:100%;height:28px;background:#0b0c0f;border:1px solid var(--neon);border-radius:999px;overflow:hidden;margin:12px 0}
+  .progress .fill{position:absolute;left:0;top:0;bottom:0;background:var(--neon);box-shadow:0 0 16px var(--neon)}
+  .progress .pct-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--neon)}
+  
+  /* Stage */
+  .stage{background:#0e0f12;padding:14px;border-radius:10px;margin-bottom:10px;border-left:3px solid var(--neon)}
+  .stage-name{color:var(--neon);font-weight:700;margin-bottom:8px}
+  
+  /* Media */
+  .media-card{background:#1a1b1f;border-radius:8px;padding:12px;margin-top:10px}
+  .photo-box{border-radius:8px;overflow:hidden;cursor:pointer}
+  .photo-box img{width:100%;display:block}
+  .audio-player{width:100%;margin-top:10px}
+  .nota{background:#0e0f12;border:1px dashed var(--neon);border-radius:8px;padding:10px;margin-top:10px;color:var(--text);font-size:.9rem}
+  
+  /* Image Modal */
+  .image-modal{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:10000;display:none;align-items:center;justify-content:center}
+  .image-modal.show{display:flex}
+  .image-modal img{max-width:95%;max-height:90vh;object-fit:contain}
+  .image-modal .close{position:absolute;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;border:none;font-size:1.5rem;cursor:pointer}
+  
+  /* Loading */
+  .loading{display:flex;align-items:center;justify-content:center;padding:60px}
+  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--neon);border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  
+  /* Empty */
+  .empty{text-align:center;padding:40px;color:var(--muted)}
+  
+  /* Error */
+  .error-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;text-align:center}
+  .error-page h1{color:var(--neon);font-size:1.5rem;margin-bottom:12px}
+  .error-page p{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- Install Banner -->
+<div id="installBanner" class="install-banner">
+  <span>📲 Instale para acompanhar a obra!</span>
+  <button id="installBtn">Instalar APP</button>
+  <button class="close" id="closeBanner">×</button>
+</div>
+
+<!-- Main Container -->
+<div id="app">
+  <!-- Loading -->
+  <div id="loadingView" class="loading">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Error -->
+  <div id="errorView" class="error-page" style="display:none">
+    <h1>⚠️ Link Inválido</h1>
+    <p>Este link não existe ou expirou.<br>Solicite um novo link ao supervisor.</p>
+  </div>
+  
+  <!-- List View -->
+  <div id="listView" style="display:none">
+    <div class="header">
+      <img id="empresaLogo" class="logo" src="" alt="" style="display:none"/>
+      <h1 id="empresaNome">Empresa</h1>
+      <div class="supervisor" id="supervisorInfo"></div>
+      <button class="install-btn" id="headerInstallBtn" style="display:none">📲 Instalar APP</button>
+    </div>
+    
+    <div class="container">
+      <div class="card">
+        <div class="card-title">📋 Cronogramas de Execução</div>
+        <div id="clienteNome" style="color:var(--muted);margin-bottom:16px"></div>
+        <ul id="cronogramaList" class="cronograma-list"></ul>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Detail View -->
+  <div id="detailView" class="detail-view">
+    <div class="header" style="text-align:left;padding:12px 16px">
+      <button class="back-btn" id="backBtn">← Voltar</button>
+    </div>
+    
+    <div class="container">
+      <div class="resumo-header">
+        <h2>Resumo com cronograma de execução de:</h2>
+        <div class="data" id="detailData"></div>
+      </div>
+      
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="card-title" style="margin:0" id="detailProjeto">Projeto</div>
+          <div id="detailSupervisor" style="color:var(--muted);font-size:.85rem"></div>
+        </div>
+        
+        <div style="margin-top:12px">
+          <div style="color:var(--muted);font-size:.85rem;margin-bottom:4px">Progresso Geral</div>
+          <div class="progress">
+            <div class="fill" id="detailFill"></div>
+            <div class="pct-label" id="detailPct">0%</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-title">Etapas</div>
+        <div id="etapasContainer"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Image Modal -->
+<div id="imageModal" class="image-modal">
+  <button class="close" id="closeModal">×</button>
+  <img id="modalImage" src="" alt=""/>
+</div>
+
+<script>
+const API_BASE = window.location.origin + '/api';
+let deferredPrompt = null;
+let tokenData = null;
+
+// Get token from URL
+const pathParts = window.location.pathname.split('/');
+const tokenIdx = pathParts.indexOf('cronograma');
+const TOKEN = pathParts[tokenIdx + 1] || null;
+
+// ===== PWA Install =====
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+  document.getElementById('headerInstallBtn').style.display = 'inline-block';
+});
+
+async function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').classList.remove('show');
+  document.getElementById('headerInstallBtn').style.display = 'none';
+}
+
+document.getElementById('installBtn').addEventListener('click', installApp);
+document.getElementById('headerInstallBtn').addEventListener('click', installApp);
+document.getElementById('closeBanner').addEventListener('click', () => {
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+// ===== Image Modal =====
+document.getElementById('closeModal').addEventListener('click', () => {
+  document.getElementById('imageModal').classList.remove('show');
+});
+
+document.getElementById('imageModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    document.getElementById('imageModal').classList.remove('show');
+  }
+});
+
+function openImage(src) {
+  document.getElementById('modalImage').src = src;
+  document.getElementById('imageModal').classList.add('show');
+}
+
+// ===== Load Data =====
+async function loadData() {
+  if (!TOKEN) {
+    showError();
+    return;
+  }
+  
+  try {
+    const res = await fetch(`${API_BASE}/cliente/cronograma/${TOKEN}`);
+    
+    if (!res.ok) {
+      showError();
+      return;
+    }
+    
+    tokenData = await res.json();
+    
+    // Update header
+    if (tokenData.empresa.logo_url) {
+      const logo = document.getElementById('empresaLogo');
+      logo.src = tokenData.empresa.logo_url;
+      logo.style.display = 'block';
+    }
+    
+    document.getElementById('empresaNome').textContent = tokenData.empresa.nome || 'Empresa';
+    document.getElementById('clienteNome').textContent = `Olá, ${tokenData.cliente_nome}! Acompanhe o andamento da sua obra:`;
+    
+    // Render list
+    renderList(tokenData.cronogramas);
+    
+    document.getElementById('loadingView').style.display = 'none';
+    document.getElementById('listView').style.display = 'block';
+    
+  } catch (err) {
+    console.error(err);
+    showError();
+  }
+}
+
+function showError() {
+  document.getElementById('loadingView').style.display = 'none';
+  document.getElementById('errorView').style.display = 'flex';
+}
+
+function renderList(cronogramas) {
+  const list = document.getElementById('cronogramaList');
+  list.innerHTML = '';
+  
+  if (!cronogramas || cronogramas.length === 0) {
+    list.innerHTML = '<div class="empty">Nenhum cronograma disponível ainda.</div>';
+    return;
+  }
+  
+  cronogramas.forEach(cron => {
+    const dataFormatada = formatDate(cron.data);
+    
+    const li = document.createElement('li');
+    li.className = 'cronograma-item';
+    li.innerHTML = `
+      <div class="info">
+        <div class="data">${dataFormatada} <span class="progress-badge">${cron.progresso_geral}%</span></div>
+        <div class="desc">Cronograma de Obra - ${cron.projeto_nome || ''}</div>
+      </div>
+      <button class="btn">Ver</button>
+    `;
+    
+    li.querySelector('.btn').addEventListener('click', () => showDetail(cron.data));
+    
+    list.appendChild(li);
+  });
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ===== Detail View =====
+async function showDetail(data) {
+  try {
+    const res = await fetch(`${API_BASE}/cliente/cronograma/${TOKEN}/${data}`);
+    
+    if (!res.ok) {
+      alert('Cronograma não encontrado');
+      return;
+    }
+    
+    const detail = await res.json();
+    const cron = detail.cronograma;
+    
+    document.getElementById('detailData').textContent = formatDate(cron.data);
+    document.getElementById('detailProjeto').textContent = cron.projeto_nome || 'Projeto';
+    document.getElementById('detailSupervisor').textContent = `Supervisor: ${cron.supervisor_nome || ''}`;
+    document.getElementById('detailFill').style.width = cron.progresso_geral + '%';
+    document.getElementById('detailPct').textContent = cron.progresso_geral + '%';
+    
+    // Render stages
+    const container = document.getElementById('etapasContainer');
+    container.innerHTML = '';
+    
+    if (!cron.etapas || cron.etapas.length === 0) {
+      container.innerHTML = '<div class="empty">Nenhuma etapa registrada.</div>';
+    } else {
+      cron.etapas.forEach(etapa => {
+        container.appendChild(createStageElement(etapa));
+      });
+    }
+    
+    document.getElementById('listView').style.display = 'none';
+    document.getElementById('detailView').classList.add('show');
+    window.scrollTo(0, 0);
+    
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao carregar cronograma');
+  }
+}
+
+function createStageElement(etapa) {
+  const div = document.createElement('div');
+  div.className = 'stage';
+  
+  div.innerHTML = `
+    <div class="stage-name">${etapa.nome}</div>
+    <div class="progress" style="height:22px">
+      <div class="fill" style="width:${etapa.percentual}%"></div>
+      <div class="pct-label" style="font-size:.85rem">${etapa.percentual}%</div>
+    </div>
+    <div class="media-container"></div>
+  `;
+  
+  const mediaContainer = div.querySelector('.media-container');
+  
+  if (etapa.media && etapa.media.length > 0) {
+    etapa.media.forEach(m => {
+      const mediaDiv = document.createElement('div');
+      mediaDiv.className = 'media-card';
+      
+      let html = '';
+      
+      if (m.imagem_url) {
+        html += `<div class="photo-box"><img src="${m.imagem_url}" alt="Foto" data-full="${m.imagem_url}"/></div>`;
+      }
+      
+      if (m.audio_url) {
+        html += `<audio class="audio-player" controls src="${m.audio_url}"></audio>`;
+      }
+      
+      if (m.nota) {
+        html += `<div class="nota">${m.nota}</div>`;
+      }
+      
+      if (html) {
+        mediaDiv.innerHTML = html;
+        
+        // Image click to expand
+        const img = mediaDiv.querySelector('img');
+        if (img) {
+          img.addEventListener('click', () => openImage(img.dataset.full));
+        }
+        
+        mediaContainer.appendChild(mediaDiv);
+      }
+    });
+  }
+  
+  return div;
+}
+
+// ===== Back Button =====
+document.getElementById('backBtn').addEventListener('click', () => {
+  document.getElementById('detailView').classList.remove('show');
+  document.getElementById('listView').style.display = 'block';
+});
+
+// ===== Init =====
+loadData();
+</script>
+</body>
+</html>
