@@ -250,7 +250,7 @@ class FuncionariosTester:
         update_data = {
             "empresa_id": self.company_id,
             "nome_completo": "Maria Santos Silva Oliveira",  # Updated name
-            "cpf": "987.654.321-00",
+            "cpf": f"987.654.{timestamp % 1000:03d}-00",  # Keep same CPF
             "endereco": "Av. Brasil, 456, Apt 101",
             "cidade": "Rio de Janeiro",
             "uf": "RJ",
