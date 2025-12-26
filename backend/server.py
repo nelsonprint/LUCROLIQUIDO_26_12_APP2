@@ -6705,6 +6705,15 @@ async def serve_supervisor_manifest():
     return FileResponse(file_path, media_type="application/json")
 
 
+@api_router.get("/supervisor/sw.js")
+async def serve_supervisor_sw():
+    """Servir Service Worker do supervisor"""
+    file_path = static_dir / "sw-supervisor.js"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Service Worker não encontrado")
+    return FileResponse(file_path, media_type="application/javascript")
+
+
 @api_router.get("/cliente/app/{token}")
 async def serve_cliente_app(token: str):
     """Servir página PWA do cliente"""
