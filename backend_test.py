@@ -886,7 +886,8 @@ class SupervisorCronogramaTester:
             response = self.session.get(f"{API_BASE}/cliente/cronograma/{self.cliente_token}")
             
             if response.status_code == 200:
-                cronogramas = response.json()
+                result = response.json()
+                cronogramas = result.get('cronogramas', [])
                 self.log(f"✅ Client cronograma access successful! Found {len(cronogramas)} cronogramas")
                 
                 # Verify cronograma data structure
