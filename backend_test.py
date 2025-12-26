@@ -154,7 +154,8 @@ class FuncionariosTester:
             
             if response.status_code == 200:
                 result = response.json()
-                self.created_funcionario_id = result.get('funcionario_id')
+                funcionario_data = result.get('funcionario', {})
+                self.created_funcionario_id = funcionario_data.get('id')
                 self.log(f"✅ Employee created successfully! ID: {self.created_funcionario_id}")
                 
                 # Verify employee data
