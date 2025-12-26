@@ -94,7 +94,9 @@ const Funcionarios = ({ user, onLogout }) => {
       setEditingFuncionario(funcionario);
       setFormData({
         ...funcionario,
-        salario: funcionario.salario || 0
+        salario: funcionario.salario || 0,
+        login_email: funcionario.login_email || '',
+        login_senha: funcionario.login_senha || ''
       });
       setCpfValido(true);
     } else {
@@ -112,11 +114,25 @@ const Funcionarios = ({ user, onLogout }) => {
         categoria_id: '',
         data_admissao: '',
         data_nascimento: '',
-        status: 'Ativo'
+        status: 'Ativo',
+        login_email: '',
+        login_senha: ''
       });
       setCpfValido(true);
     }
     setShowModal(true);
+  };
+
+  const handleEnviarLinkSupervisor = async (funcionarioId) => {
+    try {
+      const response = await axiosInstance.get(`/funcionario/${funcionarioId}/link-supervisor`);
+      if (response.data.whatsapp_url) {
+        window.open(response.data.whatsapp_url, '_blank');
+        toast.success('Abrindo WhatsApp...');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao gerar link');
+    }
   };
 
   const handleSubmit = async (e) => {
