@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="theme-color" content="#FF7A00"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Vendedor"/>
+<link rel="manifest" href="/api/vendedor/manifest.json"/>
+<title>App do Vendedor - Lucro Líquido</title>
+<style>
+:root{--brand:#FF7A00;--brand-rgb:255,122,0;--bg:#0f0f10;--card:#16171a;--muted:#9aa0a6;--text:#e8eaed;--border:#2a2d33;--danger:#ff5964;--success:#22c55e}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
+body{padding-bottom:80px}
+
+.install-banner{display:none;position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#FF7A00,#FF5500);color:#fff;padding:12px;z-index:10000;text-align:center}
+.install-banner.show{display:flex;align-items:center;justify-content:center;gap:12px}
+.install-banner button{background:#fff;color:#FF7A00;border:none;padding:8px 16px;border-radius:8px;font-weight:700;cursor:pointer}
+.install-banner .close{background:transparent;color:#fff;font-size:1.2rem}
+
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-screen.hidden{display:none}
+.login-box{background:var(--card);border-radius:16px;padding:32px;width:100%;max-width:400px;text-align:center}
+.login-box h1{font-size:1.5rem;margin-bottom:8px;color:var(--brand)}
+.login-box p{color:var(--muted);margin-bottom:24px}
+.login-box .input{width:100%;padding:14px;border-radius:10px;border:1px solid var(--border);background:#0e0f12;color:var(--text);font-size:1rem;margin-bottom:12px}
+.login-box .btn{width:100%;padding:14px;border:none;border-radius:10px;background:var(--brand);color:#fff;font-size:1rem;font-weight:700;cursor:pointer}
+.login-box .error{color:var(--danger);margin-top:12px;font-size:.9rem}
+
+.app-screen{display:none}
+.app-screen.show{display:block}
+
+.container{max-width:1100px;margin:0 auto;padding:12px 8px}
+
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100}
+.header-content{display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto}
+.header h1{font-size:1.1rem;color:var(--brand)}
+.header .user-info{font-size:.85rem;color:var(--muted)}
+.header .logout-btn{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:6px 12px;border-radius:6px;cursor:pointer}
+
+.card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px}
+.card-title{font-size:1rem;font-weight:700;margin-bottom:12px;color:var(--brand)}
+
+.label{font-size:.85rem;color:var(--muted);margin-bottom:6px;display:block}
+.input,.select{width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:#0e0f12;color:var(--text);font-size:1rem}
+.btn{padding:12px 16px;border:1px solid var(--border);background:#0e0f12;color:var(--text);border-radius:8px;cursor:pointer;font-weight:600}
+.btn-primary{border-color:var(--brand);background:var(--brand);color:#fff}
+.btn-success{border-color:var(--success);background:var(--success);color:#fff}
+.btn-danger{border-color:var(--danger);color:var(--danger)}
+.btn-ghost{background:transparent;border:1px dashed var(--border)}
+
+.kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));margin-bottom:16px}
+.kpi{background:#1a1b1f;padding:14px;border-radius:10px;text-align:center;border:1px solid var(--border)}
+.kpi .label{font-size:.75rem;color:var(--muted);margin-bottom:4px}
+.kpi .value{font-size:1.3rem;font-weight:800;color:var(--brand)}
+.kpi.success .value{color:var(--success)}
+.kpi.danger .value{color:var(--danger)}
+
+.nav-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.nav-tab{flex:1;min-width:100px;padding:12px;text-align:center;border-radius:10px;background:#1a1b1f;color:var(--muted);border:1px solid var(--border);cursor:pointer;font-weight:600}
+.nav-tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+.list-item{background:#1a1b1f;border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid var(--brand);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.list-item .info{flex:1}
+.list-item .title{font-weight:700;margin-bottom:4px}
+.list-item .subtitle{font-size:.85rem;color:var(--muted)}
+.list-item .badge{padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:700}
+.badge-pendente{background:#fef3c7;color:#92400e}
+.badge-aprovado{background:#d1fae5;color:#065f46}
+.badge-enviado{background:#dbeafe;color:#1e40af}
+.badge-rascunho{background:#f3f4f6;color:#374151}
+.badge-pago{background:#d1fae5;color:#065f46}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state svg{width:60px;height:60px;margin-bottom:12px;opacity:.5}
+
+.form-group{margin-bottom:16px}
+.form-row{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:500px){.form-row.cols-2{grid-template-columns:1fr 1fr}}
+
+.action-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:12px;display:flex;gap:10px;justify-content:center}
+.action-btn{flex:1;max-width:200px;padding:14px;border-radius:12px;border:none;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.action-btn.primary{background:var(--brand);color:#fff}
+.action-btn.secondary{background:#1a1b1f;color:var(--text);border:1px solid var(--border)}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
+.modal.show{display:flex}
+.modal-content{background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto}
+.modal-title{font-size:1.2rem;font-weight:700;margin-bottom:16px;color:var(--brand)}
+.modal-actions{display:flex;gap:10px;margin-top:16px}
+.modal-actions .btn{flex:1}
+
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:8px;z-index:10001;display:none}
+.toast.show{display:block}
+
+/* Photo/Audio capture */
+.media-capture{background:#1a1b1f;border-radius:10px;padding:12px;margin-top:10px}
+.photo-box{position:relative;min-height:180px;border-radius:8px;background:#2a2d33;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+.photo-box img{width:100%;height:100%;object-fit:cover}
+.photo-hint{color:var(--muted);text-align:center;padding:20px}
+.recbar{display:flex;align-items:center;justify-content:space-between;background:#0e0f12;border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:10px}
+.timer{font-weight:900;color:var(--text);font-family:monospace;font-size:1.1rem}
+.mic-btn{width:48px;height:48px;border-radius:8px;border:1px solid var(--border);background:#1a1b1f;color:var(--text);font-size:1.5rem;cursor:pointer}
+.audio-player{width:100%;margin-top:10px;display:none}
+
+.item-card{background:#0e0f12;border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid var(--border)}
+.item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.item-number{background:var(--brand);color:#fff;padding:4px 10px;border-radius:6px;font-weight:700;font-size:.85rem}
+.remove-item{background:transparent;border:1px solid var(--danger);color:var(--danger);width:32px;height:32px;border-radius:6px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div id="installBanner" class="install-banner">
+  <span>📲 Instale o App</span>
+  <button id="installBtn">Instalar</button>
+  <button class="close" id="closeBanner">×</button>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <h1>🛒 App do Vendedor</h1>
+    <p>Gerencie seus orçamentos e comissões</p>
+    <input type="email" id="loginEmail" class="input" placeholder="Email"/>
+    <input type="password" id="loginSenha" class="input" placeholder="Senha"/>
+    <button id="loginBtn" class="btn btn-primary">Entrar</button>
+    <div id="loginError" class="error"></div>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="appScreen" class="app-screen">
+  <header class="header">
+    <div class="header-content">
+      <div>
+        <h1>🛒 App do Vendedor</h1>
+        <span id="vendedorNome" class="user-info">Carregando...</span>
+      </div>
+      <button id="logoutBtn" class="logout-btn">Sair</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- KPIs -->
+    <div class="kpis">
+      <div class="kpi success"><div class="label">Comissão Liberada</div><div id="kpiLiberada" class="value">R$ 0,00</div></div>
+      <div class="kpi"><div class="label">Comissão Pendente</div><div id="kpiPendente" class="value">R$ 0,00</div></div>
+      <div class="kpi"><div class="label">Total Orçamentos</div><div id="kpiOrcamentos" class="value">0</div></div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <div class="nav-tab active" data-tab="orcamentos">📄 Orçamentos</div>
+      <div class="nav-tab" data-tab="comissoes">💰 Comissões</div>
+      <div class="nav-tab" data-tab="agenda">📅 Agenda</div>
+    </div>
+
+    <!-- Tab: Orçamentos -->
+    <div id="tabOrcamentos" class="tab-content">
+      <div class="card">
+        <div class="card-title">Meus Orçamentos</div>
+        <div id="listaOrcamentos"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Comissões -->
+    <div id="tabComissoes" class="tab-content" style="display:none">
+      <div class="card">
+        <div class="card-title">Minhas Comissões</div>
+        <div id="listaComissoes"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Agenda -->
+    <div id="tabAgenda" class="tab-content" style="display:none">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="card-title" style="margin:0">Agenda de Visitas</div>
+          <button id="btnNovaVisita" class="btn btn-primary" style="padding:8px 12px">+ Nova</button>
+        </div>
+        <div id="listaAgenda"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <button id="btnNovoPreOrcamento" class="action-btn primary">📝 Novo Pré-Orçamento</button>
+  </div>
+</div>
+
+<!-- Modal: Pré-Orçamento -->
+<div id="modalPreOrcamento" class="modal">
+  <div class="modal-content">
+    <div class="modal-title">📝 Novo Pré-Orçamento</div>
+    
+    <div class="form-group">
+      <label class="label">Cliente</label>
+      <select id="preCliente" class="select"></select>
+    </div>
+    
+    <div class="form-group">
+      <label class="label">Data Entrega</label>
+      <input type="date" id="preDataEntrega" class="input"/>
+    </div>
+    
+    <div class="form-group">
+      <label class="label">Itens do Pré-Orçamento</label>
+      <div id="preItens"></div>
+      <button id="btnAddItem" class="btn btn-ghost" style="width:100%;margin-top:10px">+ Adicionar Item</button>
+    </div>
+    
+    <div class="form-group">
+      <label class="label">Observações</label>
+      <textarea id="preObs" class="input" rows="3" placeholder="Observações gerais..."></textarea>
+    </div>
+    
+    <div class="modal-actions">
+      <button id="btnCancelarPre" class="btn">Cancelar</button>
+      <button id="btnSalvarPre" class="btn btn-primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nova Visita -->
+<div id="modalVisita" class="modal">
+  <div class="modal-content">
+    <div class="modal-title">📅 Nova Visita</div>
+    
+    <div class="form-group">
+      <label class="label">Cliente</label>
+      <select id="visitaCliente" class="select"></select>
+    </div>
+    
+    <div class="form-group">
+      <label class="label">Título</label>
+      <input type="text" id="visitaTitulo" class="input" placeholder="Ex: Visita técnica"/>
+    </div>
+    
+    <div class="form-row cols-2">
+      <div class="form-group">
+        <label class="label">Data</label>
+        <input type="date" id="visitaData" class="input"/>
+      </div>
+      <div class="form-group">
+        <label class="label">Hora</label>
+        <input type="time" id="visitaHora" class="input"/>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label class="label">Descrição</label>
+      <textarea id="visitaDesc" class="input" rows="2" placeholder="Detalhes da visita..."></textarea>
+    </div>
+    
+    <div class="modal-actions">
+      <button id="btnCancelarVisita" class="btn">Cancelar</button>
+      <button id="btnSalvarVisita" class="btn btn-primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+const API_BASE = window.location.origin + '/api';
+let vendedor = null;
+let empresa = null;
+let clientes = [];
+
+// ===== Utils =====
+const fmtBRL = v => new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'}).format(v||0);
+const fmtData = d => d ? new Date(d+'T12:00:00').toLocaleDateString('pt-BR') : '-';
+const showToast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); };
+
+// ===== PWA Install =====
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; document.getElementById('installBanner').classList.add('show'); });
+document.getElementById('installBtn').onclick = async () => { if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; document.getElementById('installBanner').classList.remove('show'); } };
+document.getElementById('closeBanner').onclick = () => document.getElementById('installBanner').classList.remove('show');
+
+// ===== Login =====
+document.getElementById('loginBtn').onclick = async () => {
+  const email = document.getElementById('loginEmail').value;
+  const senha = document.getElementById('loginSenha').value;
+  const err = document.getElementById('loginError');
+  if (!email || !senha) { err.textContent = 'Preencha todos os campos'; return; }
+  
+  try {
+    const res = await fetch(API_BASE + '/vendedor/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login_email: email, login_senha: senha })
+    });
+    
+    if (!res.ok) {
+      const data = await res.json();
+      err.textContent = data.detail || 'Credenciais inválidas';
+      return;
+    }
+    
+    const data = await res.json();
+    vendedor = data.vendedor;
+    empresa = data.empresa;
+    
+    localStorage.setItem('vendedor', JSON.stringify(vendedor));
+    localStorage.setItem('empresa', JSON.stringify(empresa));
+    
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.add('show');
+    document.getElementById('vendedorNome').textContent = vendedor.nome_completo;
+    
+    await loadClientes();
+    await loadOrcamentos();
+    await loadComissoes();
+    await loadAgenda();
+  } catch (e) {
+    err.textContent = 'Erro de conexão';
+  }
+};
+
+// ===== Logout =====
+document.getElementById('logoutBtn').onclick = () => {
+  vendedor = null;
+  empresa = null;
+  localStorage.removeItem('vendedor');
+  localStorage.removeItem('empresa');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('appScreen').classList.remove('show');
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginSenha').value = '';
+  document.getElementById('loginError').textContent = '';
+};
+
+// ===== Tabs =====
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.getElementById('tab' + tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)).style.display = 'block';
+  };
+});
+
+// ===== Load Clientes =====
+async function loadClientes() {
+  try {
+    const res = await fetch(API_BASE + '/clientes/' + empresa.id);
+    clientes = await res.json();
+    
+    const opts = clientes.map(c => `<option value="${c.id}">${c.nome || c.nome_fantasia || c.razao_social}</option>`).join('');
+    document.getElementById('preCliente').innerHTML = '<option value="">Selecione...</option>' + opts;
+    document.getElementById('visitaCliente').innerHTML = '<option value="">Selecione...</option>' + opts;
+  } catch (e) { console.error('Erro ao carregar clientes:', e); }
+}
+
+// ===== Load Orçamentos =====
+async function loadOrcamentos() {
+  try {
+    const res = await fetch(API_BASE + '/vendedor/' + vendedor.id + '/orcamentos');
+    const orcamentos = await res.json();
+    
+    document.getElementById('kpiOrcamentos').textContent = orcamentos.length;
+    
+    const lista = document.getElementById('listaOrcamentos');
+    if (orcamentos.length === 0) {
+      lista.innerHTML = '<div class="empty-state"><p>Nenhum orçamento encontrado</p></div>';
+      return;
+    }
+    
+    lista.innerHTML = orcamentos.map(o => {
+      const status = o.status || 'RASCUNHO';
+      const badgeClass = {
+        'RASCUNHO': 'badge-rascunho',
+        'ENVIADO': 'badge-enviado',
+        'APROVADO': 'badge-aprovado',
+        'NAO_APROVADO': 'badge-pendente'
+      }[status] || 'badge-rascunho';
+      
+      return `
+        <div class="list-item">
+          <div class="info">
+            <div class="title">#${o.numero_orcamento || '-'} - ${o.cliente_nome}</div>
+            <div class="subtitle">${fmtData(o.created_at?.split('T')[0])} • ${fmtBRL(o.preco_praticado)}</div>
+          </div>
+          <span class="badge ${badgeClass}">${status}</span>
+        </div>
+      `;
+    }).join('');
+  } catch (e) { console.error('Erro ao carregar orçamentos:', e); }
+}
+
+// ===== Load Comissões =====
+async function loadComissoes() {
+  try {
+    const res = await fetch(API_BASE + '/vendedor/' + vendedor.id + '/comissoes');
+    const data = await res.json();
+    
+    document.getElementById('kpiLiberada').textContent = fmtBRL(data.total_pago);
+    document.getElementById('kpiPendente').textContent = fmtBRL(data.total_pendente);
+    
+    const lista = document.getElementById('listaComissoes');
+    if (data.comissoes.length === 0) {
+      lista.innerHTML = '<div class="empty-state"><p>Nenhuma comissão encontrada</p></div>';
+      return;
+    }
+    
+    lista.innerHTML = data.comissoes.map(c => {
+      const isPago = c.status === 'PAGO';
+      return `
+        <div class="list-item">
+          <div class="info">
+            <div class="title">${c.descricao}</div>
+            <div class="subtitle">Venc: ${fmtData(c.data_vencimento)} • Base: ${fmtBRL(c.valor_base_servicos || c.valor_base || 0)}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700;color:${isPago ? 'var(--success)' : 'var(--brand)'}">${fmtBRL(c.valor)}</div>
+            <span class="badge ${isPago ? 'badge-pago' : 'badge-pendente'}">${isPago ? 'PAGO' : 'PENDENTE'}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) { console.error('Erro ao carregar comissões:', e); }
+}
+
+// ===== Load Agenda =====
+async function loadAgenda() {
+  try {
+    const res = await fetch(API_BASE + '/vendedor/' + vendedor.id + '/agenda');
+    const agendas = await res.json();
+    
+    const lista = document.getElementById('listaAgenda');
+    if (agendas.length === 0) {
+      lista.innerHTML = '<div class="empty-state"><p>Nenhuma visita agendada</p></div>';
+      return;
+    }
+    
+    lista.innerHTML = agendas.map(a => {
+      const statusClass = {
+        'Pendente': 'badge-pendente',
+        'Confirmado': 'badge-aprovado',
+        'Concluído': 'badge-pago',
+        'Cancelado': 'badge-rascunho'
+      }[a.status] || 'badge-pendente';
+      
+      return `
+        <div class="list-item">
+          <div class="info">
+            <div class="title">${a.titulo}</div>
+            <div class="subtitle">${a.cliente_nome} • ${fmtData(a.data)} ${a.hora_inicio || ''}</div>
+          </div>
+          <span class="badge ${statusClass}">${a.status}</span>
+        </div>
+      `;
+    }).join('');
+  } catch (e) { console.error('Erro ao carregar agenda:', e); }
+}
+
+// ===== Pré-Orçamento =====
+let preItensCount = 0;
+
+document.getElementById('btnNovoPreOrcamento').onclick = () => {
+  preItensCount = 0;
+  document.getElementById('preItens').innerHTML = '';
+  document.getElementById('preDataEntrega').value = '';
+  document.getElementById('preObs').value = '';
+  document.getElementById('preCliente').value = '';
+  addPreItem();
+  document.getElementById('modalPreOrcamento').classList.add('show');
+};
+
+document.getElementById('btnAddItem').onclick = addPreItem;
+
+function addPreItem() {
+  preItensCount++;
+  const div = document.createElement('div');
+  div.className = 'item-card';
+  div.id = 'preItem' + preItensCount;
+  div.innerHTML = `
+    <div class="item-header">
+      <span class="item-number">Item ${String(preItensCount).padStart(3, '0')}</span>
+      <button class="remove-item" onclick="this.parentElement.parentElement.remove()">×</button>
+    </div>
+    <div class="form-group">
+      <label class="label">Descrição (até 125 caracteres)</label>
+      <textarea class="input item-desc" maxlength="125" rows="2" placeholder="Descreva o serviço..."></textarea>
+    </div>
+    <div class="form-row cols-2">
+      <div class="form-group">
+        <label class="label">Quantidade</label>
+        <input type="number" class="input item-qtd" value="1" min="1"/>
+      </div>
+      <div class="form-group">
+        <label class="label">Foto</label>
+        <div class="photo-box" onclick="capturePhoto(this)">
+          <div class="photo-hint">📷 Tirar Foto</div>
+        </div>
+        <input type="hidden" class="item-foto"/>
+      </div>
+    </div>
+  `;
+  document.getElementById('preItens').appendChild(div);
+}
+
+async function capturePhoto(box) {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.playsInline = true;
+    video.srcObject = stream;
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column';
+    video.style.cssText = 'flex:1;object-fit:cover';
+    
+    const controls = document.createElement('div');
+    controls.style.cssText = 'padding:20px;display:flex;gap:10px;justify-content:center';
+    
+    const btnCapture = document.createElement('button');
+    btnCapture.className = 'btn btn-primary';
+    btnCapture.textContent = '📸 Capturar';
+    
+    const btnCancel = document.createElement('button');
+    btnCancel.className = 'btn';
+    btnCancel.textContent = 'Cancelar';
+    
+    controls.appendChild(btnCapture);
+    controls.appendChild(btnCancel);
+    modal.appendChild(video);
+    modal.appendChild(controls);
+    document.body.appendChild(modal);
+    
+    await video.play();
+    
+    btnCancel.onclick = () => { stream.getTracks().forEach(t => t.stop()); modal.remove(); };
+    
+    btnCapture.onclick = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      
+      stream.getTracks().forEach(t => t.stop());
+      modal.remove();
+      
+      box.innerHTML = `<img src="${dataUrl}" alt="Foto"/>`;
+      box.parentElement.querySelector('.item-foto').value = dataUrl;
+    };
+  } catch (e) {
+    showToast('Erro ao acessar câmera');
+  }
+}
+
+document.getElementById('btnCancelarPre').onclick = () => document.getElementById('modalPreOrcamento').classList.remove('show');
+
+document.getElementById('btnSalvarPre').onclick = async () => {
+  const clienteId = document.getElementById('preCliente').value;
+  if (!clienteId) { showToast('Selecione um cliente'); return; }
+  
+  const cliente = clientes.find(c => c.id === clienteId);
+  const itens = [...document.querySelectorAll('.item-card')].map(card => ({
+    descricao: card.querySelector('.item-desc').value,
+    quantidade: parseInt(card.querySelector('.item-qtd').value) || 1,
+    foto_url: card.querySelector('.item-foto').value || null
+  })).filter(i => i.descricao);
+  
+  if (itens.length === 0) { showToast('Adicione pelo menos um item'); return; }
+  
+  try {
+    const res = await fetch(API_BASE + '/vendedor/' + vendedor.id + '/pre-orcamento', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        empresa_id: empresa.id,
+        cliente_id: clienteId,
+        cliente_nome: cliente.nome || cliente.nome_fantasia || cliente.razao_social,
+        cliente_whatsapp: cliente.whatsapp,
+        data_entrega: document.getElementById('preDataEntrega').value,
+        itens,
+        observacoes: document.getElementById('preObs').value
+      })
+    });
+    
+    if (res.ok) {
+      showToast('Pré-orçamento salvo!');
+      document.getElementById('modalPreOrcamento').classList.remove('show');
+    } else {
+      showToast('Erro ao salvar');
+    }
+  } catch (e) {
+    showToast('Erro de conexão');
+  }
+};
+
+// ===== Nova Visita =====
+document.getElementById('btnNovaVisita').onclick = () => {
+  document.getElementById('visitaTitulo').value = '';
+  document.getElementById('visitaData').value = '';
+  document.getElementById('visitaHora').value = '';
+  document.getElementById('visitaDesc').value = '';
+  document.getElementById('visitaCliente').value = '';
+  document.getElementById('modalVisita').classList.add('show');
+};
+
+document.getElementById('btnCancelarVisita').onclick = () => document.getElementById('modalVisita').classList.remove('show');
+
+document.getElementById('btnSalvarVisita').onclick = async () => {
+  const clienteId = document.getElementById('visitaCliente').value;
+  const titulo = document.getElementById('visitaTitulo').value;
+  const data = document.getElementById('visitaData').value;
+  
+  if (!clienteId || !titulo || !data) { showToast('Preencha os campos obrigatórios'); return; }
+  
+  const cliente = clientes.find(c => c.id === clienteId);
+  
+  try {
+    const res = await fetch(API_BASE + '/vendedor/' + vendedor.id + '/agenda', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        empresa_id: empresa.id,
+        cliente_id: clienteId,
+        cliente_nome: cliente.nome || cliente.nome_fantasia || cliente.razao_social,
+        titulo,
+        descricao: document.getElementById('visitaDesc').value,
+        data,
+        hora_inicio: document.getElementById('visitaHora').value,
+        hora_fim: '',
+        status: 'Pendente'
+      })
+    });
+    
+    if (res.ok) {
+      showToast('Visita agendada!');
+      document.getElementById('modalVisita').classList.remove('show');
+      await loadAgenda();
+    } else {
+      showToast('Erro ao salvar');
+    }
+  } catch (e) {
+    showToast('Erro de conexão');
+  }
+};
+
+// ===== Auto Login =====
+(async function init() {
+  const saved = localStorage.getItem('vendedor');
+  const savedEmpresa = localStorage.getItem('empresa');
+  
+  if (saved && savedEmpresa) {
+    vendedor = JSON.parse(saved);
+    empresa = JSON.parse(savedEmpresa);
+    
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.add('show');
+    document.getElementById('vendedorNome').textContent = vendedor.nome_completo;
+    
+    await loadClientes();
+    await loadOrcamentos();
+    await loadComissoes();
+    await loadAgenda();
+  }
+})();
+</script>
+</body>
+</html>
