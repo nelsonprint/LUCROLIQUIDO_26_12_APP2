@@ -390,6 +390,18 @@ const Funcionarios = ({ user, onLogout }) => {
                           <TableCell>{getStatusBadge(func.status)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
+                              {/* Botão enviar link do App Supervisor */}
+                              {func.login_email && func.login_senha && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEnviarLinkSupervisor(func.id)}
+                                  className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                                  title="Enviar Link do App via WhatsApp"
+                                >
+                                  <Send className="w-4 h-4" />
+                                </Button>
+                              )}
                               <Button
                                 size="sm"
                                 variant="outline"
