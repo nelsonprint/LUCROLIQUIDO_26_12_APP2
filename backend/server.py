@@ -324,6 +324,9 @@ class CustomCategory(BaseModel):
 class OrcamentoCreate(BaseModel):
     empresa_id: str
     usuario_id: str
+    # Vendedor responsável
+    vendedor_id: Optional[str] = None  # ID do funcionário vendedor
+    vendedor_nome: Optional[str] = None  # Nome do vendedor (denormalizado)
     # Cliente
     cliente_nome: str
     cliente_documento: Optional[str] = None
@@ -359,6 +362,9 @@ class Orcamento(BaseModel):
     numero_orcamento: str  # Será gerado automaticamente
     empresa_id: str
     usuario_id: str
+    # Vendedor responsável
+    vendedor_id: Optional[str] = None  # ID do funcionário vendedor
+    vendedor_nome: Optional[str] = None  # Nome do vendedor (denormalizado)
     # Cliente
     cliente_nome: str
     cliente_documento: Optional[str] = None
@@ -397,6 +403,9 @@ class Orcamento(BaseModel):
     aceito_em: Optional[datetime] = None
     aceito_por_ip: Optional[str] = None
     contas_receber_geradas: Optional[list] = []  # IDs das contas geradas
+    # Comissão do vendedor
+    comissao_gerada: Optional[bool] = False  # Se a comissão já foi gerada
+    comissao_id: Optional[str] = None  # ID da conta a pagar da comissão
     # Auditoria
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
