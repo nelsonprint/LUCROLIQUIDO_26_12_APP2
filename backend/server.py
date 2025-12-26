@@ -676,6 +676,68 @@ class OrcamentoItem(BaseModel):
     line_total: float
     pricing_ref: Optional[str] = None
 
+
+# ========== MODELS: FUNCIONÁRIOS ==========
+
+class FuncionarioCreate(BaseModel):
+    """Modelo para criação de funcionário"""
+    empresa_id: str
+    nome_completo: str
+    cpf: str
+    endereco: Optional[str] = None
+    cidade: Optional[str] = None
+    uf: Optional[str] = None
+    telefone_celular: Optional[str] = None
+    whatsapp: Optional[str] = None
+    email: Optional[str] = None
+    salario: float = 0
+    categoria_id: Optional[str] = None  # ID da categoria
+    data_admissao: Optional[str] = None
+    data_nascimento: Optional[str] = None
+    status: str = "Ativo"  # Ativo, Inativo, Férias, Afastado
+
+
+class Funcionario(BaseModel):
+    """Modelo completo de funcionário"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    empresa_id: str
+    nome_completo: str
+    cpf: str
+    endereco: Optional[str] = None
+    cidade: Optional[str] = None
+    uf: Optional[str] = None
+    telefone_celular: Optional[str] = None
+    whatsapp: Optional[str] = None
+    email: Optional[str] = None
+    salario: float = 0
+    categoria_id: Optional[str] = None
+    categoria_nome: Optional[str] = None  # Nome da categoria (denormalizado)
+    data_admissao: Optional[str] = None
+    data_nascimento: Optional[str] = None
+    status: str = "Ativo"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CategoriaFuncionarioCreate(BaseModel):
+    """Modelo para criação de categoria de funcionário"""
+    empresa_id: str
+    nome: str
+    descricao: Optional[str] = None
+
+
+class CategoriaFuncionario(BaseModel):
+    """Modelo completo de categoria de funcionário"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    empresa_id: str
+    nome: str
+    descricao: Optional[str] = None
+    sistema: bool = False  # True = categoria do sistema, não pode ser excluída
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 # ========== STARTUP: CRIAR PRIMEIRO ADMIN ==========
 
 @app.on_event("startup")
