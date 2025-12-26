@@ -8,156 +8,114 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Supervisor"/>
 <link rel="manifest" href="/api/supervisor/manifest.json"/>
-<link rel="apple-touch-icon" href="/api/supervisor/icon-192.png"/>
 <title>Supervisor - Cronograma de Obra</title>
 <style>
-  :root{
-    --neon:#FF8C00;
-    --neon-rgb:255,140,0;
-    --bg:#0f0f10; --card:#16171a; --muted:#9aa0a6; --text:#e8eaed;
-    --border:#2a2d33; --danger:#ff5964; --success:#22c55e;
-    --progress-text-before:var(--neon); --progress-text-after:#0b0c0f;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-  body{padding-bottom:80px}
-  
-  /* Install Banner */
-  .install-banner{display:none;position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#FF8C00,#FF6B00);color:#fff;padding:12px 16px;z-index:10000;text-align:center}
-  .install-banner.show{display:flex;align-items:center;justify-content:center;gap:12px}
-  .install-banner button{background:#fff;color:#FF8C00;border:none;padding:8px 16px;border-radius:8px;font-weight:700;cursor:pointer}
-  .install-banner .close{background:transparent;color:#fff;font-size:1.2rem}
-  
-  /* Login Screen */
-  .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-  .login-screen.hidden{display:none}
-  .login-box{background:var(--card);border-radius:16px;padding:32px;width:100%;max-width:400px;text-align:center}
-  .login-box h1{font-size:1.5rem;margin-bottom:8px;color:var(--neon)}
-  .login-box p{color:var(--muted);margin-bottom:24px}
-  .login-box .input{width:100%;padding:14px 16px;border-radius:10px;border:1px solid var(--border);background:#0e0f12;color:var(--text);font-size:1rem;margin-bottom:12px}
-  .login-box .btn{width:100%;padding:14px;border:none;border-radius:10px;background:var(--neon);color:#fff;font-size:1rem;font-weight:700;cursor:pointer}
-  .login-box .error{color:var(--danger);margin-top:12px;font-size:.9rem}
-  
-  /* Main App */
-  .app-screen{display:none}
-  .app-screen.show{display:block}
-  
-  .container{max-width:1100px;margin:0 auto;padding:12px 8px}
-  
-  /* Header */
-  .header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100}
-  .header-content{display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto}
-  .header h1{font-size:1.1rem;color:var(--neon)}
-  .header .user-info{font-size:.85rem;color:var(--muted)}
-  .header .logout-btn{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.85rem}
-  
-  /* Cards */
-  .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px}
-  .card-title{font-size:1rem;font-weight:700;margin-bottom:12px;color:var(--text)}
-  
-  /* Select Obra */
-  .select-obra{width:100%;padding:12px 16px;border-radius:10px;border:1px solid var(--border);background:#0e0f12;color:var(--text);font-size:1rem}
-  
-  /* Stage */
-  .label{font-size:.85rem;color:var(--muted);margin-bottom:6px;display:block}
-  .input{width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:#0e0f12;color:var(--text);font-size:1rem}
-  .btn{padding:12px 16px;border:1px solid var(--border);background:#0e0f12;color:var(--text);border-radius:8px;cursor:pointer;font-size:.95rem}
-  .btn:hover{filter:brightness(1.1)}
-  .btn-primary{border-color:var(--neon);background:var(--neon);color:#fff}
-  .btn-success{border-color:var(--success);background:var(--success);color:#fff}
-  .btn-danger{border-color:var(--danger);color:var(--danger)}
-  
-  .stage{background:#0e0f12;padding:12px;border-radius:10px;margin-bottom:10px;border-left:3px solid var(--neon)}
-  .stage-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-  .stage-name{color:var(--neon);font-weight:700;cursor:pointer}
-  .stage-name:hover{text-decoration:underline}
-  
-  .progress{position:relative;width:100%;height:28px;background:#0b0c0f;border:1px solid var(--neon);border-radius:999px;overflow:hidden;cursor:pointer}
-  .progress .fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:var(--neon);box-shadow:0 0 16px var(--neon);transition:width .3s}
-  .progress .pct-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--neon)}
-  
-  /* Media */
-  .media-grid{margin-top:12px}
-  .media-card{background:#1a1b1f;border-radius:8px;padding:12px;margin-bottom:10px}
-  .photo-box{position:relative;min-height:180px;border-radius:8px;background:#2a2d33;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
-  .photo-box img{width:100%;height:100%;object-fit:cover}
-  .photo-hint{color:var(--muted);text-align:center}
-  .photo-hint svg{width:48px;height:48px;margin-bottom:8px;opacity:.5}
-  
-  .rec-bar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px;background:#0e0f12;border-radius:8px}
-  .rec-bar .timer{font-weight:900;font-family:monospace;font-size:1.1rem}
-  .rec-bar .mic-btn{width:48px;height:48px;border-radius:50%;border:2px solid var(--neon);background:transparent;color:var(--neon);font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
-  .rec-bar .mic-btn.recording{background:var(--danger);border-color:var(--danger);color:#fff;animation:pulse 1s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-  
-  .audio-player{width:100%;margin-top:10px}
-  .note{width:100%;padding:10px;border:1px dashed var(--neon);background:#0e0f12;color:var(--text);border-radius:8px;resize:vertical;min-height:60px;margin-top:10px}
-  
-  /* FAB */
-  .fab{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--neon);color:#fff;border:none;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 20px rgba(var(--neon-rgb),.4);z-index:1000}
-  
-  /* Action buttons */
-  .action-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-  
-  /* Icon buttons */
-  .icon-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center}
-  .icon-btn:hover{border-color:var(--danger);color:var(--danger)}
-  
-  /* Sheet */
-  .sheet{position:fixed;inset:0;display:none;z-index:9999}
-  .sheet.show{display:block}
-  .sheet .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6)}
-  .sheet .panel{position:absolute;left:0;right:0;bottom:0;background:#111214;border-radius:20px 20px 0 0;padding:24px;max-height:80vh;overflow-y:auto}
-  .sheet h3{font-size:1.1rem;margin-bottom:16px}
-  .sheet .range{width:100%;accent-color:var(--neon);margin:16px 0}
-  .sheet .value{font-size:2.5rem;font-weight:900;text-align:center;color:var(--neon)}
-  .sheet .actions{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
-  
-  /* Toast */
-  .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:8px;z-index:10001;display:none}
-  .toast.show{display:block;animation:fadeIn .3s}
-  @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-  
-  /* Loading */
-  .loading{display:flex;align-items:center;justify-content:center;padding:40px}
-  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--neon);border-radius:50%;animation:spin 1s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  
-  /* Empty state */
-  .empty{text-align:center;padding:40px;color:var(--muted)}
-  .empty svg{width:64px;height:64px;margin-bottom:16px;opacity:.3}
-  
-  /* Responsive */
-  @media(max-width:600px){
-    .container{padding:8px}
-    .card{padding:12px;border-radius:10px}
-    .header h1{font-size:1rem}
-    .fab{bottom:16px;right:16px;width:50px;height:50px;font-size:1.3rem}
-  }
+:root{--neon:#FF8C00;--bg:#0f0f10;--card:#16171a;--muted:#9aa0a6;--text:#e8eaed;--border:#2a2d33;--danger:#ff5964;--success:#22c55e}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
+body{padding-bottom:80px}
+
+.install-banner{display:none;position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#FF8C00,#FF6B00);color:#fff;padding:12px;z-index:10000;text-align:center}
+.install-banner.show{display:flex;align-items:center;justify-content:center;gap:12px}
+.install-banner button{background:#fff;color:#FF8C00;border:none;padding:8px 16px;border-radius:8px;font-weight:700;cursor:pointer}
+.install-banner .close{background:transparent;color:#fff;font-size:1.2rem}
+
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-screen.hidden{display:none}
+.login-box{background:var(--card);border-radius:16px;padding:32px;width:100%;max-width:400px;text-align:center}
+.login-box h1{font-size:1.5rem;margin-bottom:8px;color:var(--neon)}
+.login-box p{color:var(--muted);margin-bottom:24px}
+.login-box .input{width:100%;padding:14px;border-radius:10px;border:1px solid var(--border);background:#0e0f12;color:var(--text);font-size:1rem;margin-bottom:12px}
+.login-box .btn{width:100%;padding:14px;border:none;border-radius:10px;background:var(--neon);color:#fff;font-size:1rem;font-weight:700;cursor:pointer}
+.login-box .error{color:var(--danger);margin-top:12px;font-size:.9rem}
+
+.app-screen{display:none}
+.app-screen.show{display:block}
+
+.container{max-width:1100px;margin:0 auto;padding:12px 8px}
+
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100}
+.header-content{display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto}
+.header h1{font-size:1.1rem;color:var(--neon)}
+.header .user-info{font-size:.85rem;color:var(--muted)}
+.header .logout-btn{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:6px 12px;border-radius:6px;cursor:pointer}
+
+.card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px}
+.card-title{font-size:1rem;font-weight:700;margin-bottom:12px}
+
+.select-obra{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:#0e0f12;color:var(--text);font-size:1rem}
+
+.label{font-size:.85rem;color:var(--muted);margin-bottom:6px;display:block}
+.input{width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:#0e0f12;color:var(--text);font-size:1rem}
+.btn{padding:12px 16px;border:1px solid var(--border);background:#0e0f12;color:var(--text);border-radius:8px;cursor:pointer}
+.btn-primary{border-color:var(--neon);background:var(--neon);color:#fff}
+.btn-success{border-color:var(--success);background:var(--success);color:#fff}
+.btn-danger{border-color:var(--danger);color:var(--danger)}
+
+.stage{background:#0e0f12;padding:12px;border-radius:10px;margin-bottom:10px;border-left:3px solid var(--neon)}
+.stage-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.stage-name{color:var(--neon);font-weight:700}
+
+.progress{position:relative;width:100%;height:28px;background:#0b0c0f;border:1px solid var(--neon);border-radius:999px;overflow:hidden;cursor:pointer}
+.progress .fill{position:absolute;left:0;top:0;bottom:0;background:var(--neon);transition:width .3s}
+.progress .pct-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--neon)}
+
+.media-card{background:#1a1b1f;border-radius:8px;padding:12px;margin-top:10px}
+.photo-box{position:relative;min-height:150px;border-radius:8px;background:#2a2d33;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+.photo-box img{max-width:100%;max-height:300px;object-fit:contain}
+.photo-hint{color:var(--muted);text-align:center;padding:20px}
+
+.audio-box{margin-top:10px;padding:10px;background:#0e0f12;border-radius:8px}
+.audio-box audio{width:100%;height:40px}
+.rec-controls{display:flex;align-items:center;gap:10px}
+.rec-controls .timer{font-family:monospace;font-size:1.1rem;min-width:50px}
+.mic-btn{width:48px;height:48px;border-radius:50%;border:2px solid var(--neon);background:transparent;color:var(--neon);font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mic-btn.recording{background:var(--danger);border-color:var(--danger);color:#fff;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+.note{width:100%;padding:10px;border:1px dashed var(--neon);background:#0e0f12;color:var(--text);border-radius:8px;resize:vertical;min-height:60px;margin-top:10px}
+
+.icon-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
+.icon-btn:hover{border-color:var(--danger);color:var(--danger)}
+
+.action-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+.sheet{position:fixed;inset:0;display:none;z-index:9999}
+.sheet.show{display:block}
+.sheet .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+.sheet .panel{position:absolute;left:0;right:0;bottom:0;background:#111214;border-radius:20px 20px 0 0;padding:24px;max-height:80vh;overflow-y:auto}
+.sheet .range{width:100%;accent-color:var(--neon);margin:16px 0}
+.sheet .value{font-size:2.5rem;font-weight:900;text-align:center;color:var(--neon)}
+.sheet .actions{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
+
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:8px;z-index:10001;display:none}
+.toast.show{display:block}
+
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.status-dot.pending{background:#fbbf24}
+.status-dot.uploaded{background:#22c55e}
+.status-dot.error{background:#ef4444}
 </style>
 </head>
 <body>
 
-<!-- Install Banner -->
 <div id="installBanner" class="install-banner">
-  <span>📲 Instale o App do Supervisor</span>
+  <span>📲 Instale o App</span>
   <button id="installBtn">Instalar</button>
   <button class="close" id="closeBanner">×</button>
 </div>
 
-<!-- Login Screen -->
 <div id="loginScreen" class="login-screen">
   <div class="login-box">
     <h1>🏗️ Supervisor</h1>
     <p>Cronograma de Obra</p>
-    <input type="email" id="loginEmail" class="input" placeholder="Email de acesso"/>
+    <input type="email" id="loginEmail" class="input" placeholder="Email"/>
     <input type="password" id="loginSenha" class="input" placeholder="Senha"/>
     <button id="loginBtn" class="btn btn-primary">Entrar</button>
     <div id="loginError" class="error"></div>
   </div>
 </div>
 
-<!-- Main App -->
 <div id="appScreen" class="app-screen">
   <div class="header">
     <div class="header-content">
@@ -170,70 +128,58 @@
   </div>
 
   <div class="container">
-    <!-- Select Obra -->
     <div class="card">
       <div class="card-title">Selecione a Obra</div>
       <select id="selectObra" class="select-obra">
-        <option value="">-- Selecione um orçamento aprovado --</option>
+        <option value="">-- Selecione --</option>
       </select>
     </div>
 
-    <!-- Cronograma Section (hidden until obra selected) -->
     <div id="cronogramaSection" style="display:none">
-      <!-- Project Info -->
       <div class="card">
         <label class="label">Nome do projeto</label>
-        <input id="projetoNome" class="input" placeholder="Nome do projeto"/>
-        
-        <label class="label" style="margin-top:12px">Data do cronograma</label>
+        <input id="projetoNome" class="input" placeholder="Nome"/>
+        <label class="label" style="margin-top:12px">Data</label>
         <input id="cronogramaData" type="date" class="input"/>
-        
         <div style="margin-top:16px">
           <label class="label">Progresso geral</label>
-          <div class="progress" id="progressoGeral" title="Toque para ajustar">
+          <div class="progress" id="progressoGeral">
             <div class="fill" id="progressoFill"></div>
             <div class="pct-label" id="progressoLabel">0%</div>
           </div>
         </div>
       </div>
 
-      <!-- Stages -->
       <div class="card">
-        <div class="card-title">Etapas da Obra</div>
+        <div class="card-title">Etapas</div>
         <div id="stagesContainer"></div>
         <button id="addStageBtn" class="btn btn-primary" style="width:100%;margin-top:12px">+ Adicionar Etapa</button>
       </div>
 
-      <!-- Actions -->
       <div class="card">
         <div class="action-bar">
           <button id="saveBtn" class="btn btn-primary" style="flex:1">💾 Salvar</button>
-          <button id="sendClientBtn" class="btn btn-success" style="flex:1">📤 Enviar para Cliente</button>
+          <button id="sendClientBtn" class="btn btn-success" style="flex:1">📤 Enviar ao Cliente</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Slider Sheet -->
 <div id="sliderSheet" class="sheet">
   <div class="backdrop"></div>
   <div class="panel">
-    <h3 id="sheetTitle">Ajustar percentual</h3>
+    <h3 id="sheetTitle">Percentual</h3>
     <div class="value" id="sheetValue">0%</div>
     <input type="range" id="sheetRange" class="range" min="0" max="100" value="0"/>
     <div class="actions">
       <button id="sheetCancel" class="btn">Cancelar</button>
-      <button id="sheetOk" class="btn btn-primary">Confirmar</button>
+      <button id="sheetOk" class="btn btn-primary">OK</button>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
 <div id="toast" class="toast"></div>
-
-<!-- FAB for adding stage -->
-<button id="fabAddStage" class="fab" style="display:none">+</button>
 
 <script>
 const API_BASE = window.location.origin + '/api';
@@ -241,34 +187,21 @@ let deferredPrompt = null;
 let supervisor = null;
 let empresa = null;
 let currentOrcamento = null;
-let cronograma = {
-  projeto_nome: '',
-  data: new Date().toISOString().split('T')[0],
-  progresso_geral: 0,
-  modo_progresso: 'auto',
-  etapas: []
-};
+let cronograma = { projeto_nome: '', data: new Date().toISOString().split('T')[0], progresso_geral: 0, etapas: [] };
 
-// ===== PWA Install =====
-window.addEventListener('beforeinstallprompt', (e) => {
+// PWA Install
+window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
   document.getElementById('installBanner').classList.add('show');
 });
-
-document.getElementById('installBtn').addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const result = await deferredPrompt.userChoice;
-  deferredPrompt = null;
+document.getElementById('installBtn').onclick = async () => {
+  if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
   document.getElementById('installBanner').classList.remove('show');
-});
+};
+document.getElementById('closeBanner').onclick = () => document.getElementById('installBanner').classList.remove('show');
 
-document.getElementById('closeBanner').addEventListener('click', () => {
-  document.getElementById('installBanner').classList.remove('show');
-});
-
-// ===== Utils =====
+// Utils
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -277,510 +210,377 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ===== Login =====
-document.getElementById('loginBtn').addEventListener('click', async () => {
+// Login
+document.getElementById('loginBtn').onclick = async () => {
   const email = document.getElementById('loginEmail').value;
   const senha = document.getElementById('loginSenha').value;
-  const errorEl = document.getElementById('loginError');
-  
-  if (!email || !senha) {
-    errorEl.textContent = 'Preencha email e senha';
-    return;
-  }
-  
-  errorEl.textContent = 'Conectando...';
-  
+  const err = document.getElementById('loginError');
+  if (!email || !senha) { err.textContent = 'Preencha todos os campos'; return; }
+  err.textContent = 'Conectando...';
   try {
-    const url = API_BASE + '/supervisor/login';
-    console.log('Login URL:', url);
-    
-    const res = await fetch(url, {
+    const res = await fetch(API_BASE + '/supervisor/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ login_email: email, login_senha: senha })
     });
-    
-    console.log('Response status:', res.status);
     const data = await res.json();
-    console.log('Response data:', data);
-    
-    if (!res.ok) {
-      errorEl.textContent = data.detail || 'Credenciais inválidas';
-      return;
-    }
-    
-    if (!data.success) {
-      errorEl.textContent = 'Erro: resposta inválida';
-      return;
-    }
-    
+    if (!res.ok || !data.success) { err.textContent = data.detail || 'Credenciais inválidas'; return; }
     supervisor = data.supervisor;
     empresa = data.empresa;
-    
     localStorage.setItem('supervisor', JSON.stringify(supervisor));
     localStorage.setItem('empresa', JSON.stringify(empresa));
-    
-    errorEl.textContent = '';
+    err.textContent = '';
     showApp();
-  } catch (err) {
-    console.error('Login error:', err);
-    errorEl.textContent = 'Erro: ' + (err.message || 'Falha na conexão');
-  }
-});
+  } catch (e) { err.textContent = 'Erro de conexão'; }
+};
 
-// ===== Logout =====
-document.getElementById('logoutBtn').addEventListener('click', () => {
+document.getElementById('logoutBtn').onclick = () => {
   localStorage.removeItem('supervisor');
   localStorage.removeItem('empresa');
-  supervisor = null;
-  empresa = null;
-  document.getElementById('loginScreen').classList.remove('hidden');
-  document.getElementById('appScreen').classList.remove('show');
-});
+  location.reload();
+};
 
-// ===== Check stored login =====
-function checkStoredLogin() {
-  const stored = localStorage.getItem('supervisor');
-  const storedEmpresa = localStorage.getItem('empresa');
-  if (stored && storedEmpresa) {
-    supervisor = JSON.parse(stored);
-    empresa = JSON.parse(storedEmpresa);
-    showApp();
-  }
+function checkLogin() {
+  const s = localStorage.getItem('supervisor');
+  const e = localStorage.getItem('empresa');
+  if (s && e) { supervisor = JSON.parse(s); empresa = JSON.parse(e); showApp(); }
 }
 
-// ===== Show App =====
 async function showApp() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appScreen').classList.add('show');
-  
-  document.getElementById('empresaNome').textContent = empresa?.nome || 'Supervisor';
+  document.getElementById('empresaNome').textContent = empresa?.nome || 'Empresa';
   document.getElementById('supervisorNome').textContent = supervisor?.nome || '';
-  
   await loadOrcamentos();
 }
 
-// ===== Load Orçamentos =====
 async function loadOrcamentos() {
   try {
-    const res = await fetch(`${API_BASE}/supervisor/${supervisor.id}/orcamentos`);
-    const orcamentos = await res.json();
-    
-    const select = document.getElementById('selectObra');
-    select.innerHTML = '<option value="">-- Selecione um orçamento aprovado --</option>';
-    
-    orcamentos.forEach(orc => {
+    const res = await fetch(API_BASE + '/supervisor/' + supervisor.id + '/orcamentos');
+    const orcs = await res.json();
+    const sel = document.getElementById('selectObra');
+    sel.innerHTML = '<option value="">-- Selecione --</option>';
+    orcs.forEach(o => {
       const opt = document.createElement('option');
-      opt.value = orc.id;
-      opt.textContent = `${orc.numero_orcamento || 'S/N'} - ${orc.cliente_nome || 'Cliente'} - R$ ${(orc.valor_total || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-      opt.dataset.orcamento = JSON.stringify(orc);
-      select.appendChild(opt);
+      opt.value = o.id;
+      opt.textContent = (o.numero_orcamento || 'S/N') + ' - ' + (o.cliente_nome || 'Cliente');
+      opt.dataset.orc = JSON.stringify(o);
+      sel.appendChild(opt);
     });
-  } catch (err) {
-    toast('Erro ao carregar orçamentos');
-  }
+  } catch (e) { toast('Erro ao carregar obras'); }
 }
 
-// ===== Select Obra Change =====
-document.getElementById('selectObra').addEventListener('change', async (e) => {
-  const selectedOpt = e.target.selectedOptions[0];
-  if (!selectedOpt?.value) {
+document.getElementById('selectObra').onchange = async function() {
+  const opt = this.selectedOptions[0];
+  if (!opt?.value) {
     document.getElementById('cronogramaSection').style.display = 'none';
-    document.getElementById('fabAddStage').style.display = 'none';
     currentOrcamento = null;
     return;
   }
+  currentOrcamento = JSON.parse(opt.dataset.orc);
+  cronograma = { projeto_nome: currentOrcamento.cliente_nome || '', data: new Date().toISOString().split('T')[0], progresso_geral: 0, etapas: [] };
   
-  currentOrcamento = JSON.parse(selectedOpt.dataset.orcamento);
-  
-  // Reset cronograma
-  cronograma = {
-    projeto_nome: currentOrcamento.cliente_nome || '',
-    data: new Date().toISOString().split('T')[0],
-    progresso_geral: 0,
-    modo_progresso: 'auto',
-    etapas: []
-  };
-  
-  // Check if there's existing cronograma for today
+  // Carregar cronograma existente
   try {
-    const res = await fetch(`${API_BASE}/supervisor/${supervisor.id}/cronograma/${currentOrcamento.id}/${cronograma.data}`);
+    const res = await fetch(API_BASE + '/supervisor/' + supervisor.id + '/cronograma/' + currentOrcamento.id + '/' + cronograma.data);
     if (res.ok) {
       const existing = await res.json();
       if (existing) {
-        cronograma = {
-          id: existing.id,
-          projeto_nome: existing.projeto_nome,
-          data: existing.data,
-          progresso_geral: existing.progresso_geral,
-          modo_progresso: existing.modo_progresso,
-          etapas: existing.etapas || []
-        };
+        cronograma = { id: existing.id, projeto_nome: existing.projeto_nome, data: existing.data, progresso_geral: existing.progresso_geral, etapas: existing.etapas || [] };
       }
     }
-  } catch (err) {}
+  } catch (e) {}
   
   document.getElementById('projetoNome').value = cronograma.projeto_nome;
   document.getElementById('cronogramaData').value = cronograma.data;
-  updateProgressBar(cronograma.progresso_geral);
-  
+  updateProgress(cronograma.progresso_geral);
   renderStages();
-  
   document.getElementById('cronogramaSection').style.display = 'block';
-  document.getElementById('fabAddStage').style.display = 'block';
-});
+};
 
-// ===== Date Change =====
-document.getElementById('cronogramaData').addEventListener('change', async (e) => {
-  const newDate = e.target.value;
-  cronograma.data = newDate;
-  
-  // Check if there's existing cronograma for this date
+document.getElementById('cronogramaData').onchange = async function() {
+  cronograma.data = this.value;
   try {
-    const res = await fetch(`${API_BASE}/supervisor/${supervisor.id}/cronograma/${currentOrcamento.id}/${newDate}`);
+    const res = await fetch(API_BASE + '/supervisor/' + supervisor.id + '/cronograma/' + currentOrcamento.id + '/' + cronograma.data);
     if (res.ok) {
       const existing = await res.json();
       if (existing) {
-        cronograma = {
-          id: existing.id,
-          projeto_nome: existing.projeto_nome,
-          data: existing.data,
-          progresso_geral: existing.progresso_geral,
-          modo_progresso: existing.modo_progresso,
-          etapas: existing.etapas || []
-        };
+        cronograma = { id: existing.id, projeto_nome: existing.projeto_nome, data: existing.data, progresso_geral: existing.progresso_geral, etapas: existing.etapas || [] };
         document.getElementById('projetoNome').value = cronograma.projeto_nome;
-        updateProgressBar(cronograma.progresso_geral);
+        updateProgress(cronograma.progresso_geral);
         renderStages();
         toast('Cronograma carregado');
-      } else {
-        // New date, reset stages
-        cronograma.etapas = [];
-        cronograma.progresso_geral = 0;
-        updateProgressBar(0);
-        renderStages();
       }
     }
-  } catch (err) {}
-});
+  } catch (e) {}
+};
 
-// ===== Progress Bar =====
-function updateProgressBar(pct) {
+function updateProgress(pct) {
   document.getElementById('progressoFill').style.width = pct + '%';
   document.getElementById('progressoLabel').textContent = pct + '%';
 }
 
-document.getElementById('progressoGeral').addEventListener('click', () => {
-  openSlider({
-    title: 'Progresso Geral',
-    initial: cronograma.progresso_geral,
-    onConfirm: (v) => {
-      cronograma.progresso_geral = v;
-      cronograma.modo_progresso = 'manual';
-      updateProgressBar(v);
-    }
-  });
-});
+document.getElementById('progressoGeral').onclick = () => openSlider('Progresso Geral', cronograma.progresso_geral, v => { cronograma.progresso_geral = v; updateProgress(v); });
 
-// ===== Slider Sheet =====
-function openSlider({ title, initial, onConfirm }) {
+function openSlider(title, initial, onOk) {
   const sheet = document.getElementById('sliderSheet');
   document.getElementById('sheetTitle').textContent = title;
   document.getElementById('sheetValue').textContent = initial + '%';
-  document.getElementById('sheetRange').value = initial;
-  
-  sheet.classList.add('show');
-  
   const range = document.getElementById('sheetRange');
-  const valueEl = document.getElementById('sheetValue');
-  
-  range.oninput = () => valueEl.textContent = range.value + '%';
-  
+  range.value = initial;
+  range.oninput = () => document.getElementById('sheetValue').textContent = range.value + '%';
+  sheet.classList.add('show');
   document.querySelector('#sliderSheet .backdrop').onclick = () => sheet.classList.remove('show');
   document.getElementById('sheetCancel').onclick = () => sheet.classList.remove('show');
-  document.getElementById('sheetOk').onclick = () => {
-    onConfirm(parseInt(range.value));
-    sheet.classList.remove('show');
-  };
+  document.getElementById('sheetOk').onclick = () => { onOk(parseInt(range.value)); sheet.classList.remove('show'); };
 }
 
-// ===== Render Stages =====
 function renderStages() {
   const container = document.getElementById('stagesContainer');
   container.innerHTML = '';
-  
   if (cronograma.etapas.length === 0) {
-    container.innerHTML = '<div class="empty"><p>Nenhuma etapa adicionada</p></div>';
+    container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px">Nenhuma etapa</p>';
     return;
   }
-  
-  cronograma.etapas.forEach((etapa, idx) => {
-    container.appendChild(createStageElement(etapa, idx));
-  });
-  
-  // Update auto progress
-  if (cronograma.modo_progresso === 'auto') {
-    const avg = cronograma.etapas.length 
-      ? Math.round(cronograma.etapas.reduce((a, e) => a + (e.percentual || 0), 0) / cronograma.etapas.length)
-      : 0;
-    cronograma.progresso_geral = avg;
-    updateProgressBar(avg);
-  }
+  cronograma.etapas.forEach((etapa, idx) => container.appendChild(createStage(etapa, idx)));
 }
 
-function createStageElement(etapa, idx) {
+function createStage(etapa, idx) {
   const div = document.createElement('div');
   div.className = 'stage';
-  
   div.innerHTML = `
     <div class="stage-head">
-      <span class="stage-name" data-idx="${idx}">${etapa.nome}</span>
-      <button class="icon-btn" data-delete="${idx}">🗑️</button>
+      <span class="stage-name">${etapa.nome}</span>
+      <button class="icon-btn" onclick="deleteStage(${idx})">🗑️</button>
     </div>
-    <div class="progress" data-stage="${idx}" style="margin-bottom:12px">
+    <div class="progress" onclick="editStageProgress(${idx})">
       <div class="fill" style="width:${etapa.percentual}%"></div>
       <div class="pct-label">${etapa.percentual}%</div>
     </div>
-    <div class="media-grid" data-media="${idx}"></div>
-    <button class="btn" data-add-media="${idx}" style="width:100%;margin-top:8px">📷 + Adicionar Mídia</button>
+    <div id="media-${idx}"></div>
+    <button class="btn" style="width:100%;margin-top:8px" onclick="addMedia(${idx})">📷🎙️ Adicionar Mídia</button>
   `;
   
-  // Stage name click
-  div.querySelector('.stage-name').addEventListener('click', () => {
-    const newName = prompt('Nome da etapa:', etapa.nome);
-    if (newName) {
-      etapa.nome = newName;
-      renderStages();
-    }
-  });
-  
-  // Delete stage
-  div.querySelector('[data-delete]').addEventListener('click', () => {
-    if (confirm(`Remover etapa "${etapa.nome}"?`)) {
-      cronograma.etapas.splice(idx, 1);
-      renderStages();
-    }
-  });
-  
-  // Progress click
-  div.querySelector('.progress').addEventListener('click', () => {
-    openSlider({
-      title: `Progresso - ${etapa.nome}`,
-      initial: etapa.percentual,
-      onConfirm: (v) => {
-        etapa.percentual = v;
-        renderStages();
-      }
-    });
-  });
-  
-  // Add media
-  div.querySelector('[data-add-media]').addEventListener('click', () => {
-    if (!etapa.media) etapa.media = [];
-    etapa.media.push({ id: uid(), imagem_url: null, audio_url: null, nota: '' });
-    renderStages();
-  });
-  
-  // Render media
-  const mediaContainer = div.querySelector('[data-media]');
+  const mediaContainer = div.querySelector('#media-' + idx);
   if (etapa.media && etapa.media.length > 0) {
-    etapa.media.forEach((m, mIdx) => {
-      mediaContainer.appendChild(createMediaElement(etapa, m, mIdx));
-    });
+    etapa.media.forEach((m, mIdx) => mediaContainer.appendChild(createMedia(idx, m, mIdx)));
   }
   
   return div;
 }
 
-function createMediaElement(etapa, media, mIdx) {
+function createMedia(stageIdx, media, mediaIdx) {
   const div = document.createElement('div');
   div.className = 'media-card';
+  div.id = 'media-' + stageIdx + '-' + mediaIdx;
+  
+  // Status do upload
+  const imgStatus = media.imagem_uploaded ? 'uploaded' : (media.imagem_local ? 'pending' : '');
+  const audStatus = media.audio_uploaded ? 'uploaded' : (media.audio_local ? 'pending' : '');
   
   div.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span style="color:var(--muted);font-size:.85rem">Mídia ${mIdx + 1}</span>
-      <button class="icon-btn" data-delete-media>🗑️</button>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+      <span style="color:var(--muted);font-size:.85rem">
+        Mídia ${mediaIdx + 1}
+        ${imgStatus ? '<span class="status-dot ' + imgStatus + '" title="Foto: ' + imgStatus + '"></span>' : ''}
+        ${audStatus ? '<span class="status-dot ' + audStatus + '" title="Áudio: ' + audStatus + '"></span>' : ''}
+      </span>
+      <button class="icon-btn" onclick="deleteMedia(${stageIdx},${mediaIdx})">🗑️</button>
     </div>
-    <div class="photo-box" data-media-id="${media.id}">
-      ${media.imagem_url 
-        ? `<img src="${media.imagem_url}" alt="Foto" onerror="this.style.display='none'"/>`
-        : `<div class="photo-hint"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg><div>Toque para foto</div></div>`
-      }
+    <div class="photo-box" id="photo-${stageIdx}-${mediaIdx}" onclick="capturePhoto(${stageIdx},${mediaIdx})">
+      ${media.imagem_local || media.imagem_url 
+        ? '<img src="' + (media.imagem_local || media.imagem_url) + '" alt="Foto"/>' 
+        : '<div class="photo-hint">📷 Toque para foto</div>'}
     </div>
-    <input type="file" accept="image/*" capture="environment" style="display:none" class="photo-input" data-media-id="${media.id}"/>
-    <div class="rec-bar">
-      <span class="timer" data-media-id="${media.id}">${media.audio_url ? '✓' : 'REC'}</span>
-      <button class="mic-btn" data-media-id="${media.id}">🎙️</button>
+    <input type="file" accept="image/*" capture="environment" style="display:none" id="photo-input-${stageIdx}-${mediaIdx}" onchange="handlePhoto(this,${stageIdx},${mediaIdx})"/>
+    <div class="audio-box">
+      ${media.audio_local || media.audio_url 
+        ? '<audio controls src="' + (media.audio_local || media.audio_url) + '" style="width:100%"></audio>'
+        : '<div class="rec-controls"><span class="timer" id="timer-' + stageIdx + '-' + mediaIdx + '">00:00</span><button class="mic-btn" id="mic-' + stageIdx + '-' + mediaIdx + '" onclick="toggleRecording(' + stageIdx + ',' + mediaIdx + ')">🎙️</button></div>'}
     </div>
-    ${media.audio_url ? `<audio class="audio-player" controls src="${media.audio_url}" preload="auto"></audio>` : '<div class="audio-placeholder" data-media-id="' + media.id + '"></div>'}
-    <textarea class="note" placeholder="Nota/Resumo...">${media.nota || ''}</textarea>
+    <textarea class="note" placeholder="Nota..." onchange="updateNote(${stageIdx},${mediaIdx},this.value)">${media.nota || ''}</textarea>
   `;
-  
-  // === FOTO - Abordagem simplificada ===
-  const photoBox = div.querySelector('.photo-box');
-  const photoInput = div.querySelector('.photo-input');
-  
-  photoBox.onclick = () => photoInput.click();
-  
-  photoInput.onchange = async function(e) {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    
-    toast('Enviando foto...');
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('tipo', 'image');
-      
-      const res = await fetch(API_BASE + '/supervisor/upload/media', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const data = await res.json();
-      if (data.url) {
-        media.imagem_url = data.url;
-        // Atualizar preview diretamente sem re-render completo
-        photoBox.innerHTML = '<img src="' + data.url + '" alt="Foto"/>';
-        toast('Foto OK!');
-      } else {
-        toast('Erro no upload');
-      }
-    } catch (err) {
-      toast('Erro: ' + err.message);
-    }
-    
-    // Limpar input
-    this.value = '';
-  };
-  
-  // === ÁUDIO - Abordagem simplificada ===
-  const micBtn = div.querySelector('.mic-btn');
-  const timerEl = div.querySelector('.timer');
-  const audioPlaceholder = div.querySelector('.audio-placeholder');
-  let recorder = null;
-  let audioData = [];
-  let isRecording = false;
-  let recTimer = null;
-  let recStart = 0;
-  
-  micBtn.onclick = async function() {
-    if (!isRecording) {
-      // Iniciar gravação
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        recorder = new MediaRecorder(stream);
-        audioData = [];
-        
-        recorder.ondataavailable = function(e) {
-          if (e.data.size > 0) audioData.push(e.data);
-        };
-        
-        recorder.onstop = async function() {
-          clearInterval(recTimer);
-          stream.getTracks().forEach(t => t.stop());
-          
-          const blob = new Blob(audioData, { type: 'audio/webm' });
-          toast('Enviando áudio...');
-          
-          try {
-            const formData = new FormData();
-            formData.append('file', blob, 'audio.webm');
-            formData.append('tipo', 'audio');
-            
-            const res = await fetch(API_BASE + '/supervisor/upload/media', {
-              method: 'POST',
-              body: formData
-            });
-            
-            const data = await res.json();
-            if (data.url) {
-              media.audio_url = data.url;
-              // Inserir player de áudio
-              if (audioPlaceholder) {
-                audioPlaceholder.outerHTML = '<audio class="audio-player" controls src="' + data.url + '" preload="auto"></audio>';
-              }
-              timerEl.textContent = '✓';
-              toast('Áudio OK!');
-            }
-          } catch (err) {
-            toast('Erro áudio');
-          }
-        };
-        
-        recorder.start();
-        isRecording = true;
-        recStart = Date.now();
-        micBtn.classList.add('recording');
-        micBtn.textContent = '⏹️';
-        
-        recTimer = setInterval(function() {
-          const s = Math.floor((Date.now() - recStart) / 1000);
-          timerEl.textContent = String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
-        }, 1000);
-        
-      } catch (err) {
-        toast('Permita microfone');
-      }
-    } else {
-      // Parar gravação
-      if (recorder && recorder.state !== 'inactive') {
-        recorder.stop();
-      }
-      isRecording = false;
-      micBtn.classList.remove('recording');
-      micBtn.textContent = '🎙️';
-    }
-  };
-  
-  // Note
-  div.querySelector('.note').oninput = function(e) {
-    media.nota = e.target.value;
-  };
-  
-  // Delete media
-  div.querySelector('[data-delete-media]').addEventListener('click', () => {
-    if (confirm('Remover esta mídia?')) {
-      const idx = etapa.media.indexOf(media);
-      if (idx > -1) etapa.media.splice(idx, 1);
-      renderStages();
-    }
-  });
   
   return div;
 }
 
-// ===== Add Stage =====
-document.getElementById('addStageBtn').addEventListener('click', addStage);
-document.getElementById('fabAddStage').addEventListener('click', addStage);
+// Estado de gravação
+const recorders = {};
 
-function addStage() {
-  const nome = prompt('Nome da etapa:', 'Nova Etapa');
-  if (!nome) return;
+function capturePhoto(stageIdx, mediaIdx) {
+  document.getElementById('photo-input-' + stageIdx + '-' + mediaIdx).click();
+}
+
+function handlePhoto(input, stageIdx, mediaIdx) {
+  const file = input.files[0];
+  if (!file) return;
   
-  cronograma.etapas.push({
-    id: uid(),
-    nome: nome,
-    percentual: 0,
-    atualizado_em: new Date().toISOString(),
-    media: []
-  });
+  // Criar preview local imediatamente usando URL.createObjectURL
+  const localUrl = URL.createObjectURL(file);
   
+  // Atualizar preview
+  const photoBox = document.getElementById('photo-' + stageIdx + '-' + mediaIdx);
+  photoBox.innerHTML = '<img src="' + localUrl + '" alt="Foto"/>';
+  
+  // Salvar no estado
+  const media = cronograma.etapas[stageIdx].media[mediaIdx];
+  media.imagem_local = localUrl;
+  media.imagem_file = file;
+  media.imagem_uploaded = false;
+  
+  toast('Foto capturada! Salve para enviar.');
+  input.value = '';
+}
+
+function toggleRecording(stageIdx, mediaIdx) {
+  const key = stageIdx + '-' + mediaIdx;
+  const mic = document.getElementById('mic-' + key);
+  const timer = document.getElementById('timer-' + key);
+  
+  if (recorders[key] && recorders[key].recording) {
+    // Parar gravação
+    recorders[key].mediaRecorder.stop();
+    recorders[key].recording = false;
+    mic.classList.remove('recording');
+    mic.textContent = '🎙️';
+    clearInterval(recorders[key].timerInterval);
+  } else {
+    // Iniciar gravação
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      const mediaRecorder = new MediaRecorder(stream);
+      const chunks = [];
+      
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const localUrl = URL.createObjectURL(blob);
+        
+        // Atualizar UI
+        const audioBox = document.getElementById('media-' + stageIdx + '-' + mediaIdx).querySelector('.audio-box');
+        audioBox.innerHTML = '<audio controls src="' + localUrl + '" style="width:100%"></audio>';
+        
+        // Salvar no estado
+        const media = cronograma.etapas[stageIdx].media[mediaIdx];
+        media.audio_local = localUrl;
+        media.audio_blob = blob;
+        media.audio_uploaded = false;
+        
+        toast('Áudio gravado! Salve para enviar.');
+        delete recorders[key];
+      };
+      
+      mediaRecorder.start();
+      const startTime = Date.now();
+      
+      recorders[key] = {
+        mediaRecorder,
+        recording: true,
+        timerInterval: setInterval(() => {
+          const s = Math.floor((Date.now() - startTime) / 1000);
+          timer.textContent = String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+        }, 1000)
+      };
+      
+      mic.classList.add('recording');
+      mic.textContent = '⏹️';
+    }).catch(() => toast('Permita o microfone'));
+  }
+}
+
+function updateNote(stageIdx, mediaIdx, value) {
+  cronograma.etapas[stageIdx].media[mediaIdx].nota = value;
+}
+
+function addMedia(stageIdx) {
+  if (!cronograma.etapas[stageIdx].media) cronograma.etapas[stageIdx].media = [];
+  cronograma.etapas[stageIdx].media.push({ id: uid(), nota: '' });
   renderStages();
 }
 
-// ===== Save =====
-document.getElementById('saveBtn').addEventListener('click', async () => {
-  if (!currentOrcamento) {
-    toast('Selecione uma obra primeiro');
-    return;
+function deleteMedia(stageIdx, mediaIdx) {
+  if (confirm('Remover mídia?')) {
+    cronograma.etapas[stageIdx].media.splice(mediaIdx, 1);
+    renderStages();
   }
+}
+
+window.deleteStage = function(idx) {
+  if (confirm('Remover etapa?')) {
+    cronograma.etapas.splice(idx, 1);
+    renderStages();
+  }
+};
+
+window.editStageProgress = function(idx) {
+  openSlider('Progresso - ' + cronograma.etapas[idx].nome, cronograma.etapas[idx].percentual, v => {
+    cronograma.etapas[idx].percentual = v;
+    renderStages();
+    // Auto-calc progresso geral
+    const avg = Math.round(cronograma.etapas.reduce((a, e) => a + e.percentual, 0) / cronograma.etapas.length);
+    cronograma.progresso_geral = avg;
+    updateProgress(avg);
+  });
+};
+
+document.getElementById('addStageBtn').onclick = () => {
+  const nome = prompt('Nome da etapa:', 'Nova Etapa');
+  if (!nome) return;
+  cronograma.etapas.push({ id: uid(), nome, percentual: 0, media: [] });
+  renderStages();
+};
+
+// SALVAR - faz upload das mídias pendentes
+document.getElementById('saveBtn').onclick = async () => {
+  if (!currentOrcamento) { toast('Selecione uma obra'); return; }
   
   cronograma.projeto_nome = document.getElementById('projetoNome').value;
+  toast('Salvando...');
   
+  // Upload de mídias pendentes
+  for (const etapa of cronograma.etapas) {
+    if (!etapa.media) continue;
+    for (const media of etapa.media) {
+      // Upload foto
+      if (media.imagem_file && !media.imagem_uploaded) {
+        try {
+          const fd = new FormData();
+          fd.append('file', media.imagem_file);
+          fd.append('tipo', 'image');
+          const res = await fetch(API_BASE + '/supervisor/upload/media', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (data.url) {
+            media.imagem_url = data.url;
+            media.imagem_uploaded = true;
+            delete media.imagem_file;
+          }
+        } catch (e) { console.error('Erro upload foto', e); }
+      }
+      // Upload áudio
+      if (media.audio_blob && !media.audio_uploaded) {
+        try {
+          const fd = new FormData();
+          fd.append('file', media.audio_blob, 'audio.webm');
+          fd.append('tipo', 'audio');
+          const res = await fetch(API_BASE + '/supervisor/upload/media', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (data.url) {
+            media.audio_url = data.url;
+            media.audio_uploaded = true;
+            delete media.audio_blob;
+          }
+        } catch (e) { console.error('Erro upload audio', e); }
+      }
+      // Limpar dados locais
+      delete media.imagem_local;
+      delete media.audio_local;
+    }
+  }
+  
+  // Salvar cronograma
   try {
-    const res = await fetch(`${API_BASE}/supervisor/${supervisor.id}/cronograma`, {
+    const res = await fetch(API_BASE + '/supervisor/' + supervisor.id + '/cronograma', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -788,46 +588,29 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
         data: cronograma.data,
         projeto_nome: cronograma.projeto_nome,
         progresso_geral: cronograma.progresso_geral,
-        modo_progresso: cronograma.modo_progresso,
+        modo_progresso: 'manual',
         etapas: cronograma.etapas
       })
     });
-    
     const data = await res.json();
     cronograma.id = data.id;
-    toast('Cronograma salvo!');
-  } catch (err) {
-    toast('Erro ao salvar');
-  }
-});
+    toast('Salvo com sucesso!');
+    renderStages(); // Atualizar status dots
+  } catch (e) { toast('Erro ao salvar'); }
+};
 
-// ===== Send to Client =====
-document.getElementById('sendClientBtn').addEventListener('click', async () => {
-  if (!cronograma.id) {
-    toast('Salve o cronograma primeiro');
-    return;
-  }
-  
+document.getElementById('sendClientBtn').onclick = async () => {
+  if (!cronograma.id) { toast('Salve primeiro'); return; }
   try {
-    const res = await fetch(`${API_BASE}/supervisor/${supervisor.id}/cronograma/${cronograma.id}/enviar`, {
-      method: 'POST'
-    });
-    
+    const res = await fetch(API_BASE + '/supervisor/' + supervisor.id + '/cronograma/' + cronograma.id + '/enviar', { method: 'POST' });
     const data = await res.json();
-    
-    if (data.whatsapp_url) {
-      window.open(data.whatsapp_url, '_blank');
-      toast('Abrindo WhatsApp...');
-    } else {
-      toast('Erro: Cliente sem WhatsApp');
-    }
-  } catch (err) {
-    toast('Erro ao enviar');
-  }
-});
+    if (data.whatsapp_url) { window.open(data.whatsapp_url, '_blank'); toast('Abrindo WhatsApp...'); }
+    else { toast('Cliente sem WhatsApp'); }
+  } catch (e) { toast('Erro'); }
+};
 
-// ===== Init =====
-checkStoredLogin();
+// Init
+checkLogin();
 </script>
 </body>
 </html>
