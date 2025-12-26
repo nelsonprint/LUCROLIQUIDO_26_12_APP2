@@ -1032,7 +1032,7 @@ Foi implementada uma correção para o problema de captura de fotos e áudios na
 - Admin: `admin@lucroliquido.com` / `admin123`
 
 **URL do app supervisor:**
-- https://obrascope.preview.emergentagent.com/api/supervisor/app
+- https://vendas-mobile-3.preview.emergentagent.com/api/supervisor/app
 
 **Testar:**
 1. Login do supervisor com as credenciais acima
@@ -1107,7 +1107,7 @@ O código do `supervisor.html` foi completamente reescrito baseado no código fu
 - Supervisor: `supervisor1766725736@teste.com` / `senha123`
 
 **URL do app supervisor:**
-- https://obrascope.preview.emergentagent.com/api/supervisor/app
+- https://vendas-mobile-3.preview.emergentagent.com/api/supervisor/app
 
 **Testar:**
 1. Login do supervisor
@@ -1175,7 +1175,7 @@ O endpoint `/api/cliente/cronograma/{token}` foi corrigido para servir a página
 A página permite ao cliente visualizar o cronograma em modo somente leitura.
 
 **URL de teste:**
-- https://obrascope.preview.emergentagent.com/api/cliente/cronograma/e8e7dee1-2252-4cbb-bc65-cf4b4cb0cfb0
+- https://vendas-mobile-3.preview.emergentagent.com/api/cliente/cronograma/e8e7dee1-2252-4cbb-bc65-cf4b4cb0cfb0
 
 **Testar:**
 1. Acessar a URL acima
