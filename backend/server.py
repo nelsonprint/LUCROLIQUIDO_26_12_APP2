@@ -1706,13 +1706,24 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
         
         # === GERAR COMISSÃO DO VENDEDOR ===
         # Só gera comissão se o orçamento tiver vendedor e ainda não tiver comissão gerada
+        # IMPORTANTE: A comissão incide SOMENTE sobre SERVIÇOS, NÃO sobre materiais
         if orcamento.get('vendedor_id') and not orcamento.get('comissao_gerada'):
             vendedor = await db.funcionarios.find_one({"id": orcamento['vendedor_id']}, {"_id": 0})
             if vendedor and vendedor.get('percentual_comissao', 0) > 0:
-                # Calcular valor da comissão
-                valor_orcamento = orcamento.get('preco_praticado', 0)
+                # Calcular valor base da comissão (APENAS SERVIÇOS)
+                detalhes_itens = orcamento.get('detalhes_itens', {})
+                totals = detalhes_itens.get('totals', {})
+                valor_servicos = totals.get('services_total', 0)
+                valor_materiais = totals.get('materials_total', 0)
+                
+                # Se não tiver a estrutura nova, usar preco_praticado como fallback
+                # (para orçamentos antigos que não têm a separação)
+                if not valor_servicos and not valor_materiais:
+                    valor_servicos = orcamento.get('preco_praticado', 0)
+                    valor_materiais = 0
+                
                 percentual = vendedor.get('percentual_comissao', 0)
-                valor_comissao = valor_orcamento * (percentual / 100)
+                valor_comissao = valor_servicos * (percentual / 100)
                 
                 # Criar conta a pagar para a comissão
                 comissao_id = str(uuid.uuid4())
@@ -1728,7 +1739,7 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
                     "valor": valor_comissao,
                     "status": "PENDENTE",
                     "forma_pagamento": "PIX",
-                    "observacoes": f"Comissão de {percentual}% sobre orçamento #{orcamento.get('numero_orcamento')}. Vendedor: {vendedor.get('nome_completo')}",
+                    "observacoes": f"Comissão de {percentual}% sobre SERVIÇOS do orçamento #{orcamento.get('numero_orcamento')}. Base: R$ {valor_servicos:.2f} (Materiais excluídos: R$ {valor_materiais:.2f}). Vendedor: {vendedor.get('nome_completo')}",
                     # Additional fields for commission tracking
                     "tipo_comissao": "vendedor",
                     "vendedor_id": vendedor.get('id'),
@@ -1736,7 +1747,9 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
                     "orcamento_id": orcamento_id,
                     "orcamento_numero": orcamento.get('numero_orcamento'),
                     "percentual_comissao": percentual,
-                    "valor_base": valor_orcamento,
+                    "valor_base_servicos": valor_servicos,  # Base de cálculo (apenas serviços)
+                    "valor_materiais_excluidos": valor_materiais,  # Materiais que NÃO entraram na comissão
+                    "valor_total_orcamento": orcamento.get('preco_praticado', 0),  # Valor total para referência
                     "created_at": datetime.now(timezone.utc).isoformat(),
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }
@@ -1745,7 +1758,7 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
                 update_fields['comissao_gerada'] = True
                 update_fields['comissao_id'] = comissao_id
                 
-                logger.info(f"Comissão gerada: R$ {valor_comissao:.2f} para vendedor {vendedor.get('nome_completo')}")
+                logger.info(f"Comissão gerada: R$ {valor_comissao:.2f} para vendedor {vendedor.get('nome_completo')} (base: R$ {valor_servicos:.2f} em serviços)")
         
     elif status_data.status == "NAO_APROVADO":
         update_fields['nao_aprovado_em'] = datetime.now(timezone.utc).isoformat()
