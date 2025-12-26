@@ -6521,9 +6521,9 @@ async def cliente_listar_cronogramas(token: str):
     }
 
 
-@api_router.get("/cliente/cronograma/{token}/{data}")
+@api_router.get("/cliente/cronograma/{token}/{data}/data")
 async def cliente_ver_cronograma_dia(token: str, data: str):
-    """Página do cliente - ver cronograma de um dia específico"""
+    """API - ver cronograma de um dia específico"""
     # Buscar token
     token_doc = await db.cliente_cronograma_tokens.find_one({"token": token}, {"_id": 0})
     if not token_doc:
