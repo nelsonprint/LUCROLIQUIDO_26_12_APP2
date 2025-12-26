@@ -87,9 +87,9 @@ const NotificacoesPanel = ({ companyId, userId }) => {
         )}
       </Button>
 
-      {/* Painel de notificações */}
+      {/* Painel de notificações - Posicionado no canto superior direito */}
       {showPanel && (
-        <div className="absolute right-0 top-12 w-96 max-h-[500px] overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl z-50">
+        <div className="fixed right-4 top-16 w-96 max-h-[500px] overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl z-[9999]">
           <div className="sticky top-0 bg-zinc-900 p-4 border-b border-zinc-700 flex items-center justify-between">
             <h3 className="font-semibold text-white flex items-center gap-2">
               <Bell className="w-4 h-4" />
