@@ -708,6 +708,50 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                     </div>
                   </div>
 
+                  {/* Vendedor Responsável */}
+                  <div className="p-4 bg-orange-950/30 border border-orange-800 rounded-lg">
+                    <Label className="text-orange-400 flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Vendedor Responsável
+                    </Label>
+                    <p className="text-xs text-zinc-500 mb-2">
+                      Selecione o vendedor responsável por este orçamento (comissão será gerada automaticamente).
+                    </p>
+                    <Select 
+                      value={orcamentoData.vendedor_id} 
+                      onValueChange={(vendedorId) => {
+                        const vendedor = vendedores.find(v => v.id === vendedorId);
+                        setOrcamentoData({
+                          ...orcamentoData, 
+                          vendedor_id: vendedorId,
+                          vendedor_nome: vendedor?.nome_completo || ''
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="bg-zinc-800 border-orange-700">
+                        <SelectValue placeholder="Selecione um vendedor..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">
+                          <span className="text-zinc-500">Nenhum vendedor</span>
+                        </SelectItem>
+                        {vendedores.map((vendedor) => (
+                          <SelectItem key={vendedor.id} value={vendedor.id}>
+                            {vendedor.nome_completo}
+                            {vendedor.percentual_comissao > 0 && (
+                              <span className="text-orange-400 ml-2">({vendedor.percentual_comissao}%)</span>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {vendedores.length === 0 && (
+                      <p className="text-xs text-yellow-500 mt-2">
+                        ⚠️ Nenhum vendedor cadastrado. Cadastre funcionários com categoria "Vendedor".
+                      </p>
+                    )}
+                  </div>
+
                   <div className="flex justify-end">
                     <Button onClick={() => setActiveTab('itens')} className="bg-purple-600 hover:bg-purple-700">
                       Próximo: Serviços
