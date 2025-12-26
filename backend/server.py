@@ -6434,8 +6434,8 @@ async def enviar_cronograma_cliente(supervisor_id: str, cronograma_id: str):
     cliente_whatsapp = cronograma.get("cliente_whatsapp", "")
     cliente_whatsapp_numeros = ''.join(filter(str.isdigit, cliente_whatsapp))
     
-    # URL da página do cliente
-    base_url = os.environ.get("REACT_APP_BACKEND_URL", "")
+    # URL da página do cliente - usar BACKEND_URL do ambiente
+    base_url = os.environ.get("BACKEND_URL", os.environ.get("REACT_APP_BACKEND_URL", ""))
     cliente_url = f"{base_url}/api/cliente/cronograma/{token_doc['token']}"
     
     data_formatada = datetime.strptime(cronograma["data"], "%Y-%m-%d").strftime("%d/%m/%Y")
