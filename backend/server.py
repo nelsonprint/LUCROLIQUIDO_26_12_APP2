@@ -738,6 +738,69 @@ class CategoriaFuncionario(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+# ========== MODELS: CRONOGRAMA DE OBRA (SUPERVISOR) ==========
+
+class CronogramaEtapaMedia(BaseModel):
+    """Mídia de uma etapa do cronograma"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    imagem_url: Optional[str] = None  # URL da imagem armazenada
+    audio_url: Optional[str] = None   # URL do áudio armazenado
+    nota: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class CronogramaEtapa(BaseModel):
+    """Etapa do cronograma"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    percentual: int = 0
+    atualizado_em: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    media: List[CronogramaEtapaMedia] = []
+
+
+class CronogramaDiario(BaseModel):
+    """Cronograma de um dia específico"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    orcamento_id: str
+    empresa_id: str
+    supervisor_id: str
+    supervisor_nome: str
+    data: str  # formato YYYY-MM-DD
+    projeto_nome: str
+    cliente_nome: str
+    cliente_whatsapp: Optional[str] = None
+    progresso_geral: int = 0
+    modo_progresso: str = "auto"  # auto ou manual
+    etapas: List[CronogramaEtapa] = []
+    enviado_cliente: bool = False
+    enviado_em: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class CronogramaCreate(BaseModel):
+    """Dados para criar/atualizar cronograma"""
+    orcamento_id: str
+    data: str
+    projeto_nome: str
+    progresso_geral: int = 0
+    modo_progresso: str = "auto"
+    etapas: List[dict] = []
+
+
+class ClienteCronogramaToken(BaseModel):
+    """Token de acesso do cliente ao cronograma"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    orcamento_id: str
+    empresa_id: str
+    cliente_nome: str
+    cliente_whatsapp: str
+    token: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
 # ========== STARTUP: CRIAR PRIMEIRO ADMIN ==========
 
 @app.on_event("startup")
