@@ -206,10 +206,20 @@ function App() {
           }
         />
         <Route
-          path="/clientes"
+219|          path="/clientes"
           element={
             user ? (
               <Clientes user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="/funcionarios"
+          element={
+            user ? (
+              <Funcionarios user={user} onLogout={handleLogout} />
             ) : (
               <Navigate to="/" replace />
             )
