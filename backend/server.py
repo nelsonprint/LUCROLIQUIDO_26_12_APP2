@@ -6191,6 +6191,28 @@ async def listar_funcionarios(empresa_id: str, status: Optional[str] = None, cat
     return funcionarios
 
 
+@api_router.get("/vendedores/{empresa_id}")
+async def listar_vendedores(empresa_id: str):
+    """Listar vendedores da empresa (funcionários com categoria 'Vendedor')"""
+    # Primeiro buscar a categoria "Vendedor"
+    categoria_vendedor = await db.categorias_funcionario.find_one({
+        "empresa_id": empresa_id,
+        "nome": {"$regex": "^vendedor$", "$options": "i"}
+    }, {"_id": 0})
+    
+    if not categoria_vendedor:
+        return []
+    
+    # Buscar funcionários com essa categoria e status Ativo
+    vendedores = await db.funcionarios.find({
+        "empresa_id": empresa_id,
+        "categoria_id": categoria_vendedor['id'],
+        "status": "Ativo"
+    }, {"_id": 0}).sort("nome_completo", 1).to_list(1000)
+    
+    return vendedores
+
+
 @api_router.get("/funcionario/{funcionario_id}")
 async def buscar_funcionario(funcionario_id: str):
     """Buscar funcionário por ID"""
