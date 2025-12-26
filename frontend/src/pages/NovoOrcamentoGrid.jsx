@@ -738,7 +738,7 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                         <SelectValue placeholder="Selecione um vendedor..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">
+                        <SelectItem value="none">
                           <span className="text-zinc-500">Nenhum vendedor</span>
                         </SelectItem>
                         {vendedores.map((vendedor) => (
@@ -753,7 +753,7 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                     </Select>
                     {vendedores.length === 0 && (
                       <p className="text-xs text-yellow-500 mt-2">
-                        ⚠️ Nenhum vendedor cadastrado. Cadastre funcionários com categoria "Vendedor".
+                        ⚠️ Nenhum vendedor cadastrado. Cadastre funcionários com categoria Vendedor.
                       </p>
                     )}
                   </div>
