@@ -872,12 +872,52 @@ class WhatsAppBudgetFlowTester:
             return False
 
 def main():
-    """Main function"""
-    tester = WhatsAppBudgetFlowTester()
-    success = tester.run_all_tests()
+    """Main function - Run both WhatsApp and Funcionários tests"""
+    print("🚀 Starting Comprehensive Lucro Líquido System Tests")
+    print("=" * 80)
+    
+    # Initialize WhatsApp Budget Flow Tester
+    whatsapp_tester = WhatsAppBudgetFlowTester()
+    
+    # Run WhatsApp tests first
+    print("\n🔥 PHASE 1: WhatsApp Budget Flow Tests")
+    print("=" * 50)
+    whatsapp_success = whatsapp_tester.run_all_tests()
+    
+    # Run Funcionários tests if we have login data
+    funcionarios_success = False
+    if whatsapp_tester.user_data:
+        print("\n\n🔥 PHASE 2: Funcionários Module Tests")
+        print("=" * 50)
+        funcionarios_tester = FuncionariosTester(
+            whatsapp_tester.session, 
+            whatsapp_tester.user_data, 
+            whatsapp_tester.company_id
+        )
+        funcionarios_success = funcionarios_tester.run_all_tests()
+    else:
+        print("\n❌ Skipping Funcionários tests - no login data available")
+    
+    # Final summary
+    print("\n" + "=" * 80)
+    print("🏁 COMPREHENSIVE TEST SUMMARY")
+    print("=" * 80)
+    
+    whatsapp_status = "✅ PASSED" if whatsapp_success else "❌ FAILED"
+    funcionarios_status = "✅ PASSED" if funcionarios_success else "❌ FAILED"
+    
+    print(f"WhatsApp Budget Flow: {whatsapp_status}")
+    print(f"Funcionários Module: {funcionarios_status}")
+    
+    overall_success = whatsapp_success and funcionarios_success
+    
+    if overall_success:
+        print("\n🎉 ALL SYSTEM TESTS PASSED! Lucro Líquido system working correctly.")
+    else:
+        print("\n⚠️ SOME TESTS FAILED! Check logs above for details.")
     
     # Exit code
-    sys.exit(0 if success else 1)
+    sys.exit(0 if overall_success else 1)
 
 if __name__ == "__main__":
     main()
