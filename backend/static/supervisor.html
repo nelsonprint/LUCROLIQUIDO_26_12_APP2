@@ -772,7 +772,13 @@ function createMediaElement(etapa, media, mIdx) {
             if (!res.ok) throw new Error('Erro no servidor');
             
             const data = await res.json();
-            media.audio_url = data.url;
+            // Garantir URL completa
+            let audioUrl = data.url;
+            if (audioUrl && !audioUrl.startsWith('http')) {
+              audioUrl = window.location.origin + audioUrl;
+            }
+            media.audio_url = audioUrl;
+            console.log('Áudio URL:', audioUrl);
             renderStages();
             toast('Áudio salvo!');
           } catch (err) {
