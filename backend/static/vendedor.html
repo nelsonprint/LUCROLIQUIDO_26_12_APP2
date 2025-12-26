@@ -507,9 +507,38 @@ const maskCep = v => v.replace(/\D/g,'').replace(/(\d{5})(\d)/,'$1-$2').slice(0,
 
 // ===== PWA Install =====
 let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; document.getElementById('installBanner').classList.add('show'); });
-document.getElementById('installBtn').onclick = async () => { if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; document.getElementById('installBanner').classList.remove('show'); } };
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+  document.getElementById('installBtnManual').textContent = '📲 Instalar App Agora';
+  document.getElementById('installInstructions').style.display = 'none';
+});
+document.getElementById('installBtn').onclick = async () => {
+  if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; }
+  document.getElementById('installBanner').classList.remove('show');
+};
 document.getElementById('closeBanner').onclick = () => document.getElementById('installBanner').classList.remove('show');
+
+// Botão manual de instalação
+document.getElementById('installBtnManual').onclick = async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    if (result.outcome === 'accepted') {
+      document.getElementById('installSection').style.display = 'none';
+    }
+  } else {
+    const instructions = document.getElementById('installInstructions');
+    instructions.style.display = instructions.style.display === 'none' ? 'block' : 'none';
+  }
+};
+
+// Detectar se já está instalado como PWA
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+  document.getElementById('installSection').style.display = 'none';
+}
 
 // ===== Login =====
 document.getElementById('loginBtn').onclick = async () => {
