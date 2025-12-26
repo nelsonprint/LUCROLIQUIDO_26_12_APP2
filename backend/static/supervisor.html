@@ -10,7 +10,7 @@
 <link rel="manifest" href="/api/supervisor/manifest.json"/>
 <title>Supervisor - Cronograma de Obra</title>
 <style>
-:root{--neon:#FF8C00;--bg:#0f0f10;--card:#16171a;--muted:#9aa0a6;--text:#e8eaed;--border:#2a2d33;--danger:#ff5964;--success:#22c55e}
+:root{--neon:#FF8C00;--neon-rgb:255,140,0;--bg:#0f0f10;--card:#16171a;--muted:#9aa0a6;--text:#e8eaed;--border:#2a2d33;--danger:#ff5964;--success:#22c55e}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
 body{padding-bottom:80px}
@@ -61,21 +61,19 @@ body{padding-bottom:80px}
 .progress .pct-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--neon)}
 
 .media-card{background:#1a1b1f;border-radius:8px;padding:12px;margin-top:10px}
-.photo-box{position:relative;min-height:150px;border-radius:8px;background:#2a2d33;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
-.photo-box img{max-width:100%;max-height:300px;object-fit:contain}
-.photo-hint{color:var(--muted);text-align:center;padding:20px}
+.media-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.photo-box{position:relative;min-height:180px;border-radius:8px;background:#cbd5e1;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+.photo-box img{width:100%;height:100%;object-fit:cover}
+.photo-hint{color:#111;text-align:center;padding:20px}
 
-.audio-box{margin-top:10px;padding:10px;background:#0e0f12;border-radius:8px}
-.audio-box audio{width:100%;height:40px}
-.rec-controls{display:flex;align-items:center;gap:10px}
-.rec-controls .timer{font-family:monospace;font-size:1.1rem;min-width:50px}
-.mic-btn{width:48px;height:48px;border-radius:50%;border:2px solid var(--neon);background:transparent;color:var(--neon);font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.mic-btn.recording{background:var(--danger);border-color:var(--danger);color:#fff;animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.recbar{display:flex;align-items:center;justify-content:space-between;background:#1c1e24;border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:10px}
+.timer{font-weight:900;color:var(--text);font-family:monospace;font-size:1.1rem}
+.mic-btn{width:48px;height:48px;border-radius:8px;border:1px solid var(--border);background:#0e0f12;color:var(--text);font-size:1.5rem;cursor:pointer}
+.audio-player{width:100%;margin-top:10px;display:none}
 
 .note{width:100%;padding:10px;border:1px dashed var(--neon);background:#0e0f12;color:var(--text);border-radius:8px;resize:vertical;min-height:60px;margin-top:10px}
 
-.icon-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
+.icon-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .icon-btn:hover{border-color:var(--danger);color:var(--danger)}
 
 .action-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
@@ -90,11 +88,6 @@ body{padding-bottom:80px}
 
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:8px;z-index:10001;display:none}
 .toast.show{display:block}
-
-.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
-.status-dot.pending{background:#fbbf24}
-.status-dot.uploaded{background:#22c55e}
-.status-dot.error{background:#ef4444}
 </style>
 </head>
 <body>
@@ -182,14 +175,119 @@ body{padding-bottom:80px}
 <div id="toast" class="toast"></div>
 
 <script>
+/* ===== Config e Estado ===== */
 const API_BASE = window.location.origin + '/api';
+const IDB_NAME = 'supervisorMediaDB';
+const IDB_VERSION = 1;
+const IDB_STORE = 'blobs';
+
 let deferredPrompt = null;
 let supervisor = null;
 let empresa = null;
 let currentOrcamento = null;
 let cronograma = { projeto_nome: '', data: new Date().toISOString().split('T')[0], progresso_geral: 0, etapas: [] };
 
-// PWA Install
+/* ===== IndexedDB para Blobs ===== */
+let idb = null;
+
+function openIDB() {
+  if (idb) return Promise.resolve(idb);
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE, { keyPath: 'key' });
+      }
+    };
+    req.onsuccess = () => { idb = req.result; resolve(idb); };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbKey(mediaId, kind) { return mediaId + ':' + kind; }
+
+async function putBlob(mediaId, kind, blob) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+    tx.objectStore(IDB_STORE).put({ key: idbKey(mediaId, kind), blob });
+  });
+}
+
+async function getBlob(mediaId, kind) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    tx.onerror = () => reject(tx.error);
+    const req = tx.objectStore(IDB_STORE).get(idbKey(mediaId, kind));
+    req.onsuccess = () => resolve(req.result?.blob ?? null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function deleteBlob(mediaId, kind) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+    tx.objectStore(IDB_STORE).delete(idbKey(mediaId, kind));
+  });
+}
+
+async function deleteAllMediaFor(mediaId) {
+  await Promise.allSettled([deleteBlob(mediaId, 'image'), deleteBlob(mediaId, 'audio')]);
+}
+
+/* ===== Utils ===== */
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ===== Compressão de imagem ===== */
+async function compressImageToBlob(file, { maxSide = 1280, quality = 0.75, mime = 'image/jpeg' } = {}) {
+  const img = document.createElement('img');
+  const url = URL.createObjectURL(file);
+
+  try {
+    await new Promise((res, rej) => {
+      img.onload = () => res();
+      img.onerror = () => rej(new Error('Falha ao carregar imagem'));
+      img.src = url;
+    });
+
+    let { width: w, height: h } = img;
+    if (!w || !h) throw new Error('Dimensões inválidas');
+
+    const scale = Math.min(1, maxSide / Math.max(w, h));
+    const nw = Math.max(1, Math.round(w * scale));
+    const nh = Math.max(1, Math.round(h * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = nw;
+    canvas.height = nh;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.drawImage(img, 0, 0, nw, nh);
+
+    const blob = await new Promise((res) => {
+      canvas.toBlob((b) => res(b), mime, quality);
+    });
+    if (!blob) throw new Error('Falha ao comprimir');
+    return blob;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/* ===== PWA Install ===== */
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
@@ -201,16 +299,7 @@ document.getElementById('installBtn').onclick = async () => {
 };
 document.getElementById('closeBanner').onclick = () => document.getElementById('installBanner').classList.remove('show');
 
-// Utils
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// Login
+/* ===== Login ===== */
 document.getElementById('loginBtn').onclick = async () => {
   const email = document.getElementById('loginEmail').value;
   const senha = document.getElementById('loginSenha').value;
@@ -280,7 +369,6 @@ document.getElementById('selectObra').onchange = async function() {
   currentOrcamento = JSON.parse(opt.dataset.orc);
   cronograma = { projeto_nome: currentOrcamento.cliente_nome || '', data: new Date().toISOString().split('T')[0], progresso_geral: 0, etapas: [] };
   
-  // Carregar cronograma existente
   try {
     const res = await fetch(API_BASE + '/supervisor/' + supervisor.id + '/cronograma/' + currentOrcamento.id + '/' + cronograma.data);
     if (res.ok) {
@@ -335,281 +423,312 @@ function openSlider(title, initial, onOk) {
   document.getElementById('sheetOk').onclick = () => { onOk(parseInt(range.value)); sheet.classList.remove('show'); };
 }
 
+/* ===== Render Etapas ===== */
 function renderStages() {
   const container = document.getElementById('stagesContainer');
-  
-  // Limpar URLs de blob antigas para evitar vazamento de memória
-  cleanupBlobUrls();
-  
   container.innerHTML = '';
   if (cronograma.etapas.length === 0) {
     container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px">Nenhuma etapa</p>';
     return;
   }
-  cronograma.etapas.forEach((etapa, idx) => container.appendChild(createStage(etapa, idx)));
+  cronograma.etapas.forEach((etapa, idx) => container.appendChild(createStageElement(etapa, idx)));
 }
 
-function createStage(etapa, idx) {
+function createStageElement(etapa, stageIdx) {
   const div = document.createElement('div');
   div.className = 'stage';
-  div.innerHTML = `
-    <div class="stage-head">
-      <span class="stage-name">${etapa.nome}</span>
-      <button class="icon-btn" onclick="deleteStage(${idx})">🗑️</button>
-    </div>
-    <div class="progress" onclick="editStageProgress(${idx})">
-      <div class="fill" style="width:${etapa.percentual}%"></div>
-      <div class="pct-label">${etapa.percentual}%</div>
-    </div>
-    <div id="media-${idx}"></div>
-    <button class="btn" style="width:100%;margin-top:8px" onclick="addMedia(${idx})">📷🎙️ Adicionar Mídia</button>
-  `;
   
-  const mediaContainer = div.querySelector('#media-' + idx);
-  if (etapa.media && etapa.media.length > 0) {
-    etapa.media.forEach((m, mIdx) => mediaContainer.appendChild(createMedia(idx, m, mIdx)));
-  }
+  // Header
+  const head = document.createElement('div');
+  head.className = 'stage-head';
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'stage-name';
+  nameSpan.textContent = etapa.nome;
+  const delBtn = document.createElement('button');
+  delBtn.className = 'icon-btn';
+  delBtn.textContent = '🗑️';
+  delBtn.onclick = () => {
+    if (confirm('Remover etapa?')) {
+      cronograma.etapas.splice(stageIdx, 1);
+      renderStages();
+    }
+  };
+  head.append(nameSpan, delBtn);
   
-  return div;
-}
-
-function createMedia(stageIdx, media, mediaIdx) {
-  const div = document.createElement('div');
-  div.className = 'media-card';
-  div.id = 'media-' + stageIdx + '-' + mediaIdx;
-  
-  // Status do upload
-  const imgStatus = media.imagem_uploaded ? 'uploaded' : (media.imagem_local ? 'pending' : '');
-  const audStatus = media.audio_uploaded ? 'uploaded' : (media.audio_local ? 'pending' : '');
-  
-  div.innerHTML = `
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-      <span style="color:var(--muted);font-size:.85rem">
-        Mídia ${mediaIdx + 1}
-        ${imgStatus ? '<span class="status-dot ' + imgStatus + '" title="Foto: ' + imgStatus + '"></span>' : ''}
-        ${audStatus ? '<span class="status-dot ' + audStatus + '" title="Áudio: ' + audStatus + '"></span>' : ''}
-      </span>
-      <button class="icon-btn" onclick="deleteMedia(${stageIdx},${mediaIdx})">🗑️</button>
-    </div>
-    <div class="photo-box" id="photo-${stageIdx}-${mediaIdx}" onclick="capturePhoto(${stageIdx},${mediaIdx})">
-      ${media.imagem_local || media.imagem_url 
-        ? '<img src="' + (media.imagem_local || media.imagem_url) + '" alt="Foto"/>' 
-        : '<div class="photo-hint">📷 Toque para foto</div>'}
-    </div>
-    <input type="file" accept="image/*" capture="environment" style="display:none" id="photo-input-${stageIdx}-${mediaIdx}" onchange="handlePhoto(this,${stageIdx},${mediaIdx})"/>
-    <div class="audio-box">
-      ${media.audio_local || media.audio_url 
-        ? '<audio controls src="' + (media.audio_local || media.audio_url) + '" style="width:100%"></audio>'
-        : '<div class="rec-controls"><span class="timer" id="timer-' + stageIdx + '-' + mediaIdx + '">00:00</span><button class="mic-btn" id="mic-' + stageIdx + '-' + mediaIdx + '" onclick="toggleRecording(' + stageIdx + ',' + mediaIdx + ')">🎙️</button></div>'}
-    </div>
-    <textarea class="note" placeholder="Nota..." onchange="updateNote(${stageIdx},${mediaIdx},this.value)">${media.nota || ''}</textarea>
-  `;
-  
-  return div;
-}
-
-// Estado de gravação
-const recorders = {};
-const blobUrls = []; // Para limpar URLs de blob e evitar vazamento de memória
-
-function cleanupBlobUrls() {
-  blobUrls.forEach(url => { try { URL.revokeObjectURL(url); } catch(e) {} });
-  blobUrls.length = 0;
-}
-
-function capturePhoto(stageIdx, mediaIdx) {
-  document.getElementById('photo-input-' + stageIdx + '-' + mediaIdx).click();
-}
-
-// Comprimir imagem para evitar erro de memória
-function compressImage(file, maxWidth, quality) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        // Calcular dimensões mantendo proporção
-        let width = img.width;
-        let height = img.height;
-        if (width > maxWidth) {
-          height = Math.round(height * maxWidth / width);
-          width = maxWidth;
-        }
-        
-        // Criar canvas e comprimir
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Converter para blob comprimido
-        canvas.toBlob(function(blob) {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Falha ao comprimir'));
-          }
-          // Limpar memória
-          canvas.width = 0;
-          canvas.height = 0;
-        }, 'image/jpeg', quality);
-        
-        // Limpar imagem da memória
-        img.src = '';
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function handlePhoto(input, stageIdx, mediaIdx) {
-  const file = input.files[0];
-  if (!file) return;
-  
-  const photoBox = document.getElementById('photo-' + stageIdx + '-' + mediaIdx);
-  photoBox.innerHTML = '<div class="photo-hint">⏳ Processando...</div>';
-  
-  try {
-    // Comprimir imagem para max 800px de largura e 60% qualidade
-    const compressedBlob = await compressImage(file, 800, 0.6);
-    
-    // Criar URL do blob comprimido
-    const localUrl = URL.createObjectURL(compressedBlob);
-    blobUrls.push(localUrl);
-    
-    // Atualizar preview
-    photoBox.innerHTML = '<img src="' + localUrl + '" alt="Foto" style="max-width:100%;max-height:250px;object-fit:contain"/>';
-    
-    // Salvar no estado - usando o blob comprimido
-    const media = cronograma.etapas[stageIdx].media[mediaIdx];
-    media.imagem_local = localUrl;
-    media.imagem_file = compressedBlob; // Blob comprimido para upload
-    media.imagem_uploaded = false;
-    
-    toast('Foto capturada!');
-  } catch (err) {
-    console.error('Erro ao processar foto:', err);
-    photoBox.innerHTML = '<div class="photo-hint">❌ Erro. Toque para tentar novamente.</div>';
-    toast('Erro ao processar foto');
-  }
-  
-  // Limpar input
-  input.value = '';
-}
-
-function toggleRecording(stageIdx, mediaIdx) {
-  const key = stageIdx + '-' + mediaIdx;
-  const mic = document.getElementById('mic-' + key);
-  const timer = document.getElementById('timer-' + key);
-  
-  if (recorders[key] && recorders[key].recording) {
-    // Parar gravação
-    recorders[key].mediaRecorder.stop();
-    recorders[key].recording = false;
-    mic.classList.remove('recording');
-    mic.textContent = '🎙️';
-    clearInterval(recorders[key].timerInterval);
-  } else {
-    // Iniciar gravação
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-      // Usar opções de baixa qualidade para economizar memória
-      const options = { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 64000 };
-      let mediaRecorder;
-      try {
-        mediaRecorder = new MediaRecorder(stream, options);
-      } catch (e) {
-        // Fallback se codec não suportado
-        mediaRecorder = new MediaRecorder(stream);
-      }
-      const chunks = [];
-      
-      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-      
-      mediaRecorder.onstop = () => {
-        stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-        const localUrl = URL.createObjectURL(blob);
-        blobUrls.push(localUrl);
-        
-        // Atualizar UI com player funcional
-        const mediaCard = document.getElementById('media-' + stageIdx + '-' + mediaIdx);
-        if (mediaCard) {
-          const audioBox = mediaCard.querySelector('.audio-box');
-          if (audioBox) {
-            audioBox.innerHTML = '<audio controls preload="auto" style="width:100%"><source src="' + localUrl + '" type="' + (mediaRecorder.mimeType || 'audio/webm') + '"></audio>';
-          }
-        }
-        
-        // Salvar no estado
-        const media = cronograma.etapas[stageIdx].media[mediaIdx];
-        media.audio_local = localUrl;
-        media.audio_blob = blob;
-        media.audio_uploaded = false;
-        
-        toast('Áudio gravado!');
-        delete recorders[key];
-      };
-      
-      mediaRecorder.start(1000); // Gravar em chunks de 1 segundo
-      const startTime = Date.now();
-      
-      recorders[key] = {
-        mediaRecorder,
-        recording: true,
-        timerInterval: setInterval(() => {
-          const s = Math.floor((Date.now() - startTime) / 1000);
-          timer.textContent = String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
-        }, 1000)
-      };
-      
-      mic.classList.add('recording');
-      mic.textContent = '⏹️';
-    }).catch(err => {
-      console.error('Erro microfone:', err);
-      toast('Permita o microfone');
+  // Progress bar
+  const progress = document.createElement('div');
+  progress.className = 'progress';
+  const fill = document.createElement('div');
+  fill.className = 'fill';
+  fill.style.width = etapa.percentual + '%';
+  const label = document.createElement('div');
+  label.className = 'pct-label';
+  label.textContent = etapa.percentual + '%';
+  progress.append(fill, label);
+  progress.onclick = () => {
+    openSlider('Progresso - ' + etapa.nome, etapa.percentual, v => {
+      etapa.percentual = v;
+      fill.style.width = v + '%';
+      label.textContent = v + '%';
+      const avg = Math.round(cronograma.etapas.reduce((a, e) => a + e.percentual, 0) / cronograma.etapas.length);
+      cronograma.progresso_geral = avg;
+      updateProgress(avg);
     });
+  };
+  
+  // Media container
+  const mediaContainer = document.createElement('div');
+  mediaContainer.id = 'media-container-' + stageIdx;
+  
+  if (etapa.media && etapa.media.length > 0) {
+    etapa.media.forEach((m, mIdx) => mediaContainer.appendChild(createMediaElement(etapa, stageIdx, m, mIdx)));
   }
+  
+  // Add media button
+  const addMediaBtn = document.createElement('button');
+  addMediaBtn.className = 'btn';
+  addMediaBtn.style.cssText = 'width:100%;margin-top:8px';
+  addMediaBtn.textContent = '📷🎙️ Adicionar Mídia';
+  addMediaBtn.onclick = () => {
+    if (!etapa.media) etapa.media = [];
+    const newMedia = { id: uid(), hasImage: false, hasAudio: false, nota: '' };
+    etapa.media.push(newMedia);
+    mediaContainer.appendChild(createMediaElement(etapa, stageIdx, newMedia, etapa.media.length - 1));
+  };
+  
+  div.append(head, progress, mediaContainer, addMediaBtn);
+  return div;
 }
 
-function updateNote(stageIdx, mediaIdx, value) {
-  cronograma.etapas[stageIdx].media[mediaIdx].nota = value;
-}
-
-function addMedia(stageIdx) {
-  if (!cronograma.etapas[stageIdx].media) cronograma.etapas[stageIdx].media = [];
-  cronograma.etapas[stageIdx].media.push({ id: uid(), nota: '' });
-  renderStages();
-}
-
-function deleteMedia(stageIdx, mediaIdx) {
-  if (confirm('Remover mídia?')) {
-    cronograma.etapas[stageIdx].media.splice(mediaIdx, 1);
-    renderStages();
+/* ===== Criar elemento de mídia (baseado no seu código funcional) ===== */
+function createMediaElement(etapa, stageIdx, item, mediaIdx) {
+  const card = document.createElement('div');
+  card.className = 'media-card';
+  card.id = 'media-card-' + item.id;
+  
+  // Header
+  const head = document.createElement('div');
+  head.className = 'media-head';
+  const title = document.createElement('span');
+  title.className = 'label';
+  title.textContent = 'Mídia ' + (mediaIdx + 1);
+  const delBtn = document.createElement('button');
+  delBtn.className = 'icon-btn';
+  delBtn.textContent = '🗑️';
+  head.append(title, delBtn);
+  
+  // Photo box
+  const photoBox = document.createElement('div');
+  photoBox.className = 'photo-box';
+  const img = document.createElement('img');
+  img.style.display = 'none';
+  const hint = document.createElement('div');
+  hint.className = 'photo-hint';
+  hint.innerHTML = '📷<br>Toque para tirar foto';
+  photoBox.append(img, hint);
+  
+  let imgObjectUrl = null;
+  
+  function setImgFromBlob(blob) {
+    if (imgObjectUrl) URL.revokeObjectURL(imgObjectUrl);
+    imgObjectUrl = URL.createObjectURL(blob);
+    img.src = imgObjectUrl;
+    img.style.display = 'block';
+    hint.style.display = 'none';
   }
+  
+  function setHint() {
+    if (imgObjectUrl) URL.revokeObjectURL(imgObjectUrl);
+    imgObjectUrl = null;
+    img.style.display = 'none';
+    hint.style.display = 'block';
+  }
+  
+  // File input for photo
+  const photoInput = document.createElement('input');
+  photoInput.type = 'file';
+  photoInput.accept = 'image/*';
+  photoInput.capture = 'environment';
+  photoInput.style.display = 'none';
+  
+  photoInput.onchange = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    
+    hint.innerHTML = '⏳<br>Processando...';
+    
+    try {
+      const blob = await compressImageToBlob(f, { maxSide: 1280, quality: 0.75, mime: 'image/jpeg' });
+      await putBlob(item.id, 'image', blob);
+      item.hasImage = true;
+      setImgFromBlob(blob);
+      toast('Foto salva!');
+    } catch (err) {
+      console.error(err);
+      alert('Falha ao processar a foto. Tente novamente.');
+      hint.innerHTML = '📷<br>Toque para tirar foto';
+    } finally {
+      photoInput.value = '';
+    }
+  };
+  
+  photoBox.onclick = () => photoInput.click();
+  
+  // Load existing image from IndexedDB
+  (async () => {
+    if (item.hasImage) {
+      try {
+        const blob = await getBlob(item.id, 'image');
+        if (blob) setImgFromBlob(blob);
+        else { item.hasImage = false; setHint(); }
+      } catch (e) {
+        console.error(e);
+        setHint();
+      }
+    } else {
+      setHint();
+    }
+  })();
+  
+  // Audio recorder
+  const recbar = document.createElement('div');
+  recbar.className = 'recbar';
+  const timer = document.createElement('div');
+  timer.className = 'timer';
+  timer.textContent = 'REC';
+  const micBtn = document.createElement('button');
+  micBtn.type = 'button';
+  micBtn.className = 'mic-btn';
+  micBtn.textContent = '🎙️';
+  recbar.append(timer, micBtn);
+  
+  const player = document.createElement('audio');
+  player.className = 'audio-player';
+  player.controls = true;
+  player.style.display = 'none';
+  
+  let audioObjectUrl = null;
+  
+  function setAudioFromBlob(blob) {
+    if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
+    audioObjectUrl = URL.createObjectURL(blob);
+    player.src = audioObjectUrl;
+    player.style.display = 'block';
+  }
+  
+  function clearAudio() {
+    if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
+    audioObjectUrl = null;
+    player.removeAttribute('src');
+    player.style.display = 'none';
+  }
+  
+  // Load existing audio from IndexedDB
+  (async () => {
+    if (item.hasAudio) {
+      try {
+        const blob = await getBlob(item.id, 'audio');
+        if (blob) setAudioFromBlob(blob);
+        else { item.hasAudio = false; clearAudio(); }
+      } catch (e) {
+        console.error(e);
+        clearAudio();
+      }
+    }
+  })();
+  
+  // Recording state
+  let mediaStream = null, recorder = null, chunks = [], recording = false, startTime = 0, tickInterval = null;
+  
+  const preferred = (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus'))
+    ? 'audio/webm;codecs=opus'
+    : ((window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/mp4')) ? 'audio/mp4' : '');
+  
+  async function getMic() {
+    if (mediaStream) return mediaStream;
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    return mediaStream;
+  }
+  
+  function formatTime(s) {
+    s = Math.floor(s);
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
+  
+  async function startRecording() {
+    if (!item.hasImage) { alert('Tire a foto antes de gravar.'); return; }
+    await getMic();
+    
+    recorder = new MediaRecorder(mediaStream, preferred ? { mimeType: preferred } : {});
+    chunks = [];
+    recording = true;
+    startTime = Date.now();
+    timer.textContent = '00:00';
+    tickInterval = setInterval(() => { timer.textContent = formatTime((Date.now() - startTime) / 1000); }, 500);
+    
+    recorder.ondataavailable = (e) => { if (e.data?.size > 0) chunks.push(e.data); };
+    
+    recorder.onstop = async () => {
+      clearInterval(tickInterval);
+      recording = false;
+      
+      try {
+        const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+        await putBlob(item.id, 'audio', blob);
+        item.hasAudio = true;
+        setAudioFromBlob(blob);
+        timer.textContent = 'REC';
+        toast('Áudio salvo!');
+      } catch (err) {
+        console.error(err);
+        alert('Falha ao salvar áudio.');
+        timer.textContent = 'REC';
+      }
+    };
+    
+    recorder.start();
+  }
+  
+  function stopRecording() {
+    if (recorder && recording) recorder.stop();
+  }
+  
+  micBtn.onclick = async () => {
+    if (!recording) {
+      micBtn.textContent = '⛔';
+      await startRecording();
+    } else {
+      micBtn.textContent = '🎙️';
+      stopRecording();
+    }
+  };
+  
+  // Note textarea
+  const noteLabel = document.createElement('label');
+  noteLabel.className = 'label';
+  noteLabel.textContent = 'Nota/Resumo';
+  const note = document.createElement('textarea');
+  note.className = 'note';
+  note.rows = 2;
+  note.placeholder = 'Digite uma nota sobre esta mídia...';
+  note.value = item.nota || '';
+  note.oninput = (e) => { item.nota = e.target.value; };
+  
+  // Delete media
+  delBtn.onclick = async () => {
+    if (!confirm('Remover esta mídia?')) return;
+    await deleteAllMediaFor(item.id);
+    etapa.media = etapa.media.filter(m => m.id !== item.id);
+    if (imgObjectUrl) URL.revokeObjectURL(imgObjectUrl);
+    if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
+    card.remove();
+  };
+  
+  card.append(head, photoInput, photoBox, recbar, player, noteLabel, note);
+  return card;
 }
 
-window.deleteStage = function(idx) {
-  if (confirm('Remover etapa?')) {
-    cronograma.etapas.splice(idx, 1);
-    renderStages();
-  }
-};
-
-window.editStageProgress = function(idx) {
-  openSlider('Progresso - ' + cronograma.etapas[idx].nome, cronograma.etapas[idx].percentual, v => {
-    cronograma.etapas[idx].percentual = v;
-    renderStages();
-    // Auto-calc progresso geral
-    const avg = Math.round(cronograma.etapas.reduce((a, e) => a + e.percentual, 0) / cronograma.etapas.length);
-    cronograma.progresso_geral = avg;
-    updateProgress(avg);
-  });
-};
-
+/* ===== Add Stage ===== */
 document.getElementById('addStageBtn').onclick = () => {
   const nome = prompt('Nome da etapa:', 'Nova Etapa');
   if (!nome) return;
@@ -617,54 +736,53 @@ document.getElementById('addStageBtn').onclick = () => {
   renderStages();
 };
 
-// SALVAR - faz upload das mídias pendentes
+/* ===== SALVAR - faz upload das mídias e envia ao servidor ===== */
 document.getElementById('saveBtn').onclick = async () => {
   if (!currentOrcamento) { toast('Selecione uma obra'); return; }
   
   cronograma.projeto_nome = document.getElementById('projetoNome').value;
   toast('Salvando...');
   
-  // Upload de mídias pendentes
+  // Upload de mídias pendentes do IndexedDB
   for (const etapa of cronograma.etapas) {
     if (!etapa.media) continue;
     for (const media of etapa.media) {
       // Upload foto
-      if (media.imagem_file && !media.imagem_uploaded) {
+      if (media.hasImage && !media.imagem_url) {
         try {
-          const fd = new FormData();
-          fd.append('file', media.imagem_file);
-          fd.append('tipo', 'image');
-          const res = await fetch(API_BASE + '/supervisor/upload/media', { method: 'POST', body: fd });
-          const data = await res.json();
-          if (data.url) {
-            media.imagem_url = data.url;
-            media.imagem_uploaded = true;
-            delete media.imagem_file;
+          const blob = await getBlob(media.id, 'image');
+          if (blob) {
+            const fd = new FormData();
+            fd.append('file', blob, 'foto.jpg');
+            fd.append('tipo', 'image');
+            const res = await fetch(API_BASE + '/supervisor/upload/media', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.url) {
+              media.imagem_url = data.url;
+            }
           }
         } catch (e) { console.error('Erro upload foto', e); }
       }
       // Upload áudio
-      if (media.audio_blob && !media.audio_uploaded) {
+      if (media.hasAudio && !media.audio_url) {
         try {
-          const fd = new FormData();
-          fd.append('file', media.audio_blob, 'audio.webm');
-          fd.append('tipo', 'audio');
-          const res = await fetch(API_BASE + '/supervisor/upload/media', { method: 'POST', body: fd });
-          const data = await res.json();
-          if (data.url) {
-            media.audio_url = data.url;
-            media.audio_uploaded = true;
-            delete media.audio_blob;
+          const blob = await getBlob(media.id, 'audio');
+          if (blob) {
+            const fd = new FormData();
+            fd.append('file', blob, 'audio.webm');
+            fd.append('tipo', 'audio');
+            const res = await fetch(API_BASE + '/supervisor/upload/media', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.url) {
+              media.audio_url = data.url;
+            }
           }
         } catch (e) { console.error('Erro upload audio', e); }
       }
-      // Limpar dados locais
-      delete media.imagem_local;
-      delete media.audio_local;
     }
   }
   
-  // Salvar cronograma
+  // Salvar cronograma no backend
   try {
     const res = await fetch(API_BASE + '/supervisor/' + supervisor.id + '/cronograma', {
       method: 'POST',
@@ -681,7 +799,6 @@ document.getElementById('saveBtn').onclick = async () => {
     const data = await res.json();
     cronograma.id = data.id;
     toast('Salvo com sucesso!');
-    renderStages(); // Atualizar status dots
   } catch (e) { toast('Erro ao salvar'); }
 };
 
@@ -695,8 +812,11 @@ document.getElementById('sendClientBtn').onclick = async () => {
   } catch (e) { toast('Erro'); }
 };
 
-// Init
-checkLogin();
+/* ===== Init ===== */
+(async function boot() {
+  await openIDB();
+  checkLogin();
+})();
 </script>
 </body>
 </html>
