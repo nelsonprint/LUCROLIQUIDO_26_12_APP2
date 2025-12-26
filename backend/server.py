@@ -6275,8 +6275,10 @@ async def supervisor_login(login_email: str = Body(...), login_senha: str = Body
     if not funcionario:
         raise HTTPException(status_code=401, detail="Credenciais inválidas ou supervisor inativo")
     
-    # Buscar dados da empresa
-    empresa = await db.empresas.find_one({"id": funcionario["empresa_id"]}, {"_id": 0})
+    # Buscar dados da empresa (pode estar em 'companies' ou 'empresas')
+    empresa = await db.companies.find_one({"id": funcionario["empresa_id"]}, {"_id": 0})
+    if not empresa:
+        empresa = await db.empresas.find_one({"id": funcionario["empresa_id"]}, {"_id": 0})
     
     return {
         "success": True,
@@ -6287,8 +6289,8 @@ async def supervisor_login(login_email: str = Body(...), login_senha: str = Body
             "categoria_nome": funcionario.get("categoria_nome")
         },
         "empresa": {
-            "id": empresa.get("id") if empresa else None,
-            "nome": empresa.get("razao_social") if empresa else None,
+            "id": empresa.get("id") if empresa else funcionario["empresa_id"],
+            "nome": empresa.get("razao_social") or empresa.get("name") if empresa else "Empresa",
             "logo_url": empresa.get("logo_url") if empresa else None
         }
     }
