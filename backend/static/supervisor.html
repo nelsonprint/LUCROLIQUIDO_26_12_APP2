@@ -277,62 +277,7 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// Função para comprimir imagem antes de enviar - OTIMIZADA PARA MOBILE
-async function compressImage(file, maxSize = 600, quality = 0.6) {
-  return new Promise((resolve, reject) => {
-    // Criar URL temporária para a imagem (mais eficiente que FileReader)
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    
-    img.onload = () => {
-      URL.revokeObjectURL(url); // Liberar memória
-      
-      // Calcular novas dimensões
-      let width = img.width;
-      let height = img.height;
-      
-      // Redimensionar para no máximo 600px no maior lado
-      if (width > height) {
-        if (width > maxSize) {
-          height = Math.round((height * maxSize) / width);
-          width = maxSize;
-        }
-      } else {
-        if (height > maxSize) {
-          width = Math.round((width * maxSize) / height);
-          height = maxSize;
-        }
-      }
-      
-      // Criar canvas pequeno
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      // Converter para blob com qualidade baixa
-      canvas.toBlob(
-        (blob) => {
-          // Limpar canvas da memória
-          canvas.width = 1;
-          canvas.height = 1;
-          
-          if (blob) {
-            resolve(new File([blob], 'foto.jpg', { type: 'image/jpeg' }));
-          } else {
-            // Fallback: retornar arquivo original se falhar
-            resolve(file);
-          }
-        },
-        'image/jpeg',
-        quality
-      );
-    };
-    
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
+// ===== Login =====
       // Em caso de erro, tentar enviar arquivo original
       resolve(file);
     };
