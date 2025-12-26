@@ -1,0 +1,24 @@
+{
+  "name": "Supervisor - Cronograma de Obra",
+  "short_name": "Supervisor",
+  "description": "Acompanhe e registre o progresso das obras",
+  "start_url": "/api/supervisor/app",
+  "display": "standalone",
+  "background_color": "#0f0f10",
+  "theme_color": "#FF8C00",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/api/supervisor/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/api/supervisor/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
