@@ -206,7 +206,7 @@ function App() {
           }
         />
         <Route
-219|          path="/clientes"
+          path="/clientes"
           element={
             user ? (
               <Clientes user={user} onLogout={handleLogout} />
