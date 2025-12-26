@@ -6649,10 +6649,6 @@ async def serve_cliente_manifest():
     return FileResponse(file_path, media_type="application/json")
 
 
-# ========== INCLUIR ROUTER ==========
-
-app.include_router(api_router)
-
 # Servir arquivos de upload com prefixo /api
 uploads_dir = Path(ROOT_DIR) / "uploads"
 uploads_dir.mkdir(exist_ok=True)
@@ -6672,6 +6668,11 @@ async def serve_upload(filename: str):
         content_type = 'application/octet-stream'
     
     return FileResponse(file_path, media_type=content_type)
+
+
+# ========== INCLUIR ROUTER ==========
+
+app.include_router(api_router)
 
 # Health check endpoints
 @app.get("/")
