@@ -805,7 +805,7 @@ class SupervisorCronogramaTester:
             
             if response.status_code == 200:
                 result = response.json()
-                self.created_cronograma_id = result.get('cronograma_id')
+                self.created_cronograma_id = result.get('cronograma_id') or result.get('id')
                 
                 self.log(f"✅ Cronograma created successfully! ID: {self.created_cronograma_id}")
                 
@@ -816,6 +816,8 @@ class SupervisorCronogramaTester:
                     self.log(f"   🏗️ Project: {cronograma.get('projeto_nome')}")
                     self.log(f"   📊 Progress: {cronograma.get('progresso_geral')}%")
                     self.log(f"   📋 Stages: {len(cronograma.get('etapas', []))}")
+                elif 'id' in result:
+                    self.log(f"   📋 Cronograma ID returned: {result.get('id')}")
                 
                 return True
             else:
