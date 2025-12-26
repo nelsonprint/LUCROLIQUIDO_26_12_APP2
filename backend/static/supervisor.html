@@ -715,98 +715,77 @@ function createMediaElement(etapa, media, mIdx) {
   let recTimer = null;
   let recStart = 0;
   
-  micBtn.addEventListener('click', async () => {
-    if (!recording) {
+  micBtn.onclick = async function() {
+    if (!isRecording) {
+      // Iniciar gravação
       try {
-        audioStream = await navigator.mediaDevices.getUserMedia({ 
-          audio: { 
-            echoCancellation: true,
-            noiseSuppression: true 
-          } 
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recorder = new MediaRecorder(stream);
+        audioData = [];
         
-        // Usar formato mais compatível
-        const mimeType = MediaRecorder.isTypeSupported('audio/mp4') 
-          ? 'audio/mp4' 
-          : MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-            ? 'audio/webm;codecs=opus'
-            : 'audio/webm';
-        
-        mediaRecorder = new MediaRecorder(audioStream, { mimeType });
-        audioChunks = [];
-        
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) audioChunks.push(e.data);
+        recorder.ondataavailable = function(e) {
+          if (e.data.size > 0) audioData.push(e.data);
         };
         
-        mediaRecorder.onstop = async () => {
-          clearInterval(timerInterval);
+        recorder.onstop = async function() {
+          clearInterval(recTimer);
+          stream.getTracks().forEach(t => t.stop());
           
-          // Parar todas as tracks do stream
-          audioStream.getTracks().forEach(track => track.stop());
-          
-          const audioBlob = new Blob(audioChunks, { type: mimeType });
-          const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-          
+          const blob = new Blob(audioData, { type: 'audio/webm' });
           toast('Enviando áudio...');
           
           try {
             const formData = new FormData();
-            formData.append('file', audioBlob, `audio.${ext}`);
+            formData.append('file', blob, 'audio.webm');
             formData.append('tipo', 'audio');
             
-            const res = await fetch(`${API_BASE}/supervisor/upload/media`, {
+            const res = await fetch(API_BASE + '/supervisor/upload/media', {
               method: 'POST',
               body: formData
             });
             
-            if (!res.ok) throw new Error('Erro no servidor');
-            
             const data = await res.json();
-            // Garantir URL completa
-            let audioUrl = data.url;
-            if (audioUrl && !audioUrl.startsWith('http')) {
-              audioUrl = window.location.origin + audioUrl;
+            if (data.url) {
+              media.audio_url = data.url;
+              // Inserir player de áudio
+              if (audioPlaceholder) {
+                audioPlaceholder.outerHTML = '<audio class="audio-player" controls src="' + data.url + '" preload="auto"></audio>';
+              }
+              timerEl.textContent = '✓';
+              toast('Áudio OK!');
             }
-            media.audio_url = audioUrl;
-            console.log('Áudio URL:', audioUrl);
-            renderStages();
-            toast('Áudio salvo!');
           } catch (err) {
-            console.error('Erro áudio:', err);
-            toast('Erro ao enviar áudio');
+            toast('Erro áudio');
           }
         };
         
-        mediaRecorder.start(1000); // Capturar em chunks de 1s
-        recording = true;
-        startTime = Date.now();
+        recorder.start();
+        isRecording = true;
+        recStart = Date.now();
         micBtn.classList.add('recording');
         micBtn.textContent = '⏹️';
         
-        timerInterval = setInterval(() => {
-          const elapsed = Math.floor((Date.now() - startTime) / 1000);
-          const min = String(Math.floor(elapsed / 60)).padStart(2, '0');
-          const sec = String(elapsed % 60).padStart(2, '0');
-          timerEl.textContent = `${min}:${sec}`;
+        recTimer = setInterval(function() {
+          const s = Math.floor((Date.now() - recStart) / 1000);
+          timerEl.textContent = String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
         }, 1000);
         
       } catch (err) {
-        console.error('Erro microfone:', err);
-        toast('Permita o acesso ao microfone');
+        toast('Permita microfone');
       }
     } else {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
+      // Parar gravação
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stop();
       }
-      recording = false;
+      isRecording = false;
       micBtn.classList.remove('recording');
       micBtn.textContent = '🎙️';
     }
-  });
+  };
   
   // Note
-  div.querySelector('.note').addEventListener('input', (e) => {
+  div.querySelector('.note').oninput = function(e) {
     media.nota = e.target.value;
   });
   
