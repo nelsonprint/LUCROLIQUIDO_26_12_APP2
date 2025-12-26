@@ -647,14 +647,14 @@ const Funcionarios = ({ user, onLogout }) => {
               </div>
             </div>
 
-            {/* Login do Supervisor (para categorias Supervisor/Vendedor) */}
+            {/* Login do Supervisor/Vendedor (para categorias Supervisor/Vendedor) */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-zinc-400 border-b border-zinc-800 pb-2 flex items-center gap-2">
                 <Key className="w-4 h-4" />
-                Acesso ao App (Supervisor)
+                Acesso ao App (Supervisor / Vendedor)
               </h3>
               <p className="text-xs text-zinc-500">
-                Configure o login para que este funcionário acesse o App do Supervisor de Obras.
+                Configure o login para que este funcionário acesse o App do Supervisor ou do Vendedor.
               </p>
               
               <div className="grid grid-cols-2 gap-4">
@@ -665,7 +665,7 @@ const Funcionarios = ({ user, onLogout }) => {
                     value={formData.login_email}
                     onChange={(e) => setFormData({ ...formData, login_email: e.target.value })}
                     className="bg-zinc-800 border-zinc-700"
-                    placeholder="supervisor@empresa.com"
+                    placeholder="usuario@empresa.com"
                   />
                 </div>
 
@@ -676,10 +676,30 @@ const Funcionarios = ({ user, onLogout }) => {
                     value={formData.login_senha}
                     onChange={(e) => setFormData({ ...formData, login_senha: e.target.value })}
                     className="bg-zinc-800 border-zinc-700"
-                    placeholder="Senha do supervisor"
+                    placeholder="Senha do usuário"
                   />
                 </div>
               </div>
+
+              {/* Campo de Comissão - Mostrar apenas para Vendedores */}
+              {categorias.find(c => c.id === formData.categoria_id)?.nome?.toLowerCase().includes('vendedor') && (
+                <div className="p-4 bg-orange-950/30 border border-orange-800 rounded-lg">
+                  <Label className="text-orange-400">Percentual de Comissão (%)</Label>
+                  <p className="text-xs text-zinc-500 mb-2">
+                    Percentual sobre o valor do orçamento que será creditado como comissão ao vendedor.
+                  </p>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={formData.percentual_comissao}
+                    onChange={(e) => setFormData({ ...formData, percentual_comissao: parseFloat(e.target.value) || 0 })}
+                    className="bg-zinc-800 border-orange-700 text-orange-400 font-bold"
+                    placeholder="Ex: 5"
+                  />
+                </div>
+              )}
             </div>
 
             <DialogFooter className="pt-4">
