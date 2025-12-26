@@ -288,17 +288,29 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     return;
   }
   
+  errorEl.textContent = 'Conectando...';
+  
   try {
-    const res = await fetch(`${API_BASE}/supervisor/login`, {
+    const url = API_BASE + '/supervisor/login';
+    console.log('Login URL:', url);
+    
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ login_email: email, login_senha: senha })
     });
     
+    console.log('Response status:', res.status);
     const data = await res.json();
+    console.log('Response data:', data);
     
     if (!res.ok) {
-      errorEl.textContent = data.detail || 'Erro ao fazer login';
+      errorEl.textContent = data.detail || 'Credenciais inválidas';
+      return;
+    }
+    
+    if (!data.success) {
+      errorEl.textContent = 'Erro: resposta inválida';
       return;
     }
     
@@ -308,9 +320,11 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     localStorage.setItem('supervisor', JSON.stringify(supervisor));
     localStorage.setItem('empresa', JSON.stringify(empresa));
     
+    errorEl.textContent = '';
     showApp();
   } catch (err) {
-    errorEl.textContent = 'Erro de conexão';
+    console.error('Login error:', err);
+    errorEl.textContent = 'Erro: ' + (err.message || 'Falha na conexão');
   }
 });
 
