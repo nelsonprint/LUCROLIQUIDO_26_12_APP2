@@ -737,7 +737,7 @@ function createMediaElement(etapa, media, mIdx) {
   // Note
   div.querySelector('.note').oninput = function(e) {
     media.nota = e.target.value;
-  });
+  };
   
   // Delete media
   div.querySelector('[data-delete-media]').addEventListener('click', () => {
