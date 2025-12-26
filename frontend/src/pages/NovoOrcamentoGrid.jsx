@@ -224,6 +224,23 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
     fetchClientes();
   }, [company?.id]);
 
+  // Buscar vendedores
+  useEffect(() => {
+    const fetchVendedores = async () => {
+      if (!company?.id) return;
+      setLoadingVendedores(true);
+      try {
+        const response = await axiosInstance.get(`/vendedores/${company.id}`);
+        setVendedores(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar vendedores:', error);
+      } finally {
+        setLoadingVendedores(false);
+      }
+    };
+    fetchVendedores();
+  }, [company?.id]);
+
   // Selecionar cliente
   const handleClienteChange = (clienteId) => {
     setClienteSelecionado(clienteId);
