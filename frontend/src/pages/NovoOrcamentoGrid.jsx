@@ -82,7 +82,14 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
     valor_entrada: 0, // Valor calculado da entrada
     num_parcelas: 2, // Número de parcelas após entrada
     parcelas: [], // Array com detalhes de cada parcela [{numero, valor, editado}]
+    // Vendedor responsável
+    vendedor_id: '',
+    vendedor_nome: '',
   });
+
+  // Vendedores
+  const [vendedores, setVendedores] = useState([]);
+  const [loadingVendedores, setLoadingVendedores] = useState(false);
 
   // Itens do orçamento (Grid)
   const [orcamentoItems, setOrcamentoItems] = useState([]);
