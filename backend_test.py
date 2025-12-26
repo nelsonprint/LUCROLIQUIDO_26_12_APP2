@@ -655,7 +655,7 @@ class SupervisorCronogramaTester:
                 
                 # Approve the budget
                 status_data = {"status": "APROVADO"}
-                await self.session.patch(f"{API_BASE}/orcamento/{budget_id}/status", json=status_data)
+                self.session.patch(f"{API_BASE}/orcamento/{budget_id}/status", json=status_data)
                 
                 self.log(f"✅ Test budget created and approved: {budget_id}")
                 return budget_id
