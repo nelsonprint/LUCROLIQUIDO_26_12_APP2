@@ -6714,6 +6714,24 @@ async def serve_supervisor_sw():
     return FileResponse(file_path, media_type="application/javascript")
 
 
+@api_router.get("/supervisor/icon-192.png")
+async def serve_supervisor_icon_192():
+    """Servir ícone 192x192 do supervisor"""
+    file_path = static_dir / "icon-supervisor-192.png"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Ícone não encontrado")
+    return FileResponse(file_path, media_type="image/png")
+
+
+@api_router.get("/supervisor/icon-512.png")
+async def serve_supervisor_icon_512():
+    """Servir ícone 512x512 do supervisor"""
+    file_path = static_dir / "icon-supervisor-512.png"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Ícone não encontrado")
+    return FileResponse(file_path, media_type="image/png")
+
+
 @api_router.get("/cliente/app/{token}")
 async def serve_cliente_app(token: str):
     """Servir página PWA do cliente"""
