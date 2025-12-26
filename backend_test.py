@@ -461,6 +461,498 @@ class FuncionariosTester:
             return False
 
 
+class SupervisorCronogramaTester:
+    """Test suite for Supervisor and Cronograma de Obra system"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        self.created_funcionario_id = None
+        self.supervisor_id = None
+        self.supervisor_login_email = None
+        self.supervisor_login_senha = None
+        self.approved_budget_id = None
+        self.created_cronograma_id = None
+        self.cliente_token = None
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_create_funcionario_with_supervisor_login(self):
+        """Test POST /api/funcionarios - Create employee with supervisor login credentials"""
+        self.log("👤 Testing create funcionário with supervisor login...")
+        
+        import time
+        timestamp = int(time.time())
+        
+        funcionario_data = {
+            "empresa_id": self.company_id,
+            "nome_completo": "Carlos Supervisor",
+            "cpf": "123.456.789-00",
+            "whatsapp": "(11) 99999-1234",
+            "email": "carlos@teste.com",
+            "salario": 5000,
+            "status": "Ativo",
+            "login_email": "supervisor@teste.com",
+            "login_senha": "senha123"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/funcionarios", json=funcionario_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                funcionario_data_response = result.get('funcionario', {})
+                self.created_funcionario_id = funcionario_data_response.get('id')
+                self.supervisor_login_email = funcionario_data['login_email']
+                self.supervisor_login_senha = funcionario_data['login_senha']
+                
+                self.log(f"✅ Funcionário with supervisor login created! ID: {self.created_funcionario_id}")
+                
+                # Verify login fields were saved
+                verify_response = self.session.get(f"{API_BASE}/funcionario/{self.created_funcionario_id}")
+                if verify_response.status_code == 200:
+                    funcionario = verify_response.json()
+                    
+                    if (funcionario.get('login_email') == self.supervisor_login_email and
+                        funcionario.get('login_senha') == self.supervisor_login_senha):
+                        self.log("✅ Supervisor login credentials saved correctly!")
+                        return True
+                    else:
+                        self.log("❌ Supervisor login credentials not saved correctly", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify funcionário creation", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to create funcionário: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating funcionário: {str(e)}", "ERROR")
+            return False
+    
+    def test_supervisor_login(self):
+        """Test POST /api/supervisor/login - Supervisor login endpoint"""
+        self.log("🔐 Testing supervisor login...")
+        
+        if not self.supervisor_login_email or not self.supervisor_login_senha:
+            self.log("❌ No supervisor credentials available for login test", "ERROR")
+            return False
+        
+        login_data = {
+            "login_email": self.supervisor_login_email,
+            "login_senha": self.supervisor_login_senha
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/supervisor/login", json=login_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                supervisor_data = result.get('supervisor', {})
+                empresa_data = result.get('empresa', {})
+                
+                self.supervisor_id = supervisor_data.get('id')
+                
+                self.log(f"✅ Supervisor login successful!")
+                self.log(f"   👤 Supervisor ID: {self.supervisor_id}")
+                self.log(f"   👤 Supervisor Name: {supervisor_data.get('nome')}")
+                self.log(f"   🏢 Company ID: {empresa_data.get('id')}")
+                self.log(f"   🏢 Company Name: {empresa_data.get('nome')}")
+                
+                # Verify required fields are present
+                required_fields = ['id', 'nome']
+                for field in required_fields:
+                    if field not in supervisor_data:
+                        self.log(f"❌ Missing supervisor field: {field}", "ERROR")
+                        return False
+                
+                required_company_fields = ['id', 'nome']
+                for field in required_company_fields:
+                    if field not in empresa_data:
+                        self.log(f"❌ Missing company field: {field}", "ERROR")
+                        return False
+                
+                return True
+            else:
+                self.log(f"❌ Supervisor login failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error in supervisor login: {str(e)}", "ERROR")
+            return False
+    
+    def test_list_approved_budgets(self):
+        """Test GET /api/supervisor/{supervisor_id}/orcamentos - List approved budgets"""
+        self.log("📋 Testing list approved budgets...")
+        
+        if not self.supervisor_id:
+            self.log("❌ No supervisor ID available for budget listing", "ERROR")
+            return False
+        
+        try:
+            response = self.session.get(f"{API_BASE}/supervisor/{self.supervisor_id}/orcamentos")
+            
+            if response.status_code == 200:
+                budgets = response.json()
+                self.log(f"✅ Retrieved {len(budgets)} approved budgets")
+                
+                # If we have budgets, store one for cronograma testing
+                if len(budgets) > 0:
+                    self.approved_budget_id = budgets[0].get('id')
+                    self.log(f"   📄 First budget ID: {self.approved_budget_id}")
+                    self.log(f"   📄 First budget number: {budgets[0].get('numero_orcamento')}")
+                    self.log(f"   👤 Client: {budgets[0].get('cliente_nome')}")
+                else:
+                    self.log("⚠️ No approved budgets found - will create one for testing", "WARN")
+                    # Create a test budget for cronograma testing
+                    self.approved_budget_id = await self._create_test_budget()
+                
+                return True
+            else:
+                self.log(f"❌ Failed to list approved budgets: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error listing approved budgets: {str(e)}", "ERROR")
+            return False
+    
+    async def _create_test_budget(self):
+        """Helper method to create a test budget for cronograma testing"""
+        self.log("📝 Creating test budget for cronograma testing...")
+        
+        import time
+        timestamp = int(time.time())
+        
+        budget_data = {
+            "empresa_id": self.company_id,
+            "usuario_id": self.user_data['user_id'],
+            "cliente_nome": f"Cliente Teste Cronograma {timestamp}",
+            "cliente_whatsapp": "11999999999",
+            "tipo": "servico_hora",
+            "descricao_servico_ou_produto": "Obra Teste para Cronograma",
+            "quantidade": 1.0,
+            "custo_total": 1000.0,
+            "preco_minimo": 1500.0,
+            "preco_sugerido": 2000.0,
+            "preco_praticado": 2000.0,
+            "validade_proposta": "2025-02-28",
+            "condicoes_pagamento": "À vista",
+            "prazo_execucao": "30 dias",
+            "observacoes": "Orçamento teste para cronograma"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/orcamentos", json=budget_data)
+            if response.status_code == 200:
+                result = response.json()
+                budget_id = result.get('orcamento_id')
+                
+                # Approve the budget
+                status_data = {"status": "APROVADO"}
+                await self.session.patch(f"{API_BASE}/orcamento/{budget_id}/status", json=status_data)
+                
+                self.log(f"✅ Test budget created and approved: {budget_id}")
+                return budget_id
+            else:
+                self.log("❌ Failed to create test budget", "ERROR")
+                return None
+        except Exception as e:
+            self.log(f"❌ Error creating test budget: {str(e)}", "ERROR")
+            return None
+    
+    def test_supervisor_pwa_page(self):
+        """Test GET /api/supervisor/app - Supervisor PWA page"""
+        self.log("📱 Testing supervisor PWA page...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/supervisor/app")
+            
+            if response.status_code == 200:
+                content = response.text
+                self.log("✅ Supervisor PWA page loaded successfully!")
+                
+                # Check if it's HTML content
+                if '<html' in content.lower() or '<!doctype' in content.lower():
+                    self.log("✅ Response contains valid HTML content")
+                    return True
+                else:
+                    self.log("❌ Response does not contain valid HTML content", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to load supervisor PWA page: {response.status_code}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error loading supervisor PWA page: {str(e)}", "ERROR")
+            return False
+    
+    def test_supervisor_manifest(self):
+        """Test GET /api/supervisor/manifest.json - Supervisor manifest"""
+        self.log("📋 Testing supervisor manifest...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/supervisor/manifest.json")
+            
+            if response.status_code == 200:
+                try:
+                    manifest = response.json()
+                    self.log("✅ Supervisor manifest loaded successfully!")
+                    
+                    # Check for required manifest fields
+                    required_fields = ['name', 'short_name', 'start_url', 'display']
+                    for field in required_fields:
+                        if field in manifest:
+                            self.log(f"   ✅ {field}: {manifest[field]}")
+                        else:
+                            self.log(f"   ⚠️ Missing manifest field: {field}", "WARN")
+                    
+                    return True
+                except json.JSONDecodeError:
+                    self.log("❌ Manifest response is not valid JSON", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to load supervisor manifest: {response.status_code}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error loading supervisor manifest: {str(e)}", "ERROR")
+            return False
+    
+    def test_generate_supervisor_link(self):
+        """Test GET /api/funcionario/{funcionario_id}/link-supervisor - Generate supervisor WhatsApp link"""
+        self.log("🔗 Testing generate supervisor link...")
+        
+        if not self.created_funcionario_id:
+            self.log("❌ No funcionário ID available for link generation", "ERROR")
+            return False
+        
+        try:
+            response = self.session.get(f"{API_BASE}/funcionario/{self.created_funcionario_id}/link-supervisor")
+            
+            if response.status_code == 200:
+                result = response.json()
+                supervisor_url = result.get('supervisor_url')
+                whatsapp_url = result.get('whatsapp_url')
+                
+                self.log("✅ Supervisor link generated successfully!")
+                self.log(f"   🔗 Supervisor URL: {supervisor_url}")
+                self.log(f"   📱 WhatsApp URL: {whatsapp_url}")
+                
+                # Verify URLs are properly formatted
+                if supervisor_url and '/api/supervisor/app' in supervisor_url:
+                    self.log("✅ Supervisor URL format is correct")
+                else:
+                    self.log("❌ Supervisor URL format is incorrect", "ERROR")
+                    return False
+                
+                if whatsapp_url and 'wa.me/' in whatsapp_url:
+                    self.log("✅ WhatsApp URL format is correct")
+                    return True
+                else:
+                    self.log("❌ WhatsApp URL format is incorrect", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to generate supervisor link: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error generating supervisor link: {str(e)}", "ERROR")
+            return False
+    
+    def test_create_cronograma(self):
+        """Test POST /api/supervisor/{supervisor_id}/cronograma - Create cronograma"""
+        self.log("📅 Testing create cronograma...")
+        
+        if not self.supervisor_id or not self.approved_budget_id:
+            self.log("❌ Missing supervisor ID or approved budget ID for cronograma creation", "ERROR")
+            return False
+        
+        cronograma_data = {
+            "orcamento_id": self.approved_budget_id,
+            "data": "2024-12-26",
+            "projeto_nome": "Obra Teste",
+            "progresso_geral": 25,
+            "modo_progresso": "manual",
+            "etapas": [
+                {"id": "etapa1", "nome": "Fundação", "percentual": 50, "media": []},
+                {"id": "etapa2", "nome": "Estrutura", "percentual": 0, "media": []}
+            ]
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/supervisor/{self.supervisor_id}/cronograma", json=cronograma_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.created_cronograma_id = result.get('cronograma_id')
+                
+                self.log(f"✅ Cronograma created successfully! ID: {self.created_cronograma_id}")
+                
+                # Verify cronograma data
+                if 'cronograma' in result:
+                    cronograma = result['cronograma']
+                    self.log(f"   📅 Date: {cronograma.get('data')}")
+                    self.log(f"   🏗️ Project: {cronograma.get('projeto_nome')}")
+                    self.log(f"   📊 Progress: {cronograma.get('progresso_geral')}%")
+                    self.log(f"   📋 Stages: {len(cronograma.get('etapas', []))}")
+                
+                return True
+            else:
+                self.log(f"❌ Failed to create cronograma: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating cronograma: {str(e)}", "ERROR")
+            return False
+    
+    def test_send_cronograma_to_client(self):
+        """Test POST /api/supervisor/{supervisor_id}/cronograma/{cronograma_id}/enviar - Send cronograma to client"""
+        self.log("📤 Testing send cronograma to client...")
+        
+        if not self.supervisor_id or not self.created_cronograma_id:
+            self.log("❌ Missing supervisor ID or cronograma ID for sending", "ERROR")
+            return False
+        
+        try:
+            response = self.session.post(f"{API_BASE}/supervisor/{self.supervisor_id}/cronograma/{self.created_cronograma_id}/enviar")
+            
+            if response.status_code == 200:
+                result = response.json()
+                cliente_url = result.get('cliente_url')
+                whatsapp_url = result.get('whatsapp_url')
+                token = result.get('token')
+                
+                self.log("✅ Cronograma sent to client successfully!")
+                self.log(f"   🔗 Client URL: {cliente_url}")
+                self.log(f"   📱 WhatsApp URL: {whatsapp_url}")
+                self.log(f"   🎫 Token: {token}")
+                
+                # Store token for client access test
+                self.cliente_token = token
+                
+                # Verify URLs are properly formatted
+                if cliente_url and '/api/cliente/app/' in cliente_url and token in cliente_url:
+                    self.log("✅ Client URL format is correct")
+                else:
+                    self.log("❌ Client URL format is incorrect", "ERROR")
+                    return False
+                
+                if whatsapp_url and 'wa.me/' in whatsapp_url:
+                    self.log("✅ WhatsApp URL format is correct")
+                    return True
+                else:
+                    self.log("❌ WhatsApp URL format is incorrect", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to send cronograma: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error sending cronograma: {str(e)}", "ERROR")
+            return False
+    
+    def test_client_cronograma_access(self):
+        """Test GET /api/cliente/cronograma/{token} - Client access to cronograma"""
+        self.log("👤 Testing client cronograma access...")
+        
+        if not self.cliente_token:
+            self.log("❌ No client token available for access test", "ERROR")
+            return False
+        
+        try:
+            response = self.session.get(f"{API_BASE}/cliente/cronograma/{self.cliente_token}")
+            
+            if response.status_code == 200:
+                cronogramas = response.json()
+                self.log(f"✅ Client cronograma access successful! Found {len(cronogramas)} cronogramas")
+                
+                # Verify cronograma data structure
+                if len(cronogramas) > 0:
+                    cronograma = cronogramas[0]
+                    required_fields = ['id', 'data', 'projeto_nome', 'progresso_geral', 'etapas']
+                    
+                    for field in required_fields:
+                        if field in cronograma:
+                            self.log(f"   ✅ {field}: {cronograma[field]}")
+                        else:
+                            self.log(f"   ❌ Missing cronograma field: {field}", "ERROR")
+                            return False
+                    
+                    return True
+                else:
+                    self.log("⚠️ No cronogramas found for client", "WARN")
+                    return True  # Access worked, just no data
+            else:
+                self.log(f"❌ Failed client cronograma access: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error in client cronograma access: {str(e)}", "ERROR")
+            return False
+    
+    def run_all_tests(self):
+        """Execute all Supervisor and Cronograma tests"""
+        self.log("🚀 Starting Supervisor and Cronograma de Obra API tests")
+        self.log("=" * 70)
+        
+        tests = [
+            ("Create Funcionário with Supervisor Login", self.test_create_funcionario_with_supervisor_login),
+            ("Supervisor Login", self.test_supervisor_login),
+            ("List Approved Budgets", self.test_list_approved_budgets),
+            ("Supervisor PWA Page", self.test_supervisor_pwa_page),
+            ("Supervisor Manifest", self.test_supervisor_manifest),
+            ("Generate Supervisor Link", self.test_generate_supervisor_link),
+            ("Create Cronograma", self.test_create_cronograma),
+            ("Send Cronograma to Client", self.test_send_cronograma_to_client),
+            ("Client Cronograma Access", self.test_client_cronograma_access)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 70)
+        self.log("📊 SUPERVISOR AND CRONOGRAMA TEST SUMMARY")
+        self.log("=" * 70)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL SUPERVISOR AND CRONOGRAMA TESTS PASSED! System working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME SUPERVISOR AND CRONOGRAMA TESTS FAILED! Check logs above for details.")
+            return False
+
+
 class WhatsAppBudgetFlowTester:
     def __init__(self):
         self.session = requests.Session()
