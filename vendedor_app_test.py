@@ -462,13 +462,15 @@ class VendedorAppTester:
         timestamp = int(time.time())
         
         agenda_data = {
+            "empresa_id": self.company_id,
             "cliente_nome": f"Cliente Visita {timestamp}",
-            "cliente_whatsapp": "11999999999",
-            "data_visita": "2025-01-15",
-            "hora_visita": "14:00",
-            "endereco": "Rua Teste, 123 - São Paulo/SP",
-            "observacoes": "Visita para apresentação de proposta",
-            "status": "agendada"
+            "titulo": "Visita Comercial",
+            "descricao": "Apresentação de proposta comercial",
+            "data": "2025-01-15",
+            "hora_inicio": "14:00",
+            "hora_fim": "15:00",
+            "status": "Pendente",
+            "observacoes": "Visita para apresentação de proposta"
         }
         
         try:
