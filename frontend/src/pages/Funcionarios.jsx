@@ -50,7 +50,9 @@ const Funcionarios = ({ user, onLogout }) => {
     categoria_id: '',
     data_admissao: '',
     data_nascimento: '',
-    status: 'Ativo'
+    status: 'Ativo',
+    login_email: '',
+    login_senha: ''
   });
 
   useEffect(() => {
