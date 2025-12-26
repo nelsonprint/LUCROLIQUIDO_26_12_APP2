@@ -50,6 +50,7 @@ body{padding-bottom:80px}
 .btn-success{border-color:var(--success);background:var(--success);color:#fff}
 .btn-danger{border-color:var(--danger);color:var(--danger)}
 .btn-ghost{background:transparent;border:1px dashed var(--border)}
+.btn-sm{padding:6px 10px;font-size:.85rem}
 
 .kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));margin-bottom:16px}
 .kpi{background:#1a1b1f;padding:14px;border-radius:10px;text-align:center;border:1px solid var(--border)}
@@ -67,18 +68,22 @@ body{padding-bottom:80px}
 .list-item .title{font-weight:700;margin-bottom:4px}
 .list-item .subtitle{font-size:.85rem;color:var(--muted)}
 .list-item .badge{padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:700}
+.list-item .actions{display:flex;gap:6px;align-items:center}
 .badge-pendente{background:#fef3c7;color:#92400e}
 .badge-aprovado{background:#d1fae5;color:#065f46}
 .badge-enviado{background:#dbeafe;color:#1e40af}
 .badge-rascunho{background:#f3f4f6;color:#374151}
 .badge-pago{background:#d1fae5;color:#065f46}
+.badge-confirmado{background:#dbeafe;color:#1e40af}
+.badge-concluido{background:#d1fae5;color:#065f46}
+.badge-cancelado{background:#fee2e2;color:#991b1b}
 
 .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
 .empty-state svg{width:60px;height:60px;margin-bottom:12px;opacity:.5}
 
 .form-group{margin-bottom:16px}
 .form-row{display:grid;gap:12px;grid-template-columns:1fr}
-@media (min-width:500px){.form-row.cols-2{grid-template-columns:1fr 1fr}}
+@media (min-width:500px){.form-row.cols-2{grid-template-columns:1fr 1fr}.form-row.cols-3{grid-template-columns:1fr 1fr 1fr}}
 
 .action-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:12px;display:flex;gap:10px;justify-content:center}
 .action-btn{flex:1;max-width:200px;padding:14px;border-radius:12px;border:none;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
@@ -88,6 +93,7 @@ body{padding-bottom:80px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
 .modal.show{display:flex}
 .modal-content{background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto}
+.modal-content.large{max-width:600px}
 .modal-title{font-size:1.2rem;font-weight:700;margin-bottom:16px;color:var(--brand)}
 .modal-actions{display:flex;gap:10px;margin-top:16px}
 .modal-actions .btn{flex:1}
@@ -95,20 +101,32 @@ body{padding-bottom:80px}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:8px;z-index:10001;display:none}
 .toast.show{display:block}
 
+/* Tabs para tipo de cliente */
+.tipo-tabs{display:flex;gap:8px;margin-bottom:16px}
+.tipo-tab{flex:1;padding:10px;text-align:center;border-radius:8px;background:#1a1b1f;color:var(--muted);border:1px solid var(--border);cursor:pointer;font-weight:600}
+.tipo-tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+/* Seções colapsáveis */
+.section-title{font-size:.9rem;font-weight:700;color:var(--brand);margin:16px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
 /* Photo/Audio capture */
 .media-capture{background:#1a1b1f;border-radius:10px;padding:12px;margin-top:10px}
 .photo-box{position:relative;min-height:180px;border-radius:8px;background:#2a2d33;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
 .photo-box img{width:100%;height:100%;object-fit:cover}
 .photo-hint{color:var(--muted);text-align:center;padding:20px}
-.recbar{display:flex;align-items:center;justify-content:space-between;background:#0e0f12;border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:10px}
-.timer{font-weight:900;color:var(--text);font-family:monospace;font-size:1.1rem}
-.mic-btn{width:48px;height:48px;border-radius:8px;border:1px solid var(--border);background:#1a1b1f;color:var(--text);font-size:1.5rem;cursor:pointer}
-.audio-player{width:100%;margin-top:10px;display:none}
 
 .item-card{background:#0e0f12;border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid var(--border)}
 .item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .item-number{background:var(--brand);color:#fff;padding:4px 10px;border-radius:6px;font-weight:700;font-size:.85rem}
 .remove-item{background:transparent;border:1px solid var(--danger);color:var(--danger);width:32px;height:32px;border-radius:6px;cursor:pointer}
+
+.edit-btn{background:var(--brand);color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.delete-btn{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:.8rem}
+
+/* Cliente select com botão de adicionar */
+.select-with-add{display:flex;gap:8px}
+.select-with-add select{flex:1}
+.add-btn{background:var(--brand);color:#fff;border:none;width:44px;border-radius:8px;cursor:pointer;font-size:1.2rem;font-weight:700}
 </style>
 </head>
 <body>
@@ -194,12 +212,15 @@ body{padding-bottom:80px}
 
 <!-- Modal: Pré-Orçamento -->
 <div id="modalPreOrcamento" class="modal">
-  <div class="modal-content">
+  <div class="modal-content large">
     <div class="modal-title">📝 Novo Pré-Orçamento</div>
     
     <div class="form-group">
-      <label class="label">Cliente</label>
-      <select id="preCliente" class="select"></select>
+      <label class="label">Cliente / Prospect</label>
+      <div class="select-with-add">
+        <select id="preCliente" class="select"></select>
+        <button type="button" class="add-btn" onclick="abrirModalNovoCliente()">+</button>
+      </div>
     </div>
     
     <div class="form-group">
@@ -225,14 +246,18 @@ body{padding-bottom:80px}
   </div>
 </div>
 
-<!-- Modal: Nova Visita -->
+<!-- Modal: Nova/Editar Visita -->
 <div id="modalVisita" class="modal">
   <div class="modal-content">
-    <div class="modal-title">📅 Nova Visita</div>
+    <div class="modal-title" id="modalVisitaTitulo">📅 Nova Visita</div>
+    <input type="hidden" id="visitaId"/>
     
     <div class="form-group">
       <label class="label">Cliente</label>
-      <select id="visitaCliente" class="select"></select>
+      <div class="select-with-add">
+        <select id="visitaCliente" class="select"></select>
+        <button type="button" class="add-btn" onclick="abrirModalNovoCliente()">+</button>
+      </div>
     </div>
     
     <div class="form-group">
@@ -252,13 +277,193 @@ body{padding-bottom:80px}
     </div>
     
     <div class="form-group">
+      <label class="label">Status</label>
+      <select id="visitaStatus" class="select">
+        <option value="Pendente">Pendente</option>
+        <option value="Confirmado">Confirmado</option>
+        <option value="Reagendado">Reagendado</option>
+        <option value="Concluído">Concluído</option>
+        <option value="Cancelado">Cancelado</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
       <label class="label">Descrição</label>
       <textarea id="visitaDesc" class="input" rows="2" placeholder="Detalhes da visita..."></textarea>
     </div>
     
     <div class="modal-actions">
       <button id="btnCancelarVisita" class="btn">Cancelar</button>
+      <button id="btnExcluirVisita" class="btn btn-danger" style="display:none">Excluir</button>
       <button id="btnSalvarVisita" class="btn btn-primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Novo Cliente/Prospect -->
+<div id="modalNovoCliente" class="modal">
+  <div class="modal-content large">
+    <div class="modal-title">👤 Novo Cliente / Prospect</div>
+    
+    <div class="tipo-tabs">
+      <div class="tipo-tab active" data-tipo="PF" onclick="selecionarTipoCliente('PF')">Pessoa Física</div>
+      <div class="tipo-tab" data-tipo="PJ" onclick="selecionarTipoCliente('PJ')">Pessoa Jurídica</div>
+    </div>
+    
+    <input type="hidden" id="clienteTipo" value="PF"/>
+    
+    <!-- Campos Pessoa Física -->
+    <div id="camposPF">
+      <div class="section-title">📋 Dados Pessoais</div>
+      <div class="form-group">
+        <label class="label">Nome Completo *</label>
+        <input type="text" id="clienteNome" class="input" placeholder="Nome completo"/>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="label">CPF</label>
+          <input type="text" id="clienteCpf" class="input" placeholder="000.000.000-00"/>
+        </div>
+        <div class="form-group">
+          <label class="label">Sexo</label>
+          <select id="clienteSexo" class="select">
+            <option value="">Selecione...</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Feminino">Feminino</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="label">Profissão</label>
+        <input type="text" id="clienteProfissao" class="input" placeholder="Profissão"/>
+      </div>
+    </div>
+    
+    <!-- Campos Pessoa Jurídica -->
+    <div id="camposPJ" style="display:none">
+      <div class="section-title">🏢 Dados da Empresa</div>
+      <div class="form-group">
+        <label class="label">Nome Fantasia *</label>
+        <input type="text" id="clienteNomeFantasia" class="input" placeholder="Nome fantasia"/>
+      </div>
+      <div class="form-group">
+        <label class="label">Razão Social</label>
+        <input type="text" id="clienteRazaoSocial" class="input" placeholder="Razão social"/>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="label">CNPJ</label>
+          <input type="text" id="clienteCnpj" class="input" placeholder="00.000.000/0000-00"/>
+        </div>
+        <div class="form-group">
+          <label class="label">Ramo de Atuação</label>
+          <input type="text" id="clienteRamo" class="input" placeholder="Ramo"/>
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="label">Inscrição Municipal</label>
+          <input type="text" id="clienteInscMunicipal" class="input" placeholder="Inscrição municipal"/>
+        </div>
+        <div class="form-group">
+          <label class="label">Inscrição Estadual</label>
+          <input type="text" id="clienteInscEstadual" class="input" placeholder="Inscrição estadual"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="label">Site</label>
+        <input type="url" id="clienteSite" class="input" placeholder="https://"/>
+      </div>
+      
+      <div class="section-title">💼 Contato Financeiro</div>
+      <div class="form-group">
+        <label class="label">Nome do Contato</label>
+        <input type="text" id="clienteContatoFinanceiroNome" class="input" placeholder="Nome"/>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="label">WhatsApp</label>
+          <input type="tel" id="clienteContatoFinanceiroWhatsapp" class="input" placeholder="(00) 00000-0000"/>
+        </div>
+        <div class="form-group">
+          <label class="label">Email</label>
+          <input type="email" id="clienteContatoFinanceiroEmail" class="input" placeholder="email@empresa.com"/>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Campos Comuns: Endereço -->
+    <div class="section-title">📍 Endereço</div>
+    <div class="form-row cols-2">
+      <div class="form-group">
+        <label class="label">CEP</label>
+        <input type="text" id="clienteCep" class="input" placeholder="00000-000" onblur="buscarCep()"/>
+      </div>
+      <div class="form-group">
+        <label class="label">Logradouro</label>
+        <input type="text" id="clienteLogradouro" class="input" placeholder="Rua, Avenida..."/>
+      </div>
+    </div>
+    <div class="form-row cols-3">
+      <div class="form-group">
+        <label class="label">Número</label>
+        <input type="text" id="clienteNumero" class="input" placeholder="Nº"/>
+      </div>
+      <div class="form-group">
+        <label class="label">Complemento</label>
+        <input type="text" id="clienteComplemento" class="input" placeholder="Apto, Sala..."/>
+      </div>
+      <div class="form-group">
+        <label class="label">Bairro</label>
+        <input type="text" id="clienteBairro" class="input" placeholder="Bairro"/>
+      </div>
+    </div>
+    <div class="form-row cols-2">
+      <div class="form-group">
+        <label class="label">Cidade</label>
+        <input type="text" id="clienteCidade" class="input" placeholder="Cidade"/>
+      </div>
+      <div class="form-group">
+        <label class="label">Estado</label>
+        <select id="clienteEstado" class="select">
+          <option value="">Selecione...</option>
+          <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
+          <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
+          <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+          <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+          <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
+          <option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option>
+          <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
+          <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
+          <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="label">Ponto de Referência</label>
+      <input type="text" id="clientePontoRef" class="input" placeholder="Ponto de referência"/>
+    </div>
+    
+    <!-- Campos Comuns: Contato -->
+    <div class="section-title">📞 Contato</div>
+    <div class="form-row cols-2">
+      <div class="form-group">
+        <label class="label">WhatsApp *</label>
+        <input type="tel" id="clienteWhatsapp" class="input" placeholder="(00) 00000-0000"/>
+      </div>
+      <div class="form-group">
+        <label class="label">Telefone Fixo</label>
+        <input type="tel" id="clienteTelefone" class="input" placeholder="(00) 0000-0000"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="label">Email</label>
+      <input type="email" id="clienteEmail" class="input" placeholder="email@exemplo.com"/>
+    </div>
+    
+    <div class="modal-actions">
+      <button id="btnCancelarCliente" class="btn" onclick="fecharModalNovoCliente()">Cancelar</button>
+      <button id="btnSalvarCliente" class="btn btn-primary" onclick="salvarNovoCliente()">Salvar Cliente</button>
     </div>
   </div>
 </div>
@@ -271,11 +476,18 @@ const API_BASE = window.location.origin + '/api';
 let vendedor = null;
 let empresa = null;
 let clientes = [];
+let agendas = [];
 
 // ===== Utils =====
 const fmtBRL = v => new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'}).format(v||0);
 const fmtData = d => d ? new Date(d+'T12:00:00').toLocaleDateString('pt-BR') : '-';
 const showToast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); };
+
+// Máscaras
+const maskCpf = v => v.replace(/\D/g,'').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2').slice(0,14);
+const maskCnpj = v => v.replace(/\D/g,'').replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2').slice(0,18);
+const maskPhone = v => v.replace(/\D/g,'').replace(/(\d{2})(\d)/,'($1) $2').replace(/(\d{5})(\d{4})$/,'$1-$2').slice(0,15);
+const maskCep = v => v.replace(/\D/g,'').replace(/(\d{5})(\d)/,'$1-$2').slice(0,9);
 
 // ===== PWA Install =====
 let deferredPrompt = null;
@@ -351,11 +563,14 @@ async function loadClientes() {
   try {
     const res = await fetch(API_BASE + '/clientes/' + empresa.id);
     clientes = await res.json();
-    
-    const opts = clientes.map(c => `<option value="${c.id}">${c.nome || c.nome_fantasia || c.razao_social}</option>`).join('');
-    document.getElementById('preCliente').innerHTML = '<option value="">Selecione...</option>' + opts;
-    document.getElementById('visitaCliente').innerHTML = '<option value="">Selecione...</option>' + opts;
+    atualizarSelectClientes();
   } catch (e) { console.error('Erro ao carregar clientes:', e); }
+}
+
+function atualizarSelectClientes() {
+  const opts = clientes.map(c => `<option value="${c.id}">${c.nome || c.nome_fantasia || c.razao_social}</option>`).join('');
+  document.getElementById('preCliente').innerHTML = '<option value="">Selecione...</option>' + opts;
+  document.getElementById('visitaCliente').innerHTML = '<option value="">Selecione...</option>' + opts;
 }
 
 // ===== Load Orçamentos =====
@@ -431,7 +646,7 @@ async function loadComissoes() {
 async function loadAgenda() {
   try {
     const res = await fetch(API_BASE + '/vendedor/' + vendedor.id + '/agenda');
-    const agendas = await res.json();
+    agendas = await res.json();
     
     const lista = document.getElementById('listaAgenda');
     if (agendas.length === 0) {
@@ -442,9 +657,10 @@ async function loadAgenda() {
     lista.innerHTML = agendas.map(a => {
       const statusClass = {
         'Pendente': 'badge-pendente',
-        'Confirmado': 'badge-aprovado',
-        'Concluído': 'badge-pago',
-        'Cancelado': 'badge-rascunho'
+        'Confirmado': 'badge-confirmado',
+        'Concluído': 'badge-concluido',
+        'Cancelado': 'badge-cancelado',
+        'Reagendado': 'badge-enviado'
       }[a.status] || 'badge-pendente';
       
       return `
@@ -453,11 +669,31 @@ async function loadAgenda() {
             <div class="title">${a.titulo}</div>
             <div class="subtitle">${a.cliente_nome} • ${fmtData(a.data)} ${a.hora_inicio || ''}</div>
           </div>
-          <span class="badge ${statusClass}">${a.status}</span>
+          <div class="actions">
+            <span class="badge ${statusClass}">${a.status}</span>
+            <button class="edit-btn" onclick="editarAgenda('${a.id}')">✏️</button>
+          </div>
         </div>
       `;
     }).join('');
   } catch (e) { console.error('Erro ao carregar agenda:', e); }
+}
+
+// ===== Editar Agenda =====
+function editarAgenda(agendaId) {
+  const agenda = agendas.find(a => a.id === agendaId);
+  if (!agenda) return;
+  
+  document.getElementById('modalVisitaTitulo').textContent = '📅 Editar Visita';
+  document.getElementById('visitaId').value = agenda.id;
+  document.getElementById('visitaCliente').value = agenda.cliente_id || '';
+  document.getElementById('visitaTitulo').value = agenda.titulo || '';
+  document.getElementById('visitaData').value = agenda.data || '';
+  document.getElementById('visitaHora').value = agenda.hora_inicio || '';
+  document.getElementById('visitaStatus').value = agenda.status || 'Pendente';
+  document.getElementById('visitaDesc').value = agenda.descricao || '';
+  document.getElementById('btnExcluirVisita').style.display = 'block';
+  document.getElementById('modalVisita').classList.add('show');
 }
 
 // ===== Pré-Orçamento =====
@@ -600,17 +836,22 @@ document.getElementById('btnSalvarPre').onclick = async () => {
 
 // ===== Nova Visita =====
 document.getElementById('btnNovaVisita').onclick = () => {
+  document.getElementById('modalVisitaTitulo').textContent = '📅 Nova Visita';
+  document.getElementById('visitaId').value = '';
   document.getElementById('visitaTitulo').value = '';
   document.getElementById('visitaData').value = '';
   document.getElementById('visitaHora').value = '';
+  document.getElementById('visitaStatus').value = 'Pendente';
   document.getElementById('visitaDesc').value = '';
   document.getElementById('visitaCliente').value = '';
+  document.getElementById('btnExcluirVisita').style.display = 'none';
   document.getElementById('modalVisita').classList.add('show');
 };
 
 document.getElementById('btnCancelarVisita').onclick = () => document.getElementById('modalVisita').classList.remove('show');
 
 document.getElementById('btnSalvarVisita').onclick = async () => {
+  const agendaId = document.getElementById('visitaId').value;
   const clienteId = document.getElementById('visitaCliente').value;
   const titulo = document.getElementById('visitaTitulo').value;
   const data = document.getElementById('visitaData').value;
@@ -618,26 +859,32 @@ document.getElementById('btnSalvarVisita').onclick = async () => {
   if (!clienteId || !titulo || !data) { showToast('Preencha os campos obrigatórios'); return; }
   
   const cliente = clientes.find(c => c.id === clienteId);
+  const payload = {
+    empresa_id: empresa.id,
+    cliente_id: clienteId,
+    cliente_nome: cliente.nome || cliente.nome_fantasia || cliente.razao_social,
+    titulo,
+    descricao: document.getElementById('visitaDesc').value,
+    data,
+    hora_inicio: document.getElementById('visitaHora').value,
+    hora_fim: '',
+    status: document.getElementById('visitaStatus').value
+  };
   
   try {
-    const res = await fetch(API_BASE + '/vendedor/' + vendedor.id + '/agenda', {
-      method: 'POST',
+    const url = agendaId 
+      ? `${API_BASE}/vendedor/${vendedor.id}/agenda/${agendaId}`
+      : `${API_BASE}/vendedor/${vendedor.id}/agenda`;
+    const method = agendaId ? 'PUT' : 'POST';
+    
+    const res = await fetch(url, {
+      method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        empresa_id: empresa.id,
-        cliente_id: clienteId,
-        cliente_nome: cliente.nome || cliente.nome_fantasia || cliente.razao_social,
-        titulo,
-        descricao: document.getElementById('visitaDesc').value,
-        data,
-        hora_inicio: document.getElementById('visitaHora').value,
-        hora_fim: '',
-        status: 'Pendente'
-      })
+      body: JSON.stringify(payload)
     });
     
     if (res.ok) {
-      showToast('Visita agendada!');
+      showToast(agendaId ? 'Visita atualizada!' : 'Visita agendada!');
       document.getElementById('modalVisita').classList.remove('show');
       await loadAgenda();
     } else {
@@ -647,6 +894,178 @@ document.getElementById('btnSalvarVisita').onclick = async () => {
     showToast('Erro de conexão');
   }
 };
+
+document.getElementById('btnExcluirVisita').onclick = async () => {
+  const agendaId = document.getElementById('visitaId').value;
+  if (!agendaId) return;
+  
+  if (!confirm('Deseja realmente excluir esta visita?')) return;
+  
+  try {
+    const res = await fetch(`${API_BASE}/vendedor/${vendedor.id}/agenda/${agendaId}`, { method: 'DELETE' });
+    if (res.ok) {
+      showToast('Visita excluída!');
+      document.getElementById('modalVisita').classList.remove('show');
+      await loadAgenda();
+    } else {
+      showToast('Erro ao excluir');
+    }
+  } catch (e) {
+    showToast('Erro de conexão');
+  }
+};
+
+// ===== Novo Cliente/Prospect =====
+function abrirModalNovoCliente() {
+  limparFormCliente();
+  document.getElementById('modalNovoCliente').classList.add('show');
+}
+
+function fecharModalNovoCliente() {
+  document.getElementById('modalNovoCliente').classList.remove('show');
+}
+
+function selecionarTipoCliente(tipo) {
+  document.querySelectorAll('.tipo-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tipo-tab[data-tipo="${tipo}"]`).classList.add('active');
+  document.getElementById('clienteTipo').value = tipo;
+  document.getElementById('camposPF').style.display = tipo === 'PF' ? 'block' : 'none';
+  document.getElementById('camposPJ').style.display = tipo === 'PJ' ? 'block' : 'none';
+}
+
+function limparFormCliente() {
+  selecionarTipoCliente('PF');
+  // PF
+  document.getElementById('clienteNome').value = '';
+  document.getElementById('clienteCpf').value = '';
+  document.getElementById('clienteSexo').value = '';
+  document.getElementById('clienteProfissao').value = '';
+  // PJ
+  document.getElementById('clienteNomeFantasia').value = '';
+  document.getElementById('clienteRazaoSocial').value = '';
+  document.getElementById('clienteCnpj').value = '';
+  document.getElementById('clienteRamo').value = '';
+  document.getElementById('clienteInscMunicipal').value = '';
+  document.getElementById('clienteInscEstadual').value = '';
+  document.getElementById('clienteSite').value = '';
+  document.getElementById('clienteContatoFinanceiroNome').value = '';
+  document.getElementById('clienteContatoFinanceiroWhatsapp').value = '';
+  document.getElementById('clienteContatoFinanceiroEmail').value = '';
+  // Endereço
+  document.getElementById('clienteCep').value = '';
+  document.getElementById('clienteLogradouro').value = '';
+  document.getElementById('clienteNumero').value = '';
+  document.getElementById('clienteComplemento').value = '';
+  document.getElementById('clienteBairro').value = '';
+  document.getElementById('clienteCidade').value = '';
+  document.getElementById('clienteEstado').value = '';
+  document.getElementById('clientePontoRef').value = '';
+  // Contato
+  document.getElementById('clienteWhatsapp').value = '';
+  document.getElementById('clienteTelefone').value = '';
+  document.getElementById('clienteEmail').value = '';
+}
+
+async function buscarCep() {
+  const cep = document.getElementById('clienteCep').value.replace(/\D/g, '');
+  if (cep.length !== 8) return;
+  
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const data = await res.json();
+    if (!data.erro) {
+      document.getElementById('clienteLogradouro').value = data.logradouro || '';
+      document.getElementById('clienteBairro').value = data.bairro || '';
+      document.getElementById('clienteCidade').value = data.localidade || '';
+      document.getElementById('clienteEstado').value = data.uf || '';
+    }
+  } catch (e) { console.error('Erro ao buscar CEP:', e); }
+}
+
+async function salvarNovoCliente() {
+  const tipo = document.getElementById('clienteTipo').value;
+  
+  // Validações básicas
+  if (tipo === 'PF') {
+    const nome = document.getElementById('clienteNome').value;
+    if (!nome) { showToast('Nome é obrigatório'); return; }
+  } else {
+    const nomeFantasia = document.getElementById('clienteNomeFantasia').value;
+    if (!nomeFantasia) { showToast('Nome Fantasia é obrigatório'); return; }
+  }
+  
+  const whatsapp = document.getElementById('clienteWhatsapp').value;
+  if (!whatsapp) { showToast('WhatsApp é obrigatório'); return; }
+  
+  const payload = {
+    empresa_id: empresa.id,
+    tipo,
+    // PF
+    nome: tipo === 'PF' ? document.getElementById('clienteNome').value : null,
+    sexo: tipo === 'PF' ? document.getElementById('clienteSexo').value : null,
+    cpf: tipo === 'PF' ? document.getElementById('clienteCpf').value : null,
+    profissao: tipo === 'PF' ? document.getElementById('clienteProfissao').value : null,
+    // PJ
+    nome_fantasia: tipo === 'PJ' ? document.getElementById('clienteNomeFantasia').value : null,
+    razao_social: tipo === 'PJ' ? document.getElementById('clienteRazaoSocial').value : null,
+    cnpj: tipo === 'PJ' ? document.getElementById('clienteCnpj').value : null,
+    ramo_atuacao: tipo === 'PJ' ? document.getElementById('clienteRamo').value : null,
+    inscricao_municipal: tipo === 'PJ' ? document.getElementById('clienteInscMunicipal').value : null,
+    inscricao_estadual: tipo === 'PJ' ? document.getElementById('clienteInscEstadual').value : null,
+    site: tipo === 'PJ' ? document.getElementById('clienteSite').value : null,
+    contato_financeiro_nome: tipo === 'PJ' ? document.getElementById('clienteContatoFinanceiroNome').value : null,
+    contato_financeiro_whatsapp: tipo === 'PJ' ? document.getElementById('clienteContatoFinanceiroWhatsapp').value : null,
+    contato_financeiro_email: tipo === 'PJ' ? document.getElementById('clienteContatoFinanceiroEmail').value : null,
+    // Endereço
+    cep: document.getElementById('clienteCep').value,
+    logradouro: document.getElementById('clienteLogradouro').value,
+    numero: document.getElementById('clienteNumero').value,
+    complemento: document.getElementById('clienteComplemento').value,
+    bairro: document.getElementById('clienteBairro').value,
+    cidade: document.getElementById('clienteCidade').value,
+    estado: document.getElementById('clienteEstado').value,
+    ponto_referencia: document.getElementById('clientePontoRef').value,
+    // Contato
+    whatsapp: document.getElementById('clienteWhatsapp').value,
+    telefone_fixo: document.getElementById('clienteTelefone').value,
+    email: document.getElementById('clienteEmail').value
+  };
+  
+  try {
+    const res = await fetch(API_BASE + '/clientes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    if (res.ok) {
+      const novoCliente = await res.json();
+      showToast('Cliente cadastrado com sucesso!');
+      fecharModalNovoCliente();
+      
+      // Recarregar lista de clientes e selecionar o novo
+      await loadClientes();
+      if (novoCliente.id) {
+        document.getElementById('preCliente').value = novoCliente.id;
+        document.getElementById('visitaCliente').value = novoCliente.id;
+      }
+    } else {
+      const err = await res.json();
+      showToast(err.detail || 'Erro ao cadastrar cliente');
+    }
+  } catch (e) {
+    showToast('Erro de conexão');
+  }
+}
+
+// ===== Máscaras nos inputs =====
+document.addEventListener('input', e => {
+  if (e.target.id === 'clienteCpf') e.target.value = maskCpf(e.target.value);
+  if (e.target.id === 'clienteCnpj') e.target.value = maskCnpj(e.target.value);
+  if (e.target.id === 'clienteWhatsapp' || e.target.id === 'clienteTelefone' || e.target.id === 'clienteContatoFinanceiroWhatsapp') 
+    e.target.value = maskPhone(e.target.value);
+  if (e.target.id === 'clienteCep') e.target.value = maskCep(e.target.value);
+});
 
 // ===== Auto Login =====
 (async function init() {
