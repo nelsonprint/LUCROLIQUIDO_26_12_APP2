@@ -176,9 +176,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "CRITICAL: Commission Logic - Services Only"
-    - "App do Vendedor - PWA Endpoint"
-    - "Vendedor Login System"
+    - "App do Vendedor - PWA Login System"
+    - "App do Vendedor - Dashboard KPIs"
+    - "App do Vendedor - Navigation Tabs"
+    - "App do Vendedor - Orçamentos List"
+    - "App do Vendedor - Comissões List"
   stuck_tasks:
     - "Agenda CRUD Operations"
   test_all: false
@@ -187,3 +189,5 @@ test_plan:
 agent_communication:
   - agent: "testing"
     message: "✅ CRITICAL SUCCESS: App do Vendedor core functionality working correctly. Commission logic fixed and tested - calculates ONLY on services as required. PWA endpoints, login system, and main vendedor endpoints all functional. Minor issue with agenda creation (MongoDB serialization) but core business logic is solid."
+  - agent: "testing"
+    message: "✅ COMPREHENSIVE PWA TESTING COMPLETED: All major functionality of App do Vendedor tested and working correctly. Login system, dashboard KPIs, navigation tabs, orçamentos list, comissões list, modals (Nova Visita, Novo Pré-Orçamento), and responsive design all functioning as expected. Orange theme properly applied. Commission calculation shows correct R$ 500,00 value based on R$ 10.000,00 services. Budget #LL-2025-0015 displays with APROVADO status and R$ 15.000,00 value. All test criteria from review request successfully validated."
