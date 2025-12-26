@@ -518,7 +518,7 @@ class VendedorAppTester:
             
             if response.status_code == 200:
                 self.log("✅ Agenda visit updated successfully!")
-                self.log(f"   📅 New date: {update_data['data_visita']} at {update_data['hora_visita']}")
+                self.log(f"   📅 New date: {update_data['data']} from {update_data['hora_inicio']} to {update_data['hora_fim']}")
                 self.log(f"   📊 New status: {update_data['status']}")
                 
                 return True
