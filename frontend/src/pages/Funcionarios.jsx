@@ -118,7 +118,8 @@ const Funcionarios = ({ user, onLogout }) => {
         data_nascimento: '',
         status: 'Ativo',
         login_email: '',
-        login_senha: ''
+        login_senha: '',
+        percentual_comissao: 0
       });
       setCpfValido(true);
     }
