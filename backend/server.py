@@ -6257,6 +6257,327 @@ async def excluir_funcionario(funcionario_id: str):
     return {"message": "Funcionário excluído"}
 
 
+# ========== ROTAS: SUPERVISOR / CRONOGRAMA ==========
+
+@api_router.post("/supervisor/login")
+async def supervisor_login(login_email: str = Body(...), login_senha: str = Body(...)):
+    """Login do supervisor"""
+    funcionario = await db.funcionarios.find_one({
+        "login_email": login_email,
+        "login_senha": login_senha,
+        "status": "Ativo"
+    }, {"_id": 0})
+    
+    if not funcionario:
+        raise HTTPException(status_code=401, detail="Credenciais inválidas ou supervisor inativo")
+    
+    # Buscar dados da empresa
+    empresa = await db.empresas.find_one({"id": funcionario["empresa_id"]}, {"_id": 0})
+    
+    return {
+        "success": True,
+        "supervisor": {
+            "id": funcionario["id"],
+            "nome": funcionario["nome_completo"],
+            "empresa_id": funcionario["empresa_id"],
+            "categoria_nome": funcionario.get("categoria_nome")
+        },
+        "empresa": {
+            "id": empresa.get("id") if empresa else None,
+            "nome": empresa.get("razao_social") if empresa else None,
+            "logo_url": empresa.get("logo_url") if empresa else None
+        }
+    }
+
+
+@api_router.get("/supervisor/{supervisor_id}/orcamentos")
+async def listar_orcamentos_aprovados(supervisor_id: str):
+    """Listar orçamentos aprovados da empresa do supervisor"""
+    # Buscar supervisor
+    supervisor = await db.funcionarios.find_one({"id": supervisor_id}, {"_id": 0})
+    if not supervisor:
+        raise HTTPException(status_code=404, detail="Supervisor não encontrado")
+    
+    empresa_id = supervisor["empresa_id"]
+    
+    # Buscar orçamentos aprovados
+    orcamentos = await db.orcamentos.find({
+        "company_id": empresa_id,
+        "status": "APROVADO"
+    }, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    return orcamentos
+
+
+@api_router.get("/supervisor/{supervisor_id}/cronograma/{orcamento_id}")
+async def buscar_cronogramas_orcamento(supervisor_id: str, orcamento_id: str):
+    """Buscar todos os cronogramas de um orçamento"""
+    cronogramas = await db.cronogramas.find({
+        "orcamento_id": orcamento_id
+    }, {"_id": 0}).sort("data", -1).to_list(365)
+    
+    return cronogramas
+
+
+@api_router.get("/supervisor/{supervisor_id}/cronograma/{orcamento_id}/{data}")
+async def buscar_cronograma_dia(supervisor_id: str, orcamento_id: str, data: str):
+    """Buscar cronograma de um dia específico"""
+    cronograma = await db.cronogramas.find_one({
+        "orcamento_id": orcamento_id,
+        "data": data
+    }, {"_id": 0})
+    
+    return cronograma
+
+
+@api_router.post("/supervisor/{supervisor_id}/cronograma")
+async def salvar_cronograma(supervisor_id: str, cronograma_data: CronogramaCreate):
+    """Salvar ou atualizar cronograma de um dia"""
+    # Buscar supervisor
+    supervisor = await db.funcionarios.find_one({"id": supervisor_id}, {"_id": 0})
+    if not supervisor:
+        raise HTTPException(status_code=404, detail="Supervisor não encontrado")
+    
+    # Buscar orçamento
+    orcamento = await db.orcamentos.find_one({"id": cronograma_data.orcamento_id}, {"_id": 0})
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    # Verificar se já existe cronograma para este dia
+    existente = await db.cronogramas.find_one({
+        "orcamento_id": cronograma_data.orcamento_id,
+        "data": cronograma_data.data
+    }, {"_id": 0})
+    
+    if existente:
+        # Atualizar
+        await db.cronogramas.update_one(
+            {"id": existente["id"]},
+            {"$set": {
+                "projeto_nome": cronograma_data.projeto_nome,
+                "progresso_geral": cronograma_data.progresso_geral,
+                "modo_progresso": cronograma_data.modo_progresso,
+                "etapas": cronograma_data.etapas,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        return {"message": "Cronograma atualizado", "id": existente["id"]}
+    else:
+        # Criar novo
+        novo_cronograma = {
+            "id": str(uuid.uuid4()),
+            "orcamento_id": cronograma_data.orcamento_id,
+            "empresa_id": supervisor["empresa_id"],
+            "supervisor_id": supervisor_id,
+            "supervisor_nome": supervisor["nome_completo"],
+            "data": cronograma_data.data,
+            "projeto_nome": cronograma_data.projeto_nome,
+            "cliente_nome": orcamento.get("cliente_nome", ""),
+            "cliente_whatsapp": orcamento.get("cliente_whatsapp", ""),
+            "progresso_geral": cronograma_data.progresso_geral,
+            "modo_progresso": cronograma_data.modo_progresso,
+            "etapas": cronograma_data.etapas,
+            "enviado_cliente": False,
+            "enviado_em": None,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.cronogramas.insert_one(novo_cronograma)
+        return {"message": "Cronograma criado", "id": novo_cronograma["id"]}
+
+
+@api_router.post("/supervisor/{supervisor_id}/cronograma/{cronograma_id}/enviar")
+async def enviar_cronograma_cliente(supervisor_id: str, cronograma_id: str):
+    """Marcar cronograma como enviado e gerar/retornar link do cliente"""
+    # Buscar cronograma
+    cronograma = await db.cronogramas.find_one({"id": cronograma_id}, {"_id": 0})
+    if not cronograma:
+        raise HTTPException(status_code=404, detail="Cronograma não encontrado")
+    
+    # Buscar ou criar token do cliente
+    token_doc = await db.cliente_cronograma_tokens.find_one({
+        "orcamento_id": cronograma["orcamento_id"]
+    }, {"_id": 0})
+    
+    if not token_doc:
+        # Criar novo token
+        token_doc = {
+            "id": str(uuid.uuid4()),
+            "orcamento_id": cronograma["orcamento_id"],
+            "empresa_id": cronograma["empresa_id"],
+            "cliente_nome": cronograma["cliente_nome"],
+            "cliente_whatsapp": cronograma["cliente_whatsapp"],
+            "token": str(uuid.uuid4()),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.cliente_cronograma_tokens.insert_one(token_doc)
+    
+    # Marcar cronograma como enviado
+    await db.cronogramas.update_one(
+        {"id": cronograma_id},
+        {"$set": {
+            "enviado_cliente": True,
+            "enviado_em": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Gerar URL do WhatsApp
+    cliente_whatsapp = cronograma.get("cliente_whatsapp", "")
+    cliente_whatsapp_numeros = ''.join(filter(str.isdigit, cliente_whatsapp))
+    
+    # URL da página do cliente
+    base_url = os.environ.get("REACT_APP_BACKEND_URL", "")
+    cliente_url = f"{base_url}/api/cliente/cronograma/{token_doc['token']}"
+    
+    data_formatada = datetime.strptime(cronograma["data"], "%Y-%m-%d").strftime("%d/%m/%Y")
+    mensagem = f"""🏗️ *Cronograma de Obra*
+
+Olá {cronograma['cliente_nome']}!
+
+Segue o cronograma de execução da obra:
+📅 Data: {data_formatada}
+📊 Progresso: {cronograma['progresso_geral']}%
+
+Acesse pelo link:
+{cliente_url}
+
+Você pode instalar como um App no seu celular para acompanhar todos os dias!"""
+
+    whatsapp_url = f"https://wa.me/55{cliente_whatsapp_numeros}?text={quote(mensagem)}"
+    
+    return {
+        "success": True,
+        "cliente_url": cliente_url,
+        "whatsapp_url": whatsapp_url,
+        "token": token_doc["token"]
+    }
+
+
+@api_router.post("/supervisor/upload/media")
+async def upload_media_cronograma(
+    file: UploadFile = File(...),
+    tipo: str = Form(...)  # 'image' ou 'audio'
+):
+    """Upload de mídia (imagem ou áudio) para cronograma"""
+    # Validar tipo
+    if tipo not in ["image", "audio"]:
+        raise HTTPException(status_code=400, detail="Tipo deve ser 'image' ou 'audio'")
+    
+    # Gerar nome único
+    ext = Path(file.filename).suffix if file.filename else (".jpg" if tipo == "image" else ".webm")
+    filename = f"cronograma_{tipo}_{uuid.uuid4()}{ext}"
+    
+    # Salvar arquivo
+    file_path = uploads_dir / filename
+    
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    # Retornar URL
+    base_url = os.environ.get("REACT_APP_BACKEND_URL", "")
+    file_url = f"{base_url}/uploads/{filename}"
+    
+    return {"url": file_url, "filename": filename}
+
+
+# ========== ROTAS: CLIENTE VISUALIZAÇÃO CRONOGRAMA ==========
+
+@api_router.get("/cliente/cronograma/{token}")
+async def cliente_listar_cronogramas(token: str):
+    """Página do cliente - listar todos os cronogramas enviados"""
+    # Buscar token
+    token_doc = await db.cliente_cronograma_tokens.find_one({"token": token}, {"_id": 0})
+    if not token_doc:
+        raise HTTPException(status_code=404, detail="Link inválido ou expirado")
+    
+    # Buscar empresa
+    empresa = await db.empresas.find_one({"id": token_doc["empresa_id"]}, {"_id": 0})
+    
+    # Buscar cronogramas enviados
+    cronogramas = await db.cronogramas.find({
+        "orcamento_id": token_doc["orcamento_id"],
+        "enviado_cliente": True
+    }, {"_id": 0}).sort("data", -1).to_list(365)
+    
+    return {
+        "cliente_nome": token_doc["cliente_nome"],
+        "empresa": {
+            "nome": empresa.get("razao_social") if empresa else "Empresa",
+            "logo_url": empresa.get("logo_url") if empresa else None
+        },
+        "cronogramas": cronogramas
+    }
+
+
+@api_router.get("/cliente/cronograma/{token}/{data}")
+async def cliente_ver_cronograma_dia(token: str, data: str):
+    """Página do cliente - ver cronograma de um dia específico"""
+    # Buscar token
+    token_doc = await db.cliente_cronograma_tokens.find_one({"token": token}, {"_id": 0})
+    if not token_doc:
+        raise HTTPException(status_code=404, detail="Link inválido ou expirado")
+    
+    # Buscar empresa
+    empresa = await db.empresas.find_one({"id": token_doc["empresa_id"]}, {"_id": 0})
+    
+    # Buscar cronograma do dia
+    cronograma = await db.cronogramas.find_one({
+        "orcamento_id": token_doc["orcamento_id"],
+        "data": data,
+        "enviado_cliente": True
+    }, {"_id": 0})
+    
+    if not cronograma:
+        raise HTTPException(status_code=404, detail="Cronograma não encontrado")
+    
+    return {
+        "cliente_nome": token_doc["cliente_nome"],
+        "empresa": {
+            "nome": empresa.get("razao_social") if empresa else "Empresa",
+            "logo_url": empresa.get("logo_url") if empresa else None
+        },
+        "cronograma": cronograma
+    }
+
+
+@api_router.get("/funcionario/{funcionario_id}/link-supervisor")
+async def gerar_link_supervisor(funcionario_id: str):
+    """Gerar link do app do supervisor para enviar via WhatsApp"""
+    funcionario = await db.funcionarios.find_one({"id": funcionario_id}, {"_id": 0})
+    if not funcionario:
+        raise HTTPException(status_code=404, detail="Funcionário não encontrado")
+    
+    if not funcionario.get("login_email") or not funcionario.get("login_senha"):
+        raise HTTPException(status_code=400, detail="Configure o login do supervisor primeiro")
+    
+    base_url = os.environ.get("REACT_APP_BACKEND_URL", "")
+    supervisor_url = f"{base_url}/api/supervisor/app"
+    
+    whatsapp_numero = funcionario.get("whatsapp", "")
+    whatsapp_numero = ''.join(filter(str.isdigit, whatsapp_numero))
+    
+    mensagem = f"""🏗️ *App do Supervisor - Lucro Líquido*
+
+Olá {funcionario['nome_completo']}!
+
+Acesse o App do Supervisor pelo link:
+{supervisor_url}
+
+Suas credenciais de acesso:
+📧 Email: {funcionario['login_email']}
+🔑 Senha: {funcionario['login_senha']}
+
+Você pode instalar como um App no seu celular!"""
+
+    whatsapp_url = f"https://wa.me/55{whatsapp_numero}?text={quote(mensagem)}"
+    
+    return {
+        "supervisor_url": supervisor_url,
+        "whatsapp_url": whatsapp_url
+    }
+
+
 # ========== INCLUIR ROUTER ==========
 
 app.include_router(api_router)
