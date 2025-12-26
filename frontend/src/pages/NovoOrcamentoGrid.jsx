@@ -167,6 +167,9 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
           valor_entrada: orc.valor_entrada || 0,
           num_parcelas: orc.num_parcelas || 0,
           parcelas: orc.parcelas || [],
+          // Vendedor
+          vendedor_id: orc.vendedor_id || '',
+          vendedor_nome: orc.vendedor_nome || '',
         });
         
         // Carregar itens do orçamento (se existir)
