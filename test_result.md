@@ -200,11 +200,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "App do Vendedor - PWA Login System"
-    - "App do Vendedor - Dashboard KPIs"
-    - "App do Vendedor - Navigation Tabs"
-    - "App do Vendedor - Orçamentos List"
-    - "App do Vendedor - Comissões List"
+    - "App do Vendedor - Edit Button in Agenda"
+    - "App do Vendedor - New Client/Prospect Modal"
   stuck_tasks:
     - "Agenda CRUD Operations"
   test_all: false
@@ -215,3 +212,5 @@ agent_communication:
     message: "✅ CRITICAL SUCCESS: App do Vendedor core functionality working correctly. Commission logic fixed and tested - calculates ONLY on services as required. PWA endpoints, login system, and main vendedor endpoints all functional. Minor issue with agenda creation (MongoDB serialization) but core business logic is solid."
   - agent: "testing"
     message: "✅ COMPREHENSIVE PWA TESTING COMPLETED: All major functionality of App do Vendedor tested and working correctly. Login system, dashboard KPIs, navigation tabs, orçamentos list, comissões list, modals (Nova Visita, Novo Pré-Orçamento), and responsive design all functioning as expected. Orange theme properly applied. Commission calculation shows correct R$ 500,00 value based on R$ 10.000,00 services. Budget #LL-2025-0015 displays with APROVADO status and R$ 15.000,00 value. All test criteria from review request successfully validated."
+  - agent: "testing"
+    message: "✅ NEW FEATURES TESTING COMPLETED: Successfully tested both new features requested in review. 1) Edit button in Agenda: ✏️ button visible, opens modal with 'Editar Visita' title, form pre-populated, delete button present, status change works. 2) New Client/Prospect modal: Orange '+' button opens modal, PF/PJ tabs functional, all required fields present and working (PF: Nome, CPF, Sexo, Profissão; Address: CEP, Logradouro, etc.; Contact: WhatsApp, Telefone, Email; PJ: Nome Fantasia, CNPJ, Financial Contact fields). Successfully created test client 'Ana Costa Silva' and verified client was added to dropdown. All functionality working as specified in review request."
