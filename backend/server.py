@@ -6494,9 +6494,9 @@ async def upload_media_cronograma(
 
 # ========== ROTAS: CLIENTE VISUALIZAÇÃO CRONOGRAMA ==========
 
-@api_router.get("/cliente/cronograma/{token}")
+@api_router.get("/cliente/cronograma/{token}/data")
 async def cliente_listar_cronogramas(token: str):
-    """Página do cliente - listar todos os cronogramas enviados"""
+    """API - listar todos os cronogramas enviados para o cliente"""
     # Buscar token
     token_doc = await db.cliente_cronograma_tokens.find_one({"token": token}, {"_id": 0})
     if not token_doc:
