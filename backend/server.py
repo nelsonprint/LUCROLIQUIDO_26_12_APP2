@@ -1703,6 +1703,47 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
             update_fields['canal_envio'] = status_data.canal_envio
     elif status_data.status == "APROVADO":
         update_fields['aprovado_em'] = datetime.now(timezone.utc).isoformat()
+        
+        # === GERAR COMISSÃO DO VENDEDOR ===
+        # Só gera comissão se o orçamento tiver vendedor e ainda não tiver comissão gerada
+        if orcamento.get('vendedor_id') and not orcamento.get('comissao_gerada'):
+            vendedor = await db.funcionarios.find_one({"id": orcamento['vendedor_id']}, {"_id": 0})
+            if vendedor and vendedor.get('percentual_comissao', 0) > 0:
+                # Calcular valor da comissão
+                valor_orcamento = orcamento.get('preco_praticado', 0)
+                percentual = vendedor.get('percentual_comissao', 0)
+                valor_comissao = valor_orcamento * (percentual / 100)
+                
+                # Criar conta a pagar para a comissão
+                comissao_id = str(uuid.uuid4())
+                conta_pagar = {
+                    "id": comissao_id,
+                    "empresa_id": orcamento['empresa_id'],
+                    "descricao": f"Comissão - Orçamento #{orcamento.get('numero_orcamento', 'N/A')} - {orcamento.get('cliente_nome', '')}",
+                    "valor": valor_comissao,
+                    "data_vencimento": (datetime.now(timezone.utc) + timedelta(days=30)).strftime('%Y-%m-%d'),
+                    "data_pagamento": None,
+                    "status": "Pendente",
+                    "categoria": "Comissão",
+                    "fornecedor": vendedor.get('nome_completo', 'Vendedor'),
+                    "observacoes": f"Comissão de {percentual}% sobre orçamento #{orcamento.get('numero_orcamento')}. Vendedor: {vendedor.get('nome_completo')}",
+                    "tipo_comissao": "vendedor",
+                    "vendedor_id": vendedor.get('id'),
+                    "vendedor_nome": vendedor.get('nome_completo'),
+                    "orcamento_id": orcamento_id,
+                    "orcamento_numero": orcamento.get('numero_orcamento'),
+                    "percentual_comissao": percentual,
+                    "valor_base": valor_orcamento,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.contas_pagar.insert_one(conta_pagar)
+                
+                update_fields['comissao_gerada'] = True
+                update_fields['comissao_id'] = comissao_id
+                
+                logger.info(f"Comissão gerada: R$ {valor_comissao:.2f} para vendedor {vendedor.get('nome_completo')}")
+        
     elif status_data.status == "NAO_APROVADO":
         update_fields['nao_aprovado_em'] = datetime.now(timezone.utc).isoformat()
     
