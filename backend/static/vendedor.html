@@ -505,13 +505,25 @@ const maskCnpj = v => v.replace(/\D/g,'').replace(/(\d{2})(\d)/,'$1.$2').replace
 const maskPhone = v => v.replace(/\D/g,'').replace(/(\d{2})(\d)/,'($1) $2').replace(/(\d{5})(\d{4})$/,'$1-$2').slice(0,15);
 const maskCep = v => v.replace(/\D/g,'').replace(/(\d{5})(\d)/,'$1-$2').slice(0,9);
 
+// ===== Registrar Service Worker para PWA =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/api/vendedor/sw.js')
+    .then(reg => console.log('Service Worker registrado:', reg.scope))
+    .catch(err => console.log('Service Worker erro:', err));
+}
+
 // ===== PWA Install =====
 let deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
   document.getElementById('installBanner').classList.add('show');
-  document.getElementById('installBtnManual').textContent = '📲 Instalar App Agora';
+  // Mudar o botão para indicar que instalação direta está disponível
+  const btn = document.getElementById('installBtnManual');
+  btn.textContent = '📲 Instalar App Agora';
+  btn.style.background = 'var(--brand)';
+  btn.style.color = '#fff';
+  btn.style.borderStyle = 'solid';
   document.getElementById('installInstructions').style.display = 'none';
 });
 document.getElementById('installBtn').onclick = async () => {
