@@ -918,3 +918,36 @@ Testing:
 ⚠️ **MINOR CONFIGURATION NOTE**
 - Company WhatsApp number was required for notification URL generation (added during testing)
 - Ensure companies have celular_whatsapp field populated for full functionality
+
+### Main Agent → Testing Agent (December 26, 2024)
+**TESTE DE CAPTURA DE MÍDIA NO SUPERVISOR PWA**
+
+**Contexto:**
+Foi implementada uma correção para o problema de captura de fotos e áudios na página PWA do supervisor (`supervisor.html`). O problema anterior era erro de memória insuficiente no smartphone após capturar imagem.
+
+**Correções implementadas:**
+1. **Compressão de imagem:** Antes de exibir/salvar, a imagem é comprimida para max 800px de largura e 60% de qualidade JPEG
+2. **Gerenciamento de memória:** URLs de blob são rastreadas e liberadas com `URL.revokeObjectURL()` antes de re-renderizar
+3. **Áudio com bitrate reduzido:** Gravação de áudio usa 64kbps para economizar memória
+4. **Feedback visual:** Mostra "⏳ Processando..." enquanto comprime a imagem
+
+**Credenciais de teste:**
+- Supervisor: `supervisor1766725736@teste.com` / `senha123`
+- Admin: `admin@lucroliquido.com` / `admin123`
+
+**URL do app supervisor:**
+- https://obrascope.preview.emergentagent.com/api/supervisor/app
+
+**Testar:**
+1. Login do supervisor com as credenciais acima
+2. Selecionar uma obra (orçamento aprovado)
+3. Adicionar uma etapa
+4. Clicar em "Adicionar Mídia"
+5. Capturar uma foto - verificar se aparece o preview
+6. Gravar um áudio - verificar se o player funciona após parar
+7. Salvar o cronograma
+
+**Critério de sucesso:**
+- Foto deve aparecer no preview após captura
+- Áudio deve ser reproduzível após gravação
+- Não deve ocorrer erro de memória ou recarregamento da página
