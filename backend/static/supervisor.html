@@ -612,11 +612,16 @@ function createMediaElement(etapa, media, mIdx) {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    toast('Enviando foto...');
+    toast('Processando foto...');
     
     try {
+      // Comprimir imagem antes de enviar
+      const compressedFile = await compressImage(file, 800, 0.7);
+      
+      toast('Enviando foto...');
+      
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressedFile);
       formData.append('tipo', 'image');
       
       const res = await fetch(`${API_BASE}/supervisor/upload/media`, {
@@ -629,7 +634,8 @@ function createMediaElement(etapa, media, mIdx) {
       renderStages();
       toast('Foto salva!');
     } catch (err) {
-      toast('Erro ao enviar foto');
+      console.error('Erro:', err);
+      toast('Erro ao enviar foto: ' + (err.message || 'Tente novamente'));
     }
   });
   
