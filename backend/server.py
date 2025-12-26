@@ -6437,6 +6437,8 @@ async def enviar_cronograma_cliente(supervisor_id: str, cronograma_id: str):
     cliente_url = f"{base_url}/api/cliente/cronograma/{token_doc['token']}"
     
     data_formatada = datetime.strptime(cronograma["data"], "%Y-%m-%d").strftime("%d/%m/%Y")
+    
+    # Mensagem formatada para WhatsApp - link em linha separada para ser clicável
     mensagem = f"""🏗️ *Cronograma de Obra*
 
 Olá {cronograma['cliente_nome']}!
@@ -6445,10 +6447,10 @@ Segue o cronograma de execução da obra:
 📅 Data: {data_formatada}
 📊 Progresso: {cronograma['progresso_geral']}%
 
-Acesse pelo link:
+📲 *Acesse aqui:*
 {cliente_url}
 
-Você pode instalar como um App no seu celular para acompanhar todos os dias!"""
+💡 _Você pode instalar como um App no seu celular!_"""
 
     whatsapp_url = f"https://wa.me/55{cliente_whatsapp_numeros}?text={quote(mensagem)}"
     
