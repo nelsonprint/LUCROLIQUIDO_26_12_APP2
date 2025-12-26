@@ -6771,6 +6771,15 @@ async def serve_vendedor_manifest():
     return FileResponse(file_path, media_type="application/json")
 
 
+@api_router.get("/vendedor/sw.js")
+async def serve_vendedor_sw():
+    """Servir Service Worker do vendedor"""
+    file_path = static_dir / "sw-vendedor.js"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Service Worker não encontrado")
+    return FileResponse(file_path, media_type="application/javascript")
+
+
 @api_router.post("/vendedor/login")
 async def vendedor_login(credentials: dict = Body(...)):
     """Login do vendedor"""
