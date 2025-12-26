@@ -14,7 +14,7 @@ import { MoneyInput } from '@/components/ui/money-input';
 import { maskPhone, isValidCPF, onlyDigits, formatBRL, parseBRL } from '@/lib/formatters';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
-import { Users, Plus, Edit, Trash2, Phone, MessageCircle, Mail, UserPlus, Loader2 } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Phone, MessageCircle, Mail, UserPlus, Loader2, Send, Key } from 'lucide-react';
 
 // Lista de estados brasileiros
 const ESTADOS_BR = [
