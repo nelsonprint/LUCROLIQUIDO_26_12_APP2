@@ -331,6 +331,9 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
       const data = {
         empresa_id: company.id,
         usuario_id: user?.id || user?.user_id,
+        // Vendedor responsável
+        vendedor_id: orcamentoData.vendedor_id || null,
+        vendedor_nome: orcamentoData.vendedor_nome || null,
         // Cliente
         cliente_nome: orcamentoData.cliente_nome,
         cliente_documento: orcamentoData.cliente_documento,
