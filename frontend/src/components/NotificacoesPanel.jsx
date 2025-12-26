@@ -1,6 +1,7 @@
 /**
  * Painel de Notificações Persistentes
  * Mostra notificações que só desaparecem quando o usuário clica no X
+ * Posicionado no canto superior direito da tela
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { Bell, X, CheckCircle, AlertCircle, Info, ExternalLink } from 'lucide-react';
@@ -69,7 +70,7 @@ const NotificacoesPanel = ({ companyId, userId }) => {
   const naoLidas = notificacoes.length;
 
   return (
-    <div className="relative">
+    <>
       {/* Botão do sino */}
       <Button
         variant="ghost"
@@ -87,9 +88,17 @@ const NotificacoesPanel = ({ companyId, userId }) => {
         )}
       </Button>
 
-      {/* Painel de notificações - Posicionado no canto superior direito */}
+      {/* Overlay para fechar ao clicar fora */}
       {showPanel && (
-        <div className="fixed right-4 top-16 w-96 max-h-[500px] overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl z-[9999]">
+        <div 
+          className="fixed inset-0 z-[9998]" 
+          onClick={() => setShowPanel(false)}
+        />
+      )}
+
+      {/* Painel de notificações - FIXO no canto superior direito */}
+      {showPanel && (
+        <div className="fixed top-4 right-4 w-96 max-h-[500px] overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl z-[9999]">
           <div className="sticky top-0 bg-zinc-900 p-4 border-b border-zinc-700 flex items-center justify-between">
             <h3 className="font-semibold text-white flex items-center gap-2">
               <Bell className="w-4 h-4" />
@@ -166,7 +175,7 @@ const NotificacoesPanel = ({ companyId, userId }) => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
