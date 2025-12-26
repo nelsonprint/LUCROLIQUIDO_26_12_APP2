@@ -1147,3 +1147,39 @@ A página permite ao cliente visualizar o cronograma em modo somente leitura.
 - Interface profissional e adequada para clientes visualizarem cronogramas
 
 **NOTA IMPORTANTE:** O sistema de áudio está funcionando perfeitamente com player HTML5 nativo. A única correção necessária é para o sistema de exibição de imagens/fotos.
+
+### Main Agent → Testing Agent (December 26, 2024)
+**TESTE DO SISTEMA MÃE - ALTERAÇÕES PARA APP DO VENDEDOR**
+
+**Alterações implementadas:**
+1. Backend:
+   - Adicionado campo `percentual_comissao` no modelo de Funcionário
+   - Adicionado campos `vendedor_id` e `vendedor_nome` no modelo de Orçamento
+   - Criado endpoint `/api/vendedores/{empresa_id}` para listar vendedores
+   - Automação: Quando orçamento é APROVADO, gera comissão em Contas a Pagar
+
+2. Frontend:
+   - Campo "Percentual de Comissão" no cadastro de funcionário (aparece quando categoria é "Vendedor")
+   - Campo "Vendedor Responsável" no formulário de orçamento
+
+**Credenciais:**
+- Admin: `admin@lucroliquido.com` / `admin123`
+
+**Testar:**
+1. Login como admin
+2. Ir em Funcionários
+3. Criar/Editar um funcionário com categoria "Vendedor"
+4. Verificar se o campo "Percentual de Comissão" aparece
+5. Preencher com 5%
+6. Salvar
+7. Ir em Orçamentos > Novo
+8. Verificar se o campo "Vendedor Responsável" aparece na aba Cliente
+9. Selecionar o vendedor criado
+10. Criar um orçamento de teste
+11. Aprovar o orçamento
+12. Verificar em Contas a Pagar se a comissão foi gerada
+
+**Critério de sucesso:**
+- Campo de comissão aparece para vendedores no cadastro
+- Campo de vendedor aparece no orçamento
+- Comissão é gerada automaticamente ao aprovar orçamento
