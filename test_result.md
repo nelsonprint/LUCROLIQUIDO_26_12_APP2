@@ -1070,3 +1070,30 @@ O código do `supervisor.html` foi completamente reescrito baseado no código fu
 - Os problemas anteriores de memória foram resolvidos com as novas implementações
 - Sistema pronto para uso em produção com funcionalidade de mídia estável e otimizada
 - Nenhuma issue crítica encontrada - todas as funcionalidades operacionais
+
+### Main Agent → Testing Agent (December 26, 2024)
+**TESTE DA PÁGINA DO CLIENTE (VISUALIZAÇÃO DO CRONOGRAMA)**
+
+**Contexto:**
+O endpoint `/api/cliente/cronograma/{token}` foi corrigido para servir a página HTML ao invés de JSON.
+A página permite ao cliente visualizar o cronograma em modo somente leitura.
+
+**URL de teste:**
+- https://obrascope.preview.emergentagent.com/api/cliente/cronograma/e8e7dee1-2252-4cbb-bc65-cf4b4cb0cfb0
+
+**Testar:**
+1. Acessar a URL acima
+2. Verificar se a página carrega (não JSON)
+3. Verificar se mostra o nome do cliente e empresa
+4. Verificar se lista os cronogramas disponíveis
+5. Clicar em "Ver" para ver detalhes de um cronograma
+6. Verificar se as etapas, fotos e áudios são exibidos
+7. Verificar que não há controles de edição (somente leitura)
+
+**Critério de sucesso:**
+- Página HTML carrega (não JSON)
+- Lista de cronogramas é exibida
+- Detalhes do cronograma são visíveis
+- Fotos são exibidas
+- Áudios podem ser reproduzidos
+- Não há opção de editar
