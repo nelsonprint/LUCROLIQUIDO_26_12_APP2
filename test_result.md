@@ -1,66 +1,105 @@
-# Test Results - App do Vendedor
+backend:
+  - task: "App do Vendedor - PWA Endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ GET /api/vendedor/app returns valid HTML content for PWA. Manifest at /api/vendedor/manifest.json also working correctly with all required fields."
 
-## Última Atualização: $(date +%Y-%m-%d)
+  - task: "Vendedor Login System"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ POST /api/vendedor/login working correctly. Successfully created vendedor funcionário with login credentials and authenticated successfully."
 
-### Implementações Concluídas:
+  - task: "Vendedor Endpoints (Orçamentos, Comissões, Agenda)"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ All vendedor endpoints working: GET /api/vendedor/{id}/orcamentos, GET /api/vendedor/{id}/comissoes, GET /api/vendedor/{id}/agenda return valid responses."
 
-1. **Correção Cirúrgica na Comissão do Vendedor**
-   - A comissão agora incide SOMENTE sobre SERVIÇOS (não sobre materiais)
-   - Lógica em `server.py` linhas 1704-1761
-   - Base de cálculo: `detalhes_itens.totals.services_total`
-   - Fallback para orçamentos antigos: usa `preco_praticado`
+  - task: "CRITICAL: Commission Logic - Services Only"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ CRITICAL TEST PASSED! Commission calculation working correctly - calculates ONLY on services (R$ 10,000), excludes materials (R$ 5,000). 5% commission = R$ 500. Fixed null pointer issue in detalhes_itens handling."
 
-2. **App do Vendedor (PWA) - NOVO**
-   - URL: `/api/vendedor/app`
-   - Manifest: `/api/vendedor/manifest.json`
-   - Tema: Laranja (#FF7A00)
-   - Funcionalidades:
-     - Login com email/senha do funcionário vendedor
-     - Dashboard com KPIs (comissão liberada, pendente, total orçamentos)
-     - Lista de orçamentos do vendedor
-     - Lista de comissões (pendentes/pagas)
-     - Agenda de visitas
-     - Criar pré-orçamento com foto
+  - task: "Vendedor Link Generation"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ GET /api/funcionario/{id}/link-vendedor generates correct vendedor app URL and WhatsApp message with credentials."
 
-3. **Endpoints do Vendedor (Backend)**
-   - `POST /api/vendedor/login` - Login
-   - `GET /api/vendedor/{vendedor_id}/orcamentos` - Listar orçamentos
-   - `GET /api/vendedor/{vendedor_id}/comissoes` - Listar comissões
-   - `POST /api/vendedor/{vendedor_id}/comissao/{id}/pagar` - Marcar como paga
-   - `GET /api/vendedor/{vendedor_id}/agenda` - Listar agenda
-   - `POST /api/vendedor/{vendedor_id}/agenda` - Criar visita
-   - `PUT /api/vendedor/{vendedor_id}/agenda/{id}` - Atualizar visita
-   - `DELETE /api/vendedor/{vendedor_id}/agenda/{id}` - Excluir visita
-   - `GET /api/vendedor/{vendedor_id}/pre-orcamentos` - Listar pré-orçamentos
-   - `POST /api/vendedor/{vendedor_id}/pre-orcamento` - Criar pré-orçamento
-   - `POST /api/vendedor/upload/media` - Upload de mídia
-   - `GET /api/funcionario/{id}/link-vendedor` - Gerar link WhatsApp
+  - task: "Agenda CRUD Operations"
+    implemented: true
+    working: false
+    file: "server.py"
+    stuck_count: 1
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ POST /api/vendedor/{id}/agenda failing with 520 Internal Server Error. Issue appears to be MongoDB ObjectId serialization problem. GET endpoint works fine."
 
-4. **Frontend (Sistema Mãe)**
-   - Botão "Enviar Link do App" diferenciado para Vendedor (laranja) vs Supervisor (azul)
-   - Função `handleEnviarLinkVendedor` adicionada em Funcionarios.jsx
+frontend:
+  - task: "Frontend Integration"
+    implemented: false
+    working: "NA"
+    file: "N/A"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Frontend testing not performed as per system limitations."
 
-### Testar:
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
 
-1. **Login no App do Vendedor**
-   - Acessar `/api/vendedor/app`
-   - Criar um funcionário com categoria "Vendedor" e login configurado
-   - Testar login com essas credenciais
+test_plan:
+  current_focus:
+    - "CRITICAL: Commission Logic - Services Only"
+    - "App do Vendedor - PWA Endpoint"
+    - "Vendedor Login System"
+  stuck_tasks:
+    - "Agenda CRUD Operations"
+  test_all: false
+  test_priority: "high_first"
 
-2. **Fluxo de Comissão**
-   - Criar orçamento com vendedor e itens de serviço + materiais
-   - Aprovar orçamento
-   - Verificar se comissão foi gerada APENAS sobre os serviços
-
-3. **Agenda e Pré-Orçamento**
-   - Criar visita no app
-   - Criar pré-orçamento com foto
-
-### Credenciais:
-- Admin: admin@lucroliquido.com / admin123
-- Vendedor: (criar na página de funcionários com categoria "Vendedor")
-
-### Observações:
-- O App do Vendedor está 100% diferente do App do Supervisor
-- A tela do vendedor tem: Orçamentos, Comissões, Agenda
-- A tela do supervisor tem: Cronograma de obra, Etapas, Mídias
+agent_communication:
+  - agent: "testing"
+    message: "✅ CRITICAL SUCCESS: App do Vendedor core functionality working correctly. Commission logic fixed and tested - calculates ONLY on services as required. PWA endpoints, login system, and main vendedor endpoints all functional. Minor issue with agenda creation (MongoDB serialization) but core business logic is solid."
