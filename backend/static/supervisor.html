@@ -512,19 +512,33 @@ function toggleRecording(stageIdx, mediaIdx) {
   } else {
     // Iniciar gravação
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-      const mediaRecorder = new MediaRecorder(stream);
+      // Usar opções de baixa qualidade para economizar memória
+      const options = { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 64000 };
+      let mediaRecorder;
+      try {
+        mediaRecorder = new MediaRecorder(stream, options);
+      } catch (e) {
+        // Fallback se codec não suportado
+        mediaRecorder = new MediaRecorder(stream);
+      }
       const chunks = [];
       
       mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
       
       mediaRecorder.onstop = () => {
         stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
         const localUrl = URL.createObjectURL(blob);
+        blobUrls.push(localUrl);
         
-        // Atualizar UI
-        const audioBox = document.getElementById('media-' + stageIdx + '-' + mediaIdx).querySelector('.audio-box');
-        audioBox.innerHTML = '<audio controls src="' + localUrl + '" style="width:100%"></audio>';
+        // Atualizar UI com player funcional
+        const mediaCard = document.getElementById('media-' + stageIdx + '-' + mediaIdx);
+        if (mediaCard) {
+          const audioBox = mediaCard.querySelector('.audio-box');
+          if (audioBox) {
+            audioBox.innerHTML = '<audio controls preload="auto" style="width:100%"><source src="' + localUrl + '" type="' + (mediaRecorder.mimeType || 'audio/webm') + '"></audio>';
+          }
+        }
         
         // Salvar no estado
         const media = cronograma.etapas[stageIdx].media[mediaIdx];
@@ -532,11 +546,11 @@ function toggleRecording(stageIdx, mediaIdx) {
         media.audio_blob = blob;
         media.audio_uploaded = false;
         
-        toast('Áudio gravado! Salve para enviar.');
+        toast('Áudio gravado!');
         delete recorders[key];
       };
       
-      mediaRecorder.start();
+      mediaRecorder.start(1000); // Gravar em chunks de 1 segundo
       const startTime = Date.now();
       
       recorders[key] = {
@@ -550,7 +564,10 @@ function toggleRecording(stageIdx, mediaIdx) {
       
       mic.classList.add('recording');
       mic.textContent = '⏹️';
-    }).catch(() => toast('Permita o microfone'));
+    }).catch(err => {
+      console.error('Erro microfone:', err);
+      toast('Permita o microfone');
+    });
   }
 }
 
