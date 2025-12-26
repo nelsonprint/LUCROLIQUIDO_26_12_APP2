@@ -7012,8 +7012,10 @@ async def criar_pre_orcamento(vendedor_id: str, pre_orcamento: PreOrcamentoCreat
     }
     
     await db.pre_orcamentos.insert_one(novo_pre)
+    # Retornar cópia sem possível _id adicionado pelo MongoDB
+    pre_response = {k: v for k, v in novo_pre.items() if k != '_id'}
     
-    return {"message": "Pré-orçamento criado com sucesso", "pre_orcamento": novo_pre}
+    return {"message": "Pré-orçamento criado com sucesso", "pre_orcamento": pre_response}
 
 
 @api_router.get("/vendedor/{vendedor_id}/pre-orcamento/{pre_orcamento_id}")
