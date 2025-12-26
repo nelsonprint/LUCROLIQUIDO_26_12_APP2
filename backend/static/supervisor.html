@@ -337,6 +337,10 @@ function openSlider(title, initial, onOk) {
 
 function renderStages() {
   const container = document.getElementById('stagesContainer');
+  
+  // Limpar URLs de blob antigas para evitar vazamento de memória
+  cleanupBlobUrls();
+  
   container.innerHTML = '';
   if (cronograma.etapas.length === 0) {
     container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px">Nenhuma etapa</p>';
