@@ -632,6 +632,41 @@ const Funcionarios = ({ user, onLogout }) => {
               </div>
             </div>
 
+            {/* Login do Supervisor (para categorias Supervisor/Vendedor) */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-zinc-400 border-b border-zinc-800 pb-2 flex items-center gap-2">
+                <Key className="w-4 h-4" />
+                Acesso ao App (Supervisor)
+              </h3>
+              <p className="text-xs text-zinc-500">
+                Configure o login para que este funcionário acesse o App do Supervisor de Obras.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Email de Login</Label>
+                  <Input
+                    type="email"
+                    value={formData.login_email}
+                    onChange={(e) => setFormData({ ...formData, login_email: e.target.value })}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder="supervisor@empresa.com"
+                  />
+                </div>
+
+                <div>
+                  <Label>Senha de Acesso</Label>
+                  <Input
+                    type="text"
+                    value={formData.login_senha}
+                    onChange={(e) => setFormData({ ...formData, login_senha: e.target.value })}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder="Senha do supervisor"
+                  />
+                </div>
+              </div>
+            </div>
+
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
                 Cancelar
