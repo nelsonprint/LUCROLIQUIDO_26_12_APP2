@@ -6908,9 +6908,12 @@ async def criar_agenda_vendedor(vendedor_id: str, agenda: AgendaVendedorCreate):
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
+    # Insert and retrieve without _id
     await db.agenda_vendedor.insert_one(nova_agenda)
+    # Retornar cópia sem possível _id adicionado pelo MongoDB
+    agenda_response = {k: v for k, v in nova_agenda.items() if k != '_id'}
     
-    return {"message": "Agenda criada com sucesso", "agenda": nova_agenda}
+    return {"message": "Agenda criada com sucesso", "agenda": agenda_response}
 
 
 @api_router.put("/vendedor/{vendedor_id}/agenda/{agenda_id}")
