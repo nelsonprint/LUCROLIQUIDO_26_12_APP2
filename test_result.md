@@ -168,6 +168,30 @@ frontend:
         agent: "testing"
         comment: "✅ Responsive design working correctly. Interface adapts properly to mobile viewport (390x844). Orange theme (#FF7A00) correctly applied throughout the interface."
 
+  - task: "App do Vendedor - Edit Button in Agenda"
+    implemented: true
+    working: true
+    file: "/backend/static/vendedor.html"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Edit button (✏️) working correctly in Agenda tab. Modal opens with title 'Editar Visita', form fields are pre-populated with existing data, delete button is visible, and status can be changed successfully. All functionality as specified in review request."
+
+  - task: "App do Vendedor - New Client/Prospect Modal"
+    implemented: true
+    working: true
+    file: "/backend/static/vendedor.html"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ New Client/Prospect modal working perfectly. Orange '+' button opens modal with PF/PJ tabs, all required fields present (PF: Nome, CPF, Sexo, Profissão; PJ: Nome Fantasia, Razão Social, CNPJ, etc.), address section with CEP lookup, contact fields, and financial contact for PJ. Successfully created new client 'Ana Costa Silva' and client was added to select dropdown. All functionality as specified in review request."
+
 metadata:
   created_by: "testing_agent"
   version: "1.0"
