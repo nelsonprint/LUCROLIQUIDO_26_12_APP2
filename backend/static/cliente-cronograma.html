@@ -342,6 +342,14 @@ async function showDetail(data) {
   }
 }
 
+// Normaliza URL para absoluta
+function normalizeUrl(url) {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/')) return window.location.origin + url;
+  return url;
+}
+
 function createStageElement(etapa) {
   const div = document.createElement('div');
   div.className = 'stage';
@@ -364,12 +372,15 @@ function createStageElement(etapa) {
       
       let html = '';
       
-      if (m.imagem_url) {
-        html += `<div class="photo-box"><img src="${m.imagem_url}" alt="Foto" data-full="${m.imagem_url}"/></div>`;
+      const imgUrl = normalizeUrl(m.imagem_url);
+      const audUrl = normalizeUrl(m.audio_url);
+      
+      if (imgUrl) {
+        html += `<div class="photo-box"><img src="${imgUrl}" alt="Foto" data-full="${imgUrl}"/></div>`;
       }
       
-      if (m.audio_url) {
-        html += `<audio class="audio-player" controls src="${m.audio_url}"></audio>`;
+      if (audUrl) {
+        html += `<audio class="audio-player" controls src="${audUrl}"></audio>`;
       }
       
       if (m.nota) {
