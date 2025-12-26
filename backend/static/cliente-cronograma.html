@@ -342,11 +342,25 @@ async function showDetail(data) {
   }
 }
 
-// Normaliza URL para absoluta
+// Normaliza URL para absoluta e corrige domínio
 function normalizeUrl(url) {
   if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  if (url.startsWith('/')) return window.location.origin + url;
+  
+  // Corrigir domínio antigo (orcastream -> obrascope)
+  if (url.includes('orcastream.preview.emergentagent.com')) {
+    url = url.replace('orcastream.preview.emergentagent.com', window.location.host);
+  }
+  
+  // Se é URL absoluta, retorna
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // Se é URL relativa, converte para absoluta
+  if (url.startsWith('/')) {
+    return window.location.origin + url;
+  }
+  
   return url;
 }
 
