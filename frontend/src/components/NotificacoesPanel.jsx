@@ -1,9 +1,10 @@
 /**
  * Painel de Notificações Persistentes
  * Mostra notificações que só desaparecem quando o usuário clica no X
- * Posicionado no canto superior direito da tela
+ * Usa React Portal para garantir posicionamento correto
  */
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, X, CheckCircle, AlertCircle, Info, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -69,6 +70,95 @@ const NotificacoesPanel = ({ companyId, userId }) => {
 
   const naoLidas = notificacoes.length;
 
+  // Componente do Painel (será renderizado via Portal)
+  const PainelNotificacoes = () => (
+    <>
+      {/* Overlay para fechar ao clicar fora */}
+      <div 
+        className="fixed inset-0 bg-black/20 z-[9998]" 
+        onClick={() => setShowPanel(false)}
+      />
+
+      {/* Painel de notificações - FIXO no canto superior direito */}
+      <div className="fixed top-4 right-4 w-96 max-h-[500px] overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl z-[9999]">
+        <div className="sticky top-0 bg-zinc-900 p-4 border-b border-zinc-700 flex items-center justify-between">
+          <h3 className="font-semibold text-white flex items-center gap-2">
+            <Bell className="w-4 h-4" />
+            Notificações
+          </h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowPanel(false)}
+            className="text-zinc-400 hover:text-white h-6 w-6 p-0"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="p-2">
+          {naoLidas === 0 ? (
+            <div className="p-8 text-center text-zinc-500">
+              <Bell className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p>Nenhuma notificação nova</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {notificacoes.map((notif) => (
+                <div
+                  key={notif.id}
+                  className={`relative p-4 rounded-lg border ${getBgColor(notif.tipo)} transition-all`}
+                >
+                  {/* Botão X para fechar */}
+                  <button
+                    onClick={() => marcarComoLida(notif.id)}
+                    className="absolute top-2 right-2 text-zinc-500 hover:text-white transition-colors"
+                    title="Fechar notificação"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+
+                  {/* Conteúdo */}
+                  <div className="flex gap-3 pr-6">
+                    <div className="flex-shrink-0 mt-1">
+                      {getIcon(notif.tipo)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-white text-sm">
+                        {notif.titulo}
+                      </h4>
+                      <p className="text-zinc-400 text-sm mt-1 whitespace-pre-line">
+                        {notif.mensagem}
+                      </p>
+                      
+                      {/* Data */}
+                      <p className="text-zinc-600 text-xs mt-2">
+                        {new Date(notif.created_at).toLocaleString('pt-BR')}
+                      </p>
+
+                      {/* Link para WhatsApp da empresa (se houver) */}
+                      {notif.whatsapp_url && (
+                        <a
+                          href={notif.whatsapp_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 mt-2 text-green-400 hover:text-green-300 text-sm"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Ver no WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <>
       {/* Botão do sino */}
@@ -88,93 +178,8 @@ const NotificacoesPanel = ({ companyId, userId }) => {
         )}
       </Button>
 
-      {/* Overlay para fechar ao clicar fora */}
-      {showPanel && (
-        <div 
-          className="fixed inset-0 z-[9998]" 
-          onClick={() => setShowPanel(false)}
-        />
-      )}
-
-      {/* Painel de notificações - FIXO no canto superior direito */}
-      {showPanel && (
-        <div className="fixed top-4 right-4 w-96 max-h-[500px] overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl z-[9999]">
-          <div className="sticky top-0 bg-zinc-900 p-4 border-b border-zinc-700 flex items-center justify-between">
-            <h3 className="font-semibold text-white flex items-center gap-2">
-              <Bell className="w-4 h-4" />
-              Notificações
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowPanel(false)}
-              className="text-zinc-400 hover:text-white h-6 w-6 p-0"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-
-          <div className="p-2">
-            {naoLidas === 0 ? (
-              <div className="p-8 text-center text-zinc-500">
-                <Bell className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Nenhuma notificação nova</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {notificacoes.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className={`relative p-4 rounded-lg border ${getBgColor(notif.tipo)} transition-all`}
-                  >
-                    {/* Botão X para fechar */}
-                    <button
-                      onClick={() => marcarComoLida(notif.id)}
-                      className="absolute top-2 right-2 text-zinc-500 hover:text-white transition-colors"
-                      title="Fechar notificação"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-
-                    {/* Conteúdo */}
-                    <div className="flex gap-3 pr-6">
-                      <div className="flex-shrink-0 mt-1">
-                        {getIcon(notif.tipo)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-white text-sm">
-                          {notif.titulo}
-                        </h4>
-                        <p className="text-zinc-400 text-sm mt-1 whitespace-pre-line">
-                          {notif.mensagem}
-                        </p>
-                        
-                        {/* Data */}
-                        <p className="text-zinc-600 text-xs mt-2">
-                          {new Date(notif.created_at).toLocaleString('pt-BR')}
-                        </p>
-
-                        {/* Link para WhatsApp da empresa (se houver) */}
-                        {notif.whatsapp_url && (
-                          <a
-                            href={notif.whatsapp_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 mt-2 text-green-400 hover:text-green-300 text-sm"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            Ver no WhatsApp
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Renderizar o painel via Portal no body */}
+      {showPanel && createPortal(<PainelNotificacoes />, document.body)}
     </>
   );
 };
