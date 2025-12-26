@@ -1390,18 +1390,442 @@ class WhatsAppBudgetFlowTester:
             self.log("⚠️ SOME TESTS FAILED! Check logs above for details.")
             return False
 
+class SellerAppTester:
+    """Test suite for Seller App (App do Vendedor) functionality"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        self.vendedor_category_id = None
+        self.created_vendedor_id = None
+        self.created_orcamento_id = None
+        self.created_comissao_id = None
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_list_employee_categories_vendedor(self):
+        """Test GET /funcionarios/categorias/{empresa_id} - Check if 'Vendedor' category exists"""
+        self.log("👥 Testing list employee categories for 'Vendedor'...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/funcionarios/categorias/{self.company_id}")
+            
+            if response.status_code == 200:
+                categories = response.json()
+                self.log(f"✅ Retrieved {len(categories)} employee categories")
+                
+                # Look for "Vendedor" category
+                vendedor_category = None
+                for cat in categories:
+                    if cat.get('nome') == 'Vendedor':
+                        vendedor_category = cat
+                        self.vendedor_category_id = cat.get('id')
+                        break
+                
+                if vendedor_category:
+                    self.log(f"✅ 'Vendedor' category found! ID: {self.vendedor_category_id}")
+                    return True
+                else:
+                    self.log("❌ 'Vendedor' category not found", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to list categories: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error listing categories: {str(e)}", "ERROR")
+            return False
+    
+    def test_list_vendedores_endpoint(self):
+        """Test GET /vendedores/{empresa_id} - New endpoint to list sellers"""
+        self.log("🛍️ Testing list vendedores endpoint...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/vendedores/{self.company_id}")
+            
+            if response.status_code == 200:
+                vendedores = response.json()
+                self.log(f"✅ Vendedores endpoint working! Found {len(vendedores)} vendedores")
+                
+                # Endpoint should return an array (can be empty)
+                if isinstance(vendedores, list):
+                    self.log("✅ Response is a valid array")
+                    return True
+                else:
+                    self.log("❌ Response is not an array", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to list vendedores: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error listing vendedores: {str(e)}", "ERROR")
+            return False
+    
+    def test_create_funcionario_vendedor_with_commission(self):
+        """Test POST /funcionarios - Create employee seller with commission percentage"""
+        self.log("💼 Testing create funcionário vendedor with commission...")
+        
+        if not self.vendedor_category_id:
+            self.log("❌ No Vendedor category ID available", "ERROR")
+            return False
+        
+        import time
+        timestamp = int(time.time())
+        
+        funcionario_data = {
+            "empresa_id": self.company_id,
+            "nome_completo": "Vendedor Teste Comissão",
+            "cpf": "12345678901",
+            "categoria_id": self.vendedor_category_id,
+            "status": "Ativo",
+            "login_email": "vendedor.teste@empresa.com",
+            "login_senha": "senha123",
+            "percentual_comissao": 5.0
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/funcionarios", json=funcionario_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                funcionario_data_response = result.get('funcionario', {})
+                self.created_vendedor_id = funcionario_data_response.get('id')
+                
+                self.log(f"✅ Vendedor with commission created! ID: {self.created_vendedor_id}")
+                
+                # Verify commission percentage was saved
+                verify_response = self.session.get(f"{API_BASE}/funcionario/{self.created_vendedor_id}")
+                if verify_response.status_code == 200:
+                    funcionario = verify_response.json()
+                    
+                    if funcionario.get('percentual_comissao') == 5.0:
+                        self.log("✅ Commission percentage saved correctly (5.0%)!")
+                        return True
+                    else:
+                        self.log(f"❌ Commission percentage incorrect: {funcionario.get('percentual_comissao')}", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify funcionário creation", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to create vendedor: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating vendedor: {str(e)}", "ERROR")
+            return False
+    
+    def test_vendedor_appears_in_listing(self):
+        """Test GET /vendedores/{empresa_id} - Verify created seller appears in listing"""
+        self.log("📋 Testing vendedor appears in listing...")
+        
+        if not self.created_vendedor_id:
+            self.log("❌ No vendedor ID available for verification", "ERROR")
+            return False
+        
+        try:
+            response = self.session.get(f"{API_BASE}/vendedores/{self.company_id}")
+            
+            if response.status_code == 200:
+                vendedores = response.json()
+                self.log(f"✅ Retrieved {len(vendedores)} vendedores")
+                
+                # Look for our created vendedor
+                our_vendedor = None
+                for vendedor in vendedores:
+                    if vendedor.get('id') == self.created_vendedor_id:
+                        our_vendedor = vendedor
+                        break
+                
+                if our_vendedor:
+                    self.log("✅ Our created vendedor found in listing!")
+                    self.log(f"   👤 Name: {our_vendedor.get('nome_completo')}")
+                    self.log(f"   💰 Commission: {our_vendedor.get('percentual_comissao')}%")
+                    
+                    # Verify commission percentage
+                    if our_vendedor.get('percentual_comissao') == 5.0:
+                        self.log("✅ Commission percentage correct in listing!")
+                        return True
+                    else:
+                        self.log("❌ Commission percentage incorrect in listing", "ERROR")
+                        return False
+                else:
+                    self.log("❌ Our created vendedor not found in listing", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to list vendedores: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error listing vendedores: {str(e)}", "ERROR")
+            return False
+    
+    def test_create_orcamento_with_vendedor(self):
+        """Test POST /orcamentos - Create budget with seller information"""
+        self.log("📄 Testing create orçamento with vendedor...")
+        
+        if not self.created_vendedor_id:
+            self.log("❌ No vendedor ID available for orçamento creation", "ERROR")
+            return False
+        
+        import time
+        timestamp = int(time.time())
+        
+        orcamento_data = {
+            "empresa_id": self.company_id,
+            "usuario_id": self.user_data['user_id'],
+            "vendedor_id": self.created_vendedor_id,
+            "vendedor_nome": "Vendedor Teste Comissão",
+            # Client data
+            "cliente_nome": f"Cliente Teste Vendedor {timestamp}",
+            "cliente_documento": "123.456.789-00",
+            "cliente_whatsapp": "11999999999",
+            # Budget data
+            "tipo": "servico_hora",
+            "descricao_servico_ou_produto": f"Serviço vendido por vendedor {timestamp}",
+            "quantidade": 10.0,
+            "custo_total": 1000.0,
+            "preco_minimo": 1500.0,
+            "preco_sugerido": 2000.0,
+            "preco_praticado": 2000.0,
+            # Commercial conditions
+            "validade_proposta": "2025-02-28",
+            "condicoes_pagamento": "À vista",
+            "prazo_execucao": "15 dias úteis",
+            "observacoes": "Orçamento com vendedor para teste de comissão"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/orcamentos", json=orcamento_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.created_orcamento_id = result.get('orcamento_id')
+                numero_orcamento = result.get('numero_orcamento')
+                
+                self.log(f"✅ Orçamento with vendedor created! ID: {self.created_orcamento_id}, Number: {numero_orcamento}")
+                
+                # Verify vendedor data was saved
+                verify_response = self.session.get(f"{API_BASE}/orcamento/{self.created_orcamento_id}")
+                if verify_response.status_code == 200:
+                    orcamento = verify_response.json()
+                    
+                    if (orcamento.get('vendedor_id') == self.created_vendedor_id and
+                        orcamento.get('vendedor_nome') == "Vendedor Teste Comissão"):
+                        self.log("✅ Vendedor data saved correctly in orçamento!")
+                        return True
+                    else:
+                        self.log("❌ Vendedor data not saved correctly", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify orçamento creation", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to create orçamento: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating orçamento: {str(e)}", "ERROR")
+            return False
+    
+    def test_approve_orcamento_generate_commission(self):
+        """Test PATCH /orcamento/{id}/status - Approve budget and test commission generation"""
+        self.log("✅ Testing approve orçamento and commission generation...")
+        
+        if not self.created_orcamento_id:
+            self.log("❌ No orçamento ID available for approval", "ERROR")
+            return False
+        
+        try:
+            # Approve the budget
+            status_data = {"status": "APROVADO"}
+            response = self.session.patch(f"{API_BASE}/orcamento/{self.created_orcamento_id}/status", json=status_data)
+            
+            if response.status_code == 200:
+                self.log("✅ Orçamento approved successfully!")
+                
+                # Verify status was updated
+                verify_response = self.session.get(f"{API_BASE}/orcamento/{self.created_orcamento_id}")
+                if verify_response.status_code == 200:
+                    orcamento = verify_response.json()
+                    
+                    if orcamento.get('status') == 'APROVADO':
+                        self.log("✅ Orçamento status updated to APROVADO!")
+                        return True
+                    else:
+                        self.log(f"❌ Orçamento status not updated correctly: {orcamento.get('status')}", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify orçamento approval", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to approve orçamento: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error approving orçamento: {str(e)}", "ERROR")
+            return False
+    
+    def test_verify_commission_generated(self):
+        """Test GET /contas-pagar/{empresa_id} - Verify commission was generated"""
+        self.log("💰 Testing commission generation verification...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/contas-pagar/{self.company_id}")
+            
+            if response.status_code == 200:
+                contas_pagar = response.json()
+                self.log(f"✅ Retrieved {len(contas_pagar)} contas a pagar")
+                
+                # Look for commission account
+                commission_account = None
+                for conta in contas_pagar:
+                    if (conta.get('categoria') == 'Comissão' and 
+                        conta.get('tipo_comissao') == 'vendedor'):
+                        commission_account = conta
+                        self.created_comissao_id = conta.get('id')
+                        break
+                
+                if commission_account:
+                    self.log("✅ Commission account found!")
+                    self.log(f"   📋 Description: {commission_account.get('descricao')}")
+                    self.log(f"   💰 Value: R$ {commission_account.get('valor')}")
+                    self.log(f"   📊 Category: {commission_account.get('categoria')}")
+                    self.log(f"   🏷️ Commission Type: {commission_account.get('tipo_comissao')}")
+                    
+                    # Verify commission calculation (5% of R$ 2000 = R$ 100)
+                    expected_commission = 2000.0 * 0.05  # 5% commission
+                    actual_commission = commission_account.get('valor', 0)
+                    
+                    if abs(actual_commission - expected_commission) < 0.01:  # Allow small floating point differences
+                        self.log(f"✅ Commission value correct! Expected: R$ {expected_commission}, Got: R$ {actual_commission}")
+                        return True
+                    else:
+                        self.log(f"❌ Commission value incorrect! Expected: R$ {expected_commission}, Got: R$ {actual_commission}", "ERROR")
+                        return False
+                else:
+                    self.log("❌ Commission account not found", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to get contas a pagar: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error getting contas a pagar: {str(e)}", "ERROR")
+            return False
+    
+    def run_all_tests(self):
+        """Execute all Seller App tests"""
+        self.log("🚀 Starting Seller App (App do Vendedor) API tests")
+        self.log("=" * 70)
+        
+        tests = [
+            ("List Employee Categories - Check Vendedor", self.test_list_employee_categories_vendedor),
+            ("List Vendedores Endpoint", self.test_list_vendedores_endpoint),
+            ("Create Funcionário Vendedor with Commission", self.test_create_funcionario_vendedor_with_commission),
+            ("Vendedor Appears in Listing", self.test_vendedor_appears_in_listing),
+            ("Create Orçamento with Vendedor", self.test_create_orcamento_with_vendedor),
+            ("Approve Orçamento - Generate Commission", self.test_approve_orcamento_generate_commission),
+            ("Verify Commission Generated", self.test_verify_commission_generated)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 70)
+        self.log("📊 SELLER APP TEST SUMMARY")
+        self.log("=" * 70)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL SELLER APP TESTS PASSED! System working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME SELLER APP TESTS FAILED! Check logs above for details.")
+            return False
+
+
 def main():
-    """Main function - Run WhatsApp, Funcionários, and Supervisor/Cronograma tests"""
-    print("🚀 Starting Comprehensive Lucro Líquido System Tests")
+    """Main function - Run Seller App tests"""
+    print("🚀 Starting Seller App (App do Vendedor) System Tests")
     print("=" * 80)
     
-    # Initialize WhatsApp Budget Flow Tester
-    whatsapp_tester = WhatsAppBudgetFlowTester()
+    # Initialize session and login
+    session = requests.Session()
     
-    # Run WhatsApp tests first
-    print("\n🔥 PHASE 1: WhatsApp Budget Flow Tests")
+    # Login first
+    print("\n🔐 Logging in...")
+    login_data = {
+        "email": "admin@lucroliquido.com",
+        "password": "admin123"
+    }
+    
+    try:
+        response = session.post(f"{API_BASE}/auth/login", json=login_data)
+        if response.status_code == 200:
+            user_data = response.json()
+            print(f"✅ Login successful! User ID: {user_data['user_id']}")
+        else:
+            print(f"❌ Login failed: {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print(f"❌ Login error: {str(e)}")
+        return False
+    
+    # Use the company ID from the review request
+    company_id = "43b194f2-ad75-4b4b-8dbf-597fb02d20f8"
+    
+    # Initialize Seller App Tester
+    seller_tester = SellerAppTester(session, user_data, company_id)
+    
+    # Run Seller App tests
+    print("\n🔥 SELLER APP TESTS")
     print("=" * 50)
-    whatsapp_success = whatsapp_tester.run_all_tests()
+    seller_success = seller_tester.run_all_tests()
+    
+    # Final summary
+    print("\n" + "=" * 80)
+    print("🎯 FINAL TEST SUMMARY")
+    print("=" * 80)
+    
+    if seller_success:
+        print("🎉 ALL SELLER APP TESTS PASSED!")
+        print("✅ Sistema do Vendedor funcionando corretamente")
+        return True
+    else:
+        print("⚠️ SOME SELLER APP TESTS FAILED!")
+        print("❌ Verificar logs acima para detalhes dos erros")
+        return False
     
     # Run Funcionários tests if we have login data
     funcionarios_success = False
