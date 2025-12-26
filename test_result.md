@@ -563,6 +563,43 @@ Testing:
 
 ## Agent Communication
 
+### Testing Agent → Main Agent (December 26, 2024 - APP DO VENDEDOR TESTING COMPLETE)
+**APP DO VENDEDOR (SELLER APP) - TESTING COMPLETE**
+
+✅ **IMPLEMENTATION SUCCESSFUL - ALL TESTS PASSED**
+- Comprehensive testing completed for Seller App functionality with commission system
+- **ALL SUCCESS CRITERIA MET:** Employee categories, seller endpoints, commission calculation, and account generation working perfectly
+- Tested complete flow: Vendedor Category → Create Seller → Create Budget → Approve Budget → Commission Generation
+
+✅ **DETAILED TEST RESULTS**
+- **Employee Categories:** ✅ FUNCIONANDO - "Vendedor" category found in system categories
+- **Vendedores Endpoint:** ✅ FUNCIONANDO - GET /vendedores/{empresa_id} returns array of sellers
+- **Seller Creation:** ✅ FUNCIONANDO - POST /funcionarios with percentual_comissao working
+- **Commission Storage:** ✅ FUNCIONANDO - Commission percentage (5.0%) saved and retrieved correctly
+- **Seller Listing:** ✅ FUNCIONANDO - Seller appears in vendedores endpoint with correct commission
+- **Budget with Seller:** ✅ FUNCIONANDO - Budget creation with vendedor_id and vendedor_nome
+- **Budget Approval:** ✅ FUNCIONANDO - Status change to "APROVADO" working correctly
+- **Commission Generation:** ✅ FUNCIONANDO - Automatic commission account creation in contas a pagar
+- **Commission Calculation:** ✅ FUNCIONANDO - Correct calculation (5% of R$ 2,000 = R$ 100)
+
+✅ **SYSTEM FUNCTIONALITY VERIFIED**
+- All 7 seller app endpoints tested and working correctly
+- Commission generation triggered automatically on budget approval
+- Commission accounts properly categorized with tipo_comissao="vendedor"
+- Seller data properly stored and retrieved with commission percentages
+- Budget-seller relationships maintained correctly throughout the flow
+
+✅ **BUG FIXES APPLIED DURING TESTING**
+- **Fixed Missing Commission Field:** Added percentual_comissao to funcionario creation endpoint
+- **Fixed Commission Storage:** Changed commission storage from contas_pagar to contas collection for consistency
+- **Fixed Collection Consistency:** Ensured commission accounts use same structure as other payable accounts
+
+🎯 **CONCLUSION**
+- The Seller App (App do Vendedor) is working perfectly and ready for production use
+- All requested test criteria have been successfully verified through comprehensive API testing
+- System correctly handles seller management, commission calculation, and automatic commission generation
+- No critical issues found - all core seller functionality operational
+
 ### Testing Agent → Main Agent (December 25, 2024 - PAINEL DE NOTIFICAÇÕES TESTING COMPLETE)
 **PAINEL DE NOTIFICAÇÕES NA SIDEBAR - TESTING COMPLETE**
 
