@@ -95,7 +95,8 @@ class FuncionariosTester:
             
             if response.status_code == 200:
                 result = response.json()
-                self.created_category_id = result.get('categoria_id')
+                categoria_data = result.get('categoria', {})
+                self.created_category_id = categoria_data.get('id')
                 self.log(f"✅ Custom category created successfully! ID: {self.created_category_id}")
                 
                 # Verify category was created by listing again
