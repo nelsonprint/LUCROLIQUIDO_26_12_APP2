@@ -6304,9 +6304,12 @@ async def listar_orcamentos_aprovados(supervisor_id: str):
     
     empresa_id = supervisor["empresa_id"]
     
-    # Buscar orçamentos aprovados
+    # Buscar orçamentos aprovados (pode ser empresa_id ou company_id dependendo da versão)
     orcamentos = await db.orcamentos.find({
-        "company_id": empresa_id,
+        "$or": [
+            {"empresa_id": empresa_id},
+            {"company_id": empresa_id}
+        ],
         "status": "APROVADO"
     }, {"_id": 0}).sort("created_at", -1).to_list(100)
     
