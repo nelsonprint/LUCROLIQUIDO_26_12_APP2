@@ -1673,11 +1673,11 @@ class SellerAppTester:
             return False
     
     def test_verify_commission_generated(self):
-        """Test GET /contas-pagar/{empresa_id} - Verify commission was generated"""
+        """Test GET /contas/pagar - Verify commission was generated"""
         self.log("💰 Testing commission generation verification...")
         
         try:
-            response = self.session.get(f"{API_BASE}/contas-pagar/{self.company_id}")
+            response = self.session.get(f"{API_BASE}/contas/pagar?company_id={self.company_id}")
             
             if response.status_code == 200:
                 contas_pagar = response.json()
