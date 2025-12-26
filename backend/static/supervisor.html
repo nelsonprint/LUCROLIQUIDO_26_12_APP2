@@ -662,11 +662,11 @@ function createMediaElement(etapa, media, mIdx) {
       <span class="timer">${media.audio_url ? '✓ Áudio' : 'REC'}</span>
       <button class="mic-btn">🎙️</button>
     </div>
-    ${media.audio_url ? `<audio class="audio-player" controls src="${media.audio_url}"></audio>` : ''}
+    ${media.audio_url ? `<audio class="audio-player" controls src="${media.audio_url}" preload="metadata"></audio>` : ''}
     <textarea class="note" placeholder="Nota/Resumo...">${media.nota || ''}</textarea>
   `;
   
-  // Photo
+  // Photo - usando abordagem mais leve para mobile
   const photoBox = div.querySelector('.photo-box');
   const photoInput = div.querySelector('.photo-input');
   
@@ -676,13 +676,16 @@ function createMediaElement(etapa, media, mIdx) {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    toast('Processando foto...');
+    // Limpar input para liberar memória
+    e.target.value = '';
+    
+    toast('Comprimindo foto...');
     
     try {
-      // Comprimir imagem antes de enviar
-      const compressedFile = await compressImage(file, 800, 0.7);
+      // Comprimir imagem (600px, qualidade 60%)
+      const compressedFile = await compressImage(file, 600, 0.6);
       
-      toast('Enviando foto...');
+      toast('Enviando...');
       
       const formData = new FormData();
       formData.append('file', compressedFile);
@@ -693,24 +696,27 @@ function createMediaElement(etapa, media, mIdx) {
         body: formData
       });
       
+      if (!res.ok) throw new Error('Erro no servidor');
+      
       const data = await res.json();
       media.imagem_url = data.url;
       renderStages();
       toast('Foto salva!');
     } catch (err) {
       console.error('Erro:', err);
-      toast('Erro ao enviar foto: ' + (err.message || 'Tente novamente'));
+      toast('Erro: ' + (err.message || 'Tente novamente'));
     }
   });
   
-  // Audio
+  // Audio - usando formato mais compatível
   const micBtn = div.querySelector('.mic-btn');
   const timerEl = div.querySelector('.timer');
   let mediaRecorder = null;
-  let chunks = [];
+  let audioChunks = [];
   let recording = false;
   let startTime = 0;
   let timerInterval = null;
+  let audioStream = null;
   
   micBtn.addEventListener('click', async () => {
     if (!recording) {
