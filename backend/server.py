@@ -6798,6 +6798,24 @@ async def serve_vendedor_sw():
     return FileResponse(file_path, media_type="application/javascript")
 
 
+@api_router.get("/vendedor/icon-192.png")
+async def serve_vendedor_icon_192():
+    """Servir ícone 192x192 do vendedor"""
+    file_path = static_dir / "icon-vendedor-192.png"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Ícone não encontrado")
+    return FileResponse(file_path, media_type="image/png")
+
+
+@api_router.get("/vendedor/icon-512.png")
+async def serve_vendedor_icon_512():
+    """Servir ícone 512x512 do vendedor"""
+    file_path = static_dir / "icon-vendedor-512.png"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Ícone não encontrado")
+    return FileResponse(file_path, media_type="image/png")
+
+
 @api_router.post("/vendedor/login")
 async def vendedor_login(credentials: dict = Body(...)):
     """Login do vendedor"""
