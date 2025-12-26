@@ -405,14 +405,25 @@ const Funcionarios = ({ user, onLogout }) => {
                           <TableCell>{getStatusBadge(func.status)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              {/* Botão enviar link do App Supervisor */}
-                              {func.login_email && func.login_senha && (
+                              {/* Botão enviar link do App - diferencia Supervisor de Vendedor */}
+                              {func.login_email && func.login_senha && func.categoria_nome?.toLowerCase().includes('vendedor') && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEnviarLinkVendedor(func.id)}
+                                  className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                                  title="Enviar Link do App do Vendedor via WhatsApp"
+                                >
+                                  <Send className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {func.login_email && func.login_senha && func.categoria_nome?.toLowerCase().includes('supervisor') && (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleEnviarLinkSupervisor(func.id)}
-                                  className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
-                                  title="Enviar Link do App via WhatsApp"
+                                  className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+                                  title="Enviar Link do App do Supervisor via WhatsApp"
                                 >
                                   <Send className="w-4 h-4" />
                                 </Button>
