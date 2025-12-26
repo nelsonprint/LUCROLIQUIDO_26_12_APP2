@@ -695,6 +695,9 @@ class FuncionarioCreate(BaseModel):
     data_admissao: Optional[str] = None
     data_nascimento: Optional[str] = None
     status: str = "Ativo"  # Ativo, Inativo, Férias, Afastado
+    # Campos de login para supervisores
+    login_email: Optional[str] = None
+    login_senha: Optional[str] = None
 
 
 class Funcionario(BaseModel):
@@ -716,6 +719,9 @@ class Funcionario(BaseModel):
     data_admissao: Optional[str] = None
     data_nascimento: Optional[str] = None
     status: str = "Ativo"
+    # Campos de login para supervisores
+    login_email: Optional[str] = None
+    login_senha: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
