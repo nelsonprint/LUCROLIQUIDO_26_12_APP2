@@ -167,9 +167,10 @@ class FuncionariosTester:
                     employee = verify_response.json()
                     
                     # Check key fields
+                    expected_cpf = f"987.654.{timestamp % 1000:03d}-00"
                     checks = [
                         (employee.get('nome_completo') == "Maria Santos Silva", "Nome completo"),
-                        (employee.get('cpf') == "987.654.321-00", "CPF"),
+                        (employee.get('cpf') == expected_cpf, "CPF"),
                         (employee.get('cidade') == "Rio de Janeiro", "Cidade"),
                         (employee.get('uf') == "RJ", "UF"),
                         (employee.get('salario') == 4500.00, "Salário"),
