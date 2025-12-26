@@ -84,9 +84,12 @@ class FuncionariosTester:
         """Test POST /api/funcionarios/categorias - Create custom category"""
         self.log("➕ Testing create custom employee category...")
         
+        import time
+        timestamp = int(time.time())
+        
         category_data = {
             "empresa_id": self.company_id,
-            "nome": "Técnico",
+            "nome": f"Técnico {timestamp}",
             "descricao": "Profissional técnico especializado"
         }
         
