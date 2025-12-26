@@ -6742,6 +6742,372 @@ async def serve_cliente_manifest():
     return FileResponse(file_path, media_type="application/json")
 
 
+# ========== ENDPOINTS: APP DO VENDEDOR ==========
+
+@api_router.get("/vendedor/app")
+async def serve_vendedor_app():
+    """Servir página PWA do vendedor"""
+    file_path = static_dir / "vendedor.html"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+    return FileResponse(file_path, media_type="text/html")
+
+
+@api_router.get("/vendedor/manifest.json")
+async def serve_vendedor_manifest():
+    """Servir manifest do vendedor"""
+    file_path = static_dir / "manifest-vendedor.json"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Manifest não encontrado")
+    return FileResponse(file_path, media_type="application/json")
+
+
+@api_router.post("/vendedor/login")
+async def vendedor_login(credentials: dict = Body(...)):
+    """Login do vendedor"""
+    login_email = credentials.get("login_email")
+    login_senha = credentials.get("login_senha")
+    
+    if not login_email or not login_senha:
+        raise HTTPException(status_code=400, detail="Email e senha são obrigatórios")
+    
+    # Buscar funcionário com essas credenciais e que seja vendedor
+    funcionario = await db.funcionarios.find_one({
+        "login_email": login_email,
+        "login_senha": login_senha,
+        "status": "Ativo"
+    }, {"_id": 0})
+    
+    if not funcionario:
+        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    
+    # Verificar se é vendedor (categoria com nome "Vendedor")
+    if funcionario.get("categoria_id"):
+        categoria = await db.categorias_funcionario.find_one({"id": funcionario["categoria_id"]}, {"_id": 0})
+        if not categoria or not categoria.get("nome", "").lower().startswith("vendedor"):
+            raise HTTPException(status_code=403, detail="Acesso permitido apenas para vendedores")
+    
+    # Buscar empresa
+    empresa = await db.companies.find_one({"id": funcionario["empresa_id"]}, {"_id": 0})
+    
+    return {
+        "vendedor": funcionario,
+        "empresa": empresa
+    }
+
+
+@api_router.get("/vendedor/{vendedor_id}/orcamentos")
+async def listar_orcamentos_vendedor(vendedor_id: str):
+    """Listar orçamentos do vendedor"""
+    # Buscar orçamentos onde este vendedor é responsável
+    orcamentos = await db.orcamentos.find(
+        {"vendedor_id": vendedor_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+    
+    return orcamentos
+
+
+@api_router.get("/vendedor/{vendedor_id}/comissoes")
+async def listar_comissoes_vendedor(vendedor_id: str):
+    """Listar comissões do vendedor (contas a pagar do tipo comissão)"""
+    comissoes = await db.contas.find(
+        {
+            "vendedor_id": vendedor_id,
+            "tipo_comissao": "vendedor"
+        },
+        {"_id": 0}
+    ).sort("data_vencimento", 1).to_list(1000)
+    
+    # Calcular totais
+    total_pendente = sum(c['valor'] for c in comissoes if c.get('status') == 'PENDENTE')
+    total_pago = sum(c['valor'] for c in comissoes if c.get('status') == 'PAGO')
+    
+    return {
+        "comissoes": comissoes,
+        "total_pendente": total_pendente,
+        "total_pago": total_pago
+    }
+
+
+@api_router.post("/vendedor/{vendedor_id}/comissao/{comissao_id}/pagar")
+async def marcar_comissao_paga(vendedor_id: str, comissao_id: str):
+    """Marcar comissão como paga"""
+    result = await db.contas.update_one(
+        {
+            "id": comissao_id,
+            "vendedor_id": vendedor_id,
+            "tipo_comissao": "vendedor"
+        },
+        {
+            "$set": {
+                "status": "PAGO",
+                "data_pagamento": datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Comissão não encontrada")
+    
+    return {"message": "Comissão marcada como paga"}
+
+
+# ========== ENDPOINTS: AGENDA DO VENDEDOR ==========
+
+class AgendaVendedorCreate(BaseModel):
+    """Modelo para criar agenda de visita"""
+    empresa_id: str
+    cliente_id: Optional[str] = None
+    cliente_nome: str
+    titulo: str
+    descricao: Optional[str] = None
+    data: str  # formato YYYY-MM-DD
+    hora_inicio: str  # formato HH:MM
+    hora_fim: str  # formato HH:MM
+    status: str = "Pendente"  # Pendente, Confirmado, Reagendado, Cancelado, Concluído
+    observacoes: Optional[str] = None
+
+
+@api_router.get("/vendedor/{vendedor_id}/agenda")
+async def listar_agenda_vendedor(vendedor_id: str, data_inicio: Optional[str] = None, data_fim: Optional[str] = None):
+    """Listar agenda de visitas do vendedor"""
+    filtro = {"vendedor_id": vendedor_id}
+    
+    if data_inicio:
+        filtro["data"] = {"$gte": data_inicio}
+    if data_fim:
+        if "data" in filtro:
+            filtro["data"]["$lte"] = data_fim
+        else:
+            filtro["data"] = {"$lte": data_fim}
+    
+    agendas = await db.agenda_vendedor.find(filtro, {"_id": 0}).sort("data", 1).to_list(1000)
+    
+    return agendas
+
+
+@api_router.post("/vendedor/{vendedor_id}/agenda")
+async def criar_agenda_vendedor(vendedor_id: str, agenda: AgendaVendedorCreate):
+    """Criar nova agenda de visita"""
+    nova_agenda = {
+        "id": str(uuid.uuid4()),
+        "vendedor_id": vendedor_id,
+        "empresa_id": agenda.empresa_id,
+        "cliente_id": agenda.cliente_id,
+        "cliente_nome": agenda.cliente_nome,
+        "titulo": agenda.titulo,
+        "descricao": agenda.descricao,
+        "data": agenda.data,
+        "hora_inicio": agenda.hora_inicio,
+        "hora_fim": agenda.hora_fim,
+        "status": agenda.status,
+        "observacoes": agenda.observacoes,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.agenda_vendedor.insert_one(nova_agenda)
+    
+    return {"message": "Agenda criada com sucesso", "agenda": nova_agenda}
+
+
+@api_router.put("/vendedor/{vendedor_id}/agenda/{agenda_id}")
+async def atualizar_agenda_vendedor(vendedor_id: str, agenda_id: str, agenda: AgendaVendedorCreate):
+    """Atualizar agenda de visita"""
+    update_data = {
+        "cliente_id": agenda.cliente_id,
+        "cliente_nome": agenda.cliente_nome,
+        "titulo": agenda.titulo,
+        "descricao": agenda.descricao,
+        "data": agenda.data,
+        "hora_inicio": agenda.hora_inicio,
+        "hora_fim": agenda.hora_fim,
+        "status": agenda.status,
+        "observacoes": agenda.observacoes,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    result = await db.agenda_vendedor.update_one(
+        {"id": agenda_id, "vendedor_id": vendedor_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Agenda não encontrada")
+    
+    return {"message": "Agenda atualizada com sucesso"}
+
+
+@api_router.delete("/vendedor/{vendedor_id}/agenda/{agenda_id}")
+async def excluir_agenda_vendedor(vendedor_id: str, agenda_id: str):
+    """Excluir agenda de visita"""
+    result = await db.agenda_vendedor.delete_one({"id": agenda_id, "vendedor_id": vendedor_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Agenda não encontrada")
+    
+    return {"message": "Agenda excluída com sucesso"}
+
+
+# ========== ENDPOINTS: PRÉ-ORÇAMENTO DO VENDEDOR ==========
+
+class PreOrcamentoItemCreate(BaseModel):
+    """Item do pré-orçamento"""
+    descricao: str
+    quantidade: int = 1
+    foto_url: Optional[str] = None
+    audio_url: Optional[str] = None
+
+
+class PreOrcamentoCreate(BaseModel):
+    """Modelo para criar pré-orçamento"""
+    empresa_id: str
+    cliente_id: Optional[str] = None
+    cliente_nome: str
+    cliente_whatsapp: Optional[str] = None
+    data_entrega: Optional[str] = None
+    itens: List[PreOrcamentoItemCreate] = []
+    observacoes: Optional[str] = None
+
+
+@api_router.get("/vendedor/{vendedor_id}/pre-orcamentos")
+async def listar_pre_orcamentos_vendedor(vendedor_id: str):
+    """Listar pré-orçamentos do vendedor"""
+    pre_orcamentos = await db.pre_orcamentos.find(
+        {"vendedor_id": vendedor_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+    
+    return pre_orcamentos
+
+
+@api_router.post("/vendedor/{vendedor_id}/pre-orcamento")
+async def criar_pre_orcamento(vendedor_id: str, pre_orcamento: PreOrcamentoCreate):
+    """Criar novo pré-orçamento"""
+    # Buscar vendedor para pegar nome
+    vendedor = await db.funcionarios.find_one({"id": vendedor_id}, {"_id": 0})
+    if not vendedor:
+        raise HTTPException(status_code=404, detail="Vendedor não encontrado")
+    
+    novo_pre = {
+        "id": str(uuid.uuid4()),
+        "vendedor_id": vendedor_id,
+        "vendedor_nome": vendedor.get("nome_completo"),
+        "empresa_id": pre_orcamento.empresa_id,
+        "cliente_id": pre_orcamento.cliente_id,
+        "cliente_nome": pre_orcamento.cliente_nome,
+        "cliente_whatsapp": pre_orcamento.cliente_whatsapp,
+        "data_entrega": pre_orcamento.data_entrega,
+        "itens": [item.model_dump() for item in pre_orcamento.itens],
+        "observacoes": pre_orcamento.observacoes,
+        "status": "Pendente",  # Pendente, Convertido (quando virar orçamento real)
+        "orcamento_id": None,  # ID do orçamento gerado (se convertido)
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.pre_orcamentos.insert_one(novo_pre)
+    
+    return {"message": "Pré-orçamento criado com sucesso", "pre_orcamento": novo_pre}
+
+
+@api_router.get("/vendedor/{vendedor_id}/pre-orcamento/{pre_orcamento_id}")
+async def buscar_pre_orcamento(vendedor_id: str, pre_orcamento_id: str):
+    """Buscar pré-orçamento específico"""
+    pre_orcamento = await db.pre_orcamentos.find_one(
+        {"id": pre_orcamento_id, "vendedor_id": vendedor_id},
+        {"_id": 0}
+    )
+    
+    if not pre_orcamento:
+        raise HTTPException(status_code=404, detail="Pré-orçamento não encontrado")
+    
+    return pre_orcamento
+
+
+@api_router.post("/vendedor/upload/media")
+async def upload_media_vendedor(file: UploadFile = File(...)):
+    """Upload de mídia (foto ou áudio) do vendedor"""
+    try:
+        # Criar diretório se não existir
+        upload_dir = Path(ROOT_DIR) / "uploads" / "vendedor"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Gerar nome único
+        ext = Path(file.filename).suffix.lower() if file.filename else ".bin"
+        filename = f"{uuid.uuid4()}{ext}"
+        file_path = upload_dir / filename
+        
+        # Salvar arquivo
+        content = await file.read()
+        async with aiofiles.open(file_path, 'wb') as f:
+            await f.write(content)
+        
+        # Retornar URL
+        base_url = os.environ.get("REACT_APP_BACKEND_URL", "")
+        url = f"{base_url}/api/uploads/vendedor/{filename}"
+        
+        return {"url": url, "filename": filename}
+    except Exception as e:
+        logger.error(f"Erro ao fazer upload: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/uploads/vendedor/{filename}")
+async def serve_vendedor_upload(filename: str):
+    """Servir arquivos de upload do vendedor"""
+    file_path = Path(ROOT_DIR) / "uploads" / "vendedor" / filename
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+    
+    import mimetypes
+    content_type, _ = mimetypes.guess_type(str(file_path))
+    if not content_type:
+        content_type = 'application/octet-stream'
+    
+    return FileResponse(file_path, media_type=content_type)
+
+
+@api_router.get("/funcionario/{funcionario_id}/link-vendedor")
+async def gerar_link_vendedor(funcionario_id: str):
+    """Gerar link do app do vendedor para enviar via WhatsApp"""
+    funcionario = await db.funcionarios.find_one({"id": funcionario_id}, {"_id": 0})
+    if not funcionario:
+        raise HTTPException(status_code=404, detail="Funcionário não encontrado")
+    
+    if not funcionario.get("login_email") or not funcionario.get("login_senha"):
+        raise HTTPException(status_code=400, detail="Configure o login do vendedor primeiro")
+    
+    base_url = os.environ.get("BACKEND_URL", os.environ.get("REACT_APP_BACKEND_URL", ""))
+    vendedor_url = f"{base_url}/api/vendedor/app"
+    
+    whatsapp_numero = funcionario.get("whatsapp", "")
+    whatsapp_numero = ''.join(filter(str.isdigit, whatsapp_numero))
+    
+    mensagem = f"""🛒 *App do Vendedor - Lucro Líquido*
+
+Olá {funcionario['nome_completo']}!
+
+📲 *Acesse o App:*
+{vendedor_url}
+
+*Suas credenciais:*
+📧 Email: {funcionario['login_email']}
+🔑 Senha: {funcionario['login_senha']}
+
+💡 _Instale como App no celular!_"""
+
+    whatsapp_url = f"https://wa.me/55{whatsapp_numero}?text={quote(mensagem)}"
+    
+    return {
+        "vendedor_url": vendedor_url,
+        "whatsapp_url": whatsapp_url
+    }
+
+
 # Servir arquivos de upload com prefixo /api
 uploads_dir = Path(ROOT_DIR) / "uploads"
 uploads_dir.mkdir(exist_ok=True)
