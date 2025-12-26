@@ -6578,6 +6578,52 @@ Você pode instalar como um App no seu celular!"""
     }
 
 
+# ========== ROTAS: SERVIR PÁGINAS PWA ==========
+
+static_dir = Path(ROOT_DIR) / "static"
+static_dir.mkdir(exist_ok=True)
+
+@api_router.get("/supervisor/app")
+async def serve_supervisor_app():
+    """Servir página PWA do supervisor"""
+    file_path = static_dir / "supervisor.html"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+    return FileResponse(file_path, media_type="text/html")
+
+
+@api_router.get("/supervisor/manifest.json")
+async def serve_supervisor_manifest():
+    """Servir manifest do supervisor"""
+    file_path = static_dir / "manifest-supervisor.json"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Manifest não encontrado")
+    return FileResponse(file_path, media_type="application/json")
+
+
+@api_router.get("/cliente/app/{token}")
+async def serve_cliente_app(token: str):
+    """Servir página PWA do cliente"""
+    # Verificar se token existe
+    token_doc = await db.cliente_cronograma_tokens.find_one({"token": token}, {"_id": 0})
+    if not token_doc:
+        raise HTTPException(status_code=404, detail="Link inválido")
+    
+    file_path = static_dir / "cliente-cronograma.html"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+    return FileResponse(file_path, media_type="text/html")
+
+
+@api_router.get("/cliente/manifest.json")
+async def serve_cliente_manifest():
+    """Servir manifest do cliente"""
+    file_path = static_dir / "manifest-cliente.json"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Manifest não encontrado")
+    return FileResponse(file_path, media_type="application/json")
+
+
 # ========== INCLUIR ROUTER ==========
 
 app.include_router(api_router)
