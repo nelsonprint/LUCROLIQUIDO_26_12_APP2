@@ -15,18 +15,22 @@ import { MoneyInput } from '@/components/ui/money-input';
 import { maskPhone, isValidCPF, isValidCNPJ, formatBRL, parseBRL } from '@/lib/formatters';
 import { 
   FileText, Users, Calendar, CreditCard, Save, ArrowLeft, 
-  Plus, UserPlus, Loader2, Calculator, Package, AlertTriangle, Banknote
+  Plus, UserPlus, Loader2, Calculator, Package, AlertTriangle, Banknote, PanelRightOpen, PanelRightClose
 } from 'lucide-react';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OrcamentoItemsGrid from '@/components/OrcamentoItemsGrid';
 import OrcamentoMateriais from '@/components/OrcamentoMateriais';
+import PreOrcamentoPainel from '@/components/PreOrcamentoPainel';
 
 const NovoOrcamentoGrid = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const company = JSON.parse(localStorage.getItem('company') || '{}');
+
+  // Estado do painel de pré-orçamento
+  const [showPreOrcamentoPainel, setShowPreOrcamentoPainel] = useState(false);
 
   // Verificar se é modo edição (ID passado na URL ou state)
   const orcamentoIdParam = new URLSearchParams(location.search).get('id');
