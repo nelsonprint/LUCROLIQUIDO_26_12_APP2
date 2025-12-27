@@ -4965,14 +4965,55 @@ async def webhook(data: dict):
 
 async def create_lancamento_from_conta(conta: dict, tipo_lancamento: str):
     """Criar lançamento financeiro automaticamente quando conta é paga/recebida"""
+    # Determinar mês de competência a partir da data
+    data_pagamento = conta.get('data_pagamento') or conta.get('data_vencimento') or datetime.now().strftime('%Y-%m-%d')
+    competence_month = data_pagamento[:7]  # Formato YYYY-MM
+    
+    # Buscar ou criar category_id baseado na categoria da conta
+    categoria_nome = conta.get('categoria', 'Outros')
+    
+    # Determinar grupo baseado no tipo
+    if tipo_lancamento == 'despesa':
+        grupo = 'VARIAVEL_INDIRETA'  # Despesas variáveis indiretas como padrão
+    else:
+        grupo = 'RECEITA'  # Para receitas
+    
+    # Buscar categoria existente no plano de contas
+    categoria_plano = await db.plano_contas.find_one({
+        "company_id": conta['company_id'],
+        "name": categoria_nome
+    }, {"_id": 0})
+    
+    # Se não encontrar, usar uma categoria padrão ou criar uma
+    if categoria_plano:
+        category_id = categoria_plano['id']
+        category_name = categoria_plano['name']
+        category_group = categoria_plano.get('group', grupo)
+    else:
+        # Criar categoria automaticamente no plano de contas
+        category_id = str(uuid.uuid4())
+        category_name = categoria_nome
+        category_group = grupo
+        nova_categoria = {
+            "id": category_id,
+            "company_id": conta['company_id'],
+            "name": categoria_nome,
+            "group": grupo,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.plano_contas.insert_one(nova_categoria)
+    
     transaction = Transaction(
         company_id=conta['company_id'],
         user_id=conta['user_id'],
         type=tipo_lancamento,  # despesa (para PAGAR) ou receita (para RECEBER)
         description=conta['descricao'],
         amount=conta['valor'],
-        category=conta['categoria'],
-        date=conta['data_pagamento'] or conta['data_vencimento'],
+        category_id=category_id,
+        category_name=category_name,
+        category_group=category_group,
+        competence_month=competence_month,
+        date=data_pagamento,
         status="realizado",
         notes=f"Lançamento automático de conta {conta['tipo'].lower()}",
         origem="conta",
