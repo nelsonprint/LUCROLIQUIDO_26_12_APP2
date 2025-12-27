@@ -239,10 +239,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "App do Vendedor - Edit Button in Agenda"
-    - "App do Vendedor - New Client/Prospect Modal"
-  stuck_tasks:
-    - "Agenda CRUD Operations"
+    - "Pre-Orçamento Endpoints for Sistema Mãe"
+    - "Pre-Orçamento Creation with Audio/Photo"
+    - "Pre-Orçamento Listing with Media Items"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
