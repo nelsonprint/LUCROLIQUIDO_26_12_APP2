@@ -1282,6 +1282,18 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
           </Dialog>
         </div>
       </div>
+
+      {/* Painel lateral de Pré-Orçamentos */}
+      {showPreOrcamentoPainel && (
+        <div className="fixed top-0 right-0 h-screen z-40">
+          <PreOrcamentoPainel
+            companyId={company?.id}
+            clienteSelecionado={clienteSelecionado}
+            onUsarDadosCliente={handleUsarDadosPreOrcamento}
+            onClose={() => setShowPreOrcamentoPainel(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };
