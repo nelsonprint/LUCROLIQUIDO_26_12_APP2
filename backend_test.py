@@ -3325,6 +3325,341 @@ def main_pre_orcamento_tests():
         return False
 
 
+class VendedorFieldPrecificacaoTester:
+    """Test suite for Vendedor Field in Precificação (Classic Pricing) functionality"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        self.vendedor_id = None
+        self.vendedor_nome = None
+        self.created_orcamento_id = None
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_create_vendedor_if_needed(self):
+        """Test creating a vendedor if none exists"""
+        self.log("👤 Testing create vendedor if needed...")
+        
+        try:
+            # First check if vendedores exist
+            response = self.session.get(f"{API_BASE}/vendedores/{self.company_id}")
+            
+            if response.status_code == 200:
+                vendedores = response.json()
+                self.log(f"✅ Found {len(vendedores)} existing vendedores")
+                
+                if len(vendedores) > 0:
+                    # Use existing vendedor
+                    self.vendedor_id = vendedores[0].get('id')
+                    self.vendedor_nome = vendedores[0].get('nome_completo')
+                    self.log(f"✅ Using existing vendedor: {self.vendedor_nome} (ID: {self.vendedor_id})")
+                    return True
+                else:
+                    self.log("⚠️ No vendedores found, creating one...")
+                    return self._create_new_vendedor()
+            else:
+                self.log(f"❌ Failed to list vendedores: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error checking vendedores: {str(e)}", "ERROR")
+            return False
+    
+    def _create_new_vendedor(self):
+        """Helper method to create a new vendedor"""
+        self.log("➕ Creating new vendedor...")
+        
+        try:
+            # First get vendedor category
+            categories_response = self.session.get(f"{API_BASE}/funcionarios/categorias/{self.company_id}")
+            if categories_response.status_code != 200:
+                self.log("❌ Could not get employee categories", "ERROR")
+                return False
+            
+            categories = categories_response.json()
+            vendedor_category = None
+            for cat in categories:
+                if cat.get('nome') == 'Vendedor':
+                    vendedor_category = cat
+                    break
+            
+            if not vendedor_category:
+                self.log("❌ Vendedor category not found", "ERROR")
+                return False
+            
+            import time
+            timestamp = int(time.time())
+            
+            vendedor_data = {
+                "empresa_id": self.company_id,
+                "nome_completo": f"Vendedor Precificação {timestamp}",
+                "cpf": f"123.456.{timestamp % 1000:03d}-00",
+                "email": f"vendedor.precificacao{timestamp}@teste.com",
+                "salario": 3000.0,
+                "categoria_id": vendedor_category['id'],
+                "percentual_comissao": 10.0,
+                "status": "Ativo"
+            }
+            
+            response = self.session.post(f"{API_BASE}/funcionarios", json=vendedor_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                funcionario_data = result.get('funcionario', {})
+                self.vendedor_id = funcionario_data.get('id')
+                self.vendedor_nome = vendedor_data['nome_completo']
+                
+                self.log(f"✅ New vendedor created! ID: {self.vendedor_id}, Name: {self.vendedor_nome}")
+                return True
+            else:
+                self.log(f"❌ Failed to create vendedor: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating vendedor: {str(e)}", "ERROR")
+            return False
+    
+    def test_get_vendedores_endpoint(self):
+        """Test GET /api/vendedores/{company_id} - List vendedores for dropdown"""
+        self.log("📋 Testing GET /api/vendedores endpoint...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/vendedores/{self.company_id}")
+            
+            if response.status_code == 200:
+                vendedores = response.json()
+                self.log(f"✅ GET /api/vendedores working! Retrieved {len(vendedores)} vendedores")
+                
+                # Verify response structure
+                if isinstance(vendedores, list):
+                    if len(vendedores) > 0:
+                        vendedor = vendedores[0]
+                        required_fields = ['id', 'nome_completo', 'percentual_comissao']
+                        
+                        for field in required_fields:
+                            if field in vendedor:
+                                self.log(f"   ✅ {field}: {vendedor[field]}")
+                            else:
+                                self.log(f"   ❌ Missing field: {field}", "ERROR")
+                                return False
+                        
+                        # Verify our vendedor is in the list
+                        our_vendedor_found = any(v.get('id') == self.vendedor_id for v in vendedores)
+                        if our_vendedor_found:
+                            self.log("✅ Our vendedor found in the list!")
+                            return True
+                        else:
+                            self.log("❌ Our vendedor not found in the list", "ERROR")
+                            return False
+                    else:
+                        self.log("⚠️ No vendedores in response", "WARN")
+                        return True  # Endpoint works, just no data
+                else:
+                    self.log("❌ Response is not a list", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to get vendedores: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error getting vendedores: {str(e)}", "ERROR")
+            return False
+    
+    def test_create_orcamento_with_vendedor_fields(self):
+        """Test POST /api/orcamentos - Create budget with vendedor_id and vendedor_nome"""
+        self.log("💰 Testing create orçamento with vendedor fields...")
+        
+        if not self.vendedor_id or not self.vendedor_nome:
+            self.log("❌ No vendedor data available for orçamento creation", "ERROR")
+            return False
+        
+        import time
+        timestamp = int(time.time())
+        
+        orcamento_data = {
+            "empresa_id": self.company_id,
+            "usuario_id": self.user_data['user_id'],
+            # CRITICAL: Vendedor fields
+            "vendedor_id": self.vendedor_id,
+            "vendedor_nome": self.vendedor_nome,
+            # Client data
+            "cliente_nome": f"Cliente Precificação {timestamp}",
+            "cliente_documento": "123.456.789-00",
+            "cliente_email": "cliente.precificacao@teste.com",
+            "cliente_telefone": "(11) 99999-8888",
+            "cliente_whatsapp": "11999999888",
+            "cliente_endereco": "Rua Teste, 123 - São Paulo/SP",
+            # Budget data
+            "tipo": "servico_hora",
+            "descricao_servico_ou_produto": f"Serviço de precificação com vendedor {timestamp}",
+            "quantidade": 5.0,
+            "custo_total": 1000.0,
+            "preco_minimo": 1500.0,
+            "preco_sugerido": 2000.0,
+            "preco_praticado": 2000.0,
+            # Commercial conditions
+            "validade_proposta": "2025-03-31",
+            "condicoes_pagamento": "À vista",
+            "prazo_execucao": "10 dias úteis",
+            "observacoes": "Orçamento criado via precificação com vendedor responsável"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/orcamentos", json=orcamento_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.created_orcamento_id = result.get('orcamento_id')
+                numero_orcamento = result.get('numero_orcamento')
+                
+                self.log(f"✅ Orçamento created with vendedor! ID: {self.created_orcamento_id}, Number: {numero_orcamento}")
+                
+                # Verify vendedor fields were saved
+                verify_response = self.session.get(f"{API_BASE}/orcamento/{self.created_orcamento_id}")
+                if verify_response.status_code == 200:
+                    orcamento = verify_response.json()
+                    
+                    # Check vendedor fields
+                    checks = [
+                        (orcamento.get('vendedor_id') == self.vendedor_id, "vendedor_id"),
+                        (orcamento.get('vendedor_nome') == self.vendedor_nome, "vendedor_nome"),
+                        (orcamento.get('cliente_nome') == f"Cliente Precificação {timestamp}", "cliente_nome"),
+                        (orcamento.get('preco_praticado') == 2000.0, "preco_praticado")
+                    ]
+                    
+                    all_correct = True
+                    for check, field_name in checks:
+                        if check:
+                            self.log(f"   ✅ {field_name}: OK")
+                        else:
+                            self.log(f"   ❌ {field_name}: INCORRECT", "ERROR")
+                            all_correct = False
+                    
+                    if all_correct:
+                        self.log("✅ All vendedor fields saved correctly!")
+                        self.log(f"   👤 Vendedor ID: {orcamento.get('vendedor_id')}")
+                        self.log(f"   👤 Vendedor Nome: {orcamento.get('vendedor_nome')}")
+                        return True
+                    else:
+                        self.log("❌ Some vendedor fields were not saved correctly", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify orçamento creation", "WARN")
+                    return True  # Creation worked, verification failed
+            else:
+                self.log(f"❌ Failed to create orçamento: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating orçamento: {str(e)}", "ERROR")
+            return False
+    
+    def test_verify_orcamento_with_vendedor_in_listing(self):
+        """Test GET /api/orcamentos/{empresa_id} - Verify budget with vendedor appears in listing"""
+        self.log("📋 Testing orçamento with vendedor in listing...")
+        
+        if not self.created_orcamento_id:
+            self.log("❌ No orçamento ID available for verification", "ERROR")
+            return False
+        
+        try:
+            response = self.session.get(f"{API_BASE}/orcamentos/{self.company_id}")
+            
+            if response.status_code == 200:
+                orcamentos = response.json()
+                self.log(f"✅ Retrieved {len(orcamentos)} orçamentos")
+                
+                # Find our orçamento
+                our_orcamento = None
+                for orc in orcamentos:
+                    if orc.get('id') == self.created_orcamento_id:
+                        our_orcamento = orc
+                        break
+                
+                if our_orcamento:
+                    self.log("✅ Our orçamento found in listing!")
+                    self.log(f"   📄 Number: {our_orcamento.get('numero_orcamento')}")
+                    self.log(f"   👤 Vendedor ID: {our_orcamento.get('vendedor_id')}")
+                    self.log(f"   👤 Vendedor Nome: {our_orcamento.get('vendedor_nome')}")
+                    self.log(f"   💰 Value: R$ {our_orcamento.get('preco_praticado')}")
+                    
+                    # Verify vendedor fields are present
+                    if (our_orcamento.get('vendedor_id') == self.vendedor_id and
+                        our_orcamento.get('vendedor_nome') == self.vendedor_nome):
+                        self.log("✅ Vendedor fields correctly preserved in listing!")
+                        return True
+                    else:
+                        self.log("❌ Vendedor fields not correctly preserved in listing", "ERROR")
+                        return False
+                else:
+                    self.log("❌ Our orçamento not found in listing", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to get orçamentos: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error getting orçamentos: {str(e)}", "ERROR")
+            return False
+    
+    def run_all_tests(self):
+        """Execute all Vendedor Field in Precificação tests"""
+        self.log("🚀 Starting Vendedor Field in Precificação API tests")
+        self.log("=" * 70)
+        
+        tests = [
+            ("Create Vendedor if Needed", self.test_create_vendedor_if_needed),
+            ("GET Vendedores Endpoint", self.test_get_vendedores_endpoint),
+            ("Create Orçamento with Vendedor Fields", self.test_create_orcamento_with_vendedor_fields),
+            ("Verify Orçamento with Vendedor in Listing", self.test_verify_orcamento_with_vendedor_in_listing)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 70)
+        self.log("📊 VENDEDOR FIELD IN PRECIFICAÇÃO TEST SUMMARY")
+        self.log("=" * 70)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL VENDEDOR FIELD IN PRECIFICAÇÃO TESTS PASSED! Feature working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME VENDEDOR FIELD TESTS FAILED! Check logs above for details.")
+            return False
+
+
 if __name__ == "__main__":
     # Run the commission bug fix tests
     main()
