@@ -2041,7 +2041,7 @@ class CommissionBugFixTester:
         
         try:
             # Get all contas a pagar for the company
-            response = self.session.get(f"{API_BASE}/contas/pagar/{self.company_id}")
+            response = self.session.get(f"{API_BASE}/contas/pagar?company_id={self.company_id}")
             
             if response.status_code == 200:
                 contas = response.json()
