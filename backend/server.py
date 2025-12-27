@@ -3018,10 +3018,20 @@ async def aceitar_orcamento(orcamento_id: str, request: Request):
             valor_servicos = totals.get('services_total', 0)
             valor_materiais = totals.get('materials_total', 0)
             
-            # Se não tiver a estrutura nova, usar preco_praticado como fallback
+            # Se não tiver a estrutura nova de totals, calcular a partir dos arrays
             if not valor_servicos and not valor_materiais:
-                valor_servicos = orcamento.get('preco_praticado', 0)
-                valor_materiais = 0
+                # Calcular total de serviços
+                servicos = detalhes_itens.get('servicos', [])
+                valor_servicos = sum(item.get('valor_total', 0) for item in servicos)
+                
+                # Calcular total de materiais
+                materiais = detalhes_itens.get('materiais', [])
+                valor_materiais = sum(item.get('valor_total', 0) for item in materiais)
+                
+                # Se ainda não tiver valores, usar preco_praticado como fallback
+                if not valor_servicos and not valor_materiais:
+                    valor_servicos = orcamento.get('preco_praticado', 0)
+                    valor_materiais = 0
             
             percentual = vendedor.get('percentual_comissao', 0)
             valor_comissao = valor_servicos * (percentual / 100)
