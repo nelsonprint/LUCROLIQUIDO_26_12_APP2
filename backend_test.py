@@ -1508,21 +1508,22 @@ class ProportionalCommissionTester:
         # Generate a valid CPF for testing
         def generate_valid_cpf():
             """Generate a valid CPF for testing"""
-            # Use a known valid CPF pattern and modify the last digits
-            base = "123.456.789"
-            # Calculate check digits
-            digits = [int(d) for d in base.replace('.', '')]
+            import random
+            # Generate random base digits
+            base_digits = [random.randint(1, 9) for _ in range(9)]
             
             # First check digit
-            sum1 = sum(digits[i] * (10 - i) for i in range(9))
+            sum1 = sum(base_digits[i] * (10 - i) for i in range(9))
             digit1 = (sum1 * 10 % 11) % 10
             
             # Second check digit  
-            digits.append(digit1)
-            sum2 = sum(digits[i] * (11 - i) for i in range(10))
+            base_digits.append(digit1)
+            sum2 = sum(base_digits[i] * (11 - i) for i in range(10))
             digit2 = (sum2 * 10 % 11) % 10
             
-            return f"{base}-{digit1}{digit2}"
+            # Format as CPF
+            cpf_digits = base_digits + [digit2]
+            return f"{cpf_digits[0]}{cpf_digits[1]}{cpf_digits[2]}.{cpf_digits[3]}{cpf_digits[4]}{cpf_digits[5]}.{cpf_digits[6]}{cpf_digits[7]}{cpf_digits[8]}-{cpf_digits[9]}{cpf_digits[10]}"
         
         client_data = {
             "empresa_id": self.company_id,
