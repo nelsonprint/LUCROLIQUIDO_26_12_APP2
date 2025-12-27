@@ -1417,6 +1417,25 @@ class ProportionalCommissionTester:
         import time
         timestamp = int(time.time())
         
+        # Generate a valid CPF for testing
+        def generate_valid_cpf():
+            """Generate a valid CPF for testing"""
+            # Use a known valid CPF pattern and modify the last digits
+            base = "111.222.333"
+            # Calculate check digits
+            digits = [int(d) for d in base.replace('.', '')]
+            
+            # First check digit
+            sum1 = sum(digits[i] * (10 - i) for i in range(9))
+            digit1 = (sum1 * 10 % 11) % 10
+            
+            # Second check digit  
+            digits.append(digit1)
+            sum2 = sum(digits[i] * (11 - i) for i in range(10))
+            digit2 = (sum2 * 10 % 11) % 10
+            
+            return f"{base}-{digit1}{digit2}"
+        
         # First get or create Vendedor category
         try:
             categories_response = self.session.get(f"{API_BASE}/funcionarios/categorias/{self.company_id}")
@@ -1435,7 +1454,7 @@ class ProportionalCommissionTester:
                 vendedor_data = {
                     "empresa_id": self.company_id,
                     "nome_completo": f"João Vendedor {timestamp}",
-                    "cpf": f"123.456.{timestamp % 1000:03d}-99",
+                    "cpf": generate_valid_cpf(),
                     "whatsapp": "(11) 99999-5555",
                     "email": f"joao.vendedor{timestamp}@teste.com",
                     "salario": 3000,
