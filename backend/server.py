@@ -2951,85 +2951,8 @@ async def aceitar_orcamento(orcamento_id: str, request: Request):
         }}
     )
     
-    # ===== GERAR COMISSÃO DO VENDEDOR =====
-    # Só gera comissão se o orçamento tiver vendedor e ainda não tiver comissão gerada
-    # IMPORTANTE: A comissão incide SOMENTE sobre SERVIÇOS, NÃO sobre materiais
-    comissao_gerada_info = None
-    if orcamento.get('vendedor_id') and not orcamento.get('comissao_gerada'):
-        vendedor = await db.funcionarios.find_one({"id": orcamento['vendedor_id']}, {"_id": 0})
-        if vendedor and vendedor.get('percentual_comissao', 0) > 0:
-            # Calcular valor base da comissão (APENAS SERVIÇOS)
-            detalhes_itens = orcamento.get('detalhes_itens', {})
-            totals = detalhes_itens.get('totals', {})
-            valor_servicos = totals.get('services_total', 0)
-            valor_materiais = totals.get('materials_total', 0)
-            
-            # Se não tiver a estrutura nova de totals, calcular a partir dos arrays
-            if not valor_servicos and not valor_materiais:
-                # Calcular total de serviços
-                servicos = detalhes_itens.get('servicos', [])
-                valor_servicos = sum(item.get('valor_total', 0) for item in servicos)
-                
-                # Calcular total de materiais
-                materiais = detalhes_itens.get('materiais', [])
-                valor_materiais = sum(item.get('valor_total', 0) for item in materiais)
-                
-                # Se ainda não tiver valores, usar preco_praticado como fallback
-                if not valor_servicos and not valor_materiais:
-                    valor_servicos = orcamento.get('preco_praticado', 0)
-                    valor_materiais = 0
-            
-            percentual = vendedor.get('percentual_comissao', 0)
-            valor_comissao = valor_servicos * (percentual / 100)
-            
-            # Criar conta a pagar para a comissão
-            comissao_id = str(uuid.uuid4())
-            conta_comissao = {
-                "id": comissao_id,
-                "company_id": orcamento['empresa_id'],
-                "user_id": orcamento.get('usuario_id'),
-                "tipo": "PAGAR",
-                "descricao": f"Comissão - Orçamento #{orcamento.get('numero_orcamento', 'N/A')} - {orcamento.get('cliente_nome', '')}",
-                "categoria": "Comissão",
-                "data_emissao": agora.strftime('%Y-%m-%d'),
-                "data_vencimento": (agora + timedelta(days=30)).strftime('%Y-%m-%d'),
-                "valor": valor_comissao,
-                "status": "PENDENTE",
-                "forma_pagamento": "PIX",
-                "observacoes": f"Comissão de {percentual}% sobre SERVIÇOS do orçamento #{orcamento.get('numero_orcamento')}. Base: R$ {valor_servicos:.2f} (Materiais excluídos: R$ {valor_materiais:.2f}). Vendedor: {vendedor.get('nome_completo')}",
-                # Additional fields for commission tracking
-                "tipo_comissao": "vendedor",
-                "vendedor_id": vendedor.get('id'),
-                "vendedor_nome": vendedor.get('nome_completo'),
-                "orcamento_id": orcamento_id,
-                "orcamento_numero": orcamento.get('numero_orcamento'),
-                "percentual_comissao": percentual,
-                "valor_base_servicos": valor_servicos,
-                "valor_materiais_excluidos": valor_materiais,
-                "valor_total_orcamento": orcamento.get('preco_praticado', 0),
-                "created_at": agora.isoformat(),
-                "updated_at": agora.isoformat()
-            }
-            await db.contas.insert_one(conta_comissao)
-            
-            # Atualizar orçamento com info da comissão
-            await db.orcamentos.update_one(
-                {"id": orcamento_id},
-                {"$set": {
-                    "comissao_gerada": True,
-                    "comissao_id": comissao_id
-                }}
-            )
-            
-            comissao_gerada_info = {
-                "vendedor": vendedor.get('nome_completo'),
-                "percentual": percentual,
-                "valor": valor_comissao,
-                "valor_base": valor_servicos,
-                "conta_id": comissao_id
-            }
-            
-            logger.info(f"Comissão gerada no aceite: R$ {valor_comissao:.2f} para vendedor {vendedor.get('nome_completo')} (base: R$ {valor_servicos:.2f} em serviços)")
+    # NOTA: A comissão do vendedor é gerada PROPORCIONALMENTE quando cada parcela é paga
+    # Lógica implementada no endpoint update_status_conta_receber (PATCH /api/contas/receber/status)
     
     # Preparar mensagem WhatsApp para a empresa
     whatsapp_empresa = empresa.get('celular_whatsapp') or empresa.get('telefone', '')
