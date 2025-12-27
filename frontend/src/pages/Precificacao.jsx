@@ -472,6 +472,8 @@ const Precificacao = ({ user, onLogout }) => {
         condicoes_pagamento: '',
         prazo_execucao: '',
         observacoes: '',
+        vendedor_id: '',
+        vendedor_nome: '',
       });
 
       // Redirecionar para página de orçamentos
