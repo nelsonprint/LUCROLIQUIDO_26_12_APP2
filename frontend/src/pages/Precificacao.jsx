@@ -81,6 +81,7 @@ const Precificacao = ({ user, onLogout }) => {
   useEffect(() => {
     if (showOrcamentoModal && company?.id) {
       fetchClientes();
+      fetchVendedores();
     }
   }, [showOrcamentoModal, company?.id]);
 
@@ -94,6 +95,20 @@ const Precificacao = ({ user, onLogout }) => {
       console.error('Erro ao buscar clientes:', error);
     } finally {
       setLoadingClientes(false);
+    }
+  };
+
+  // Buscar vendedores
+  const fetchVendedores = async () => {
+    if (!company?.id) return;
+    setLoadingVendedores(true);
+    try {
+      const response = await axiosInstance.get(`/vendedores/${company.id}`);
+      setVendedores(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar vendedores:', error);
+    } finally {
+      setLoadingVendedores(false);
     }
   };
 
