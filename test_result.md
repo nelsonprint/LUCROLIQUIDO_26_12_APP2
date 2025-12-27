@@ -35,6 +35,18 @@ backend:
         agent: "testing"
         comment: "✅ All vendedor endpoints working: GET /api/vendedor/{id}/orcamentos, GET /api/vendedor/{id}/comissoes, GET /api/vendedor/{id}/agenda return valid responses."
 
+  - task: "CRITICAL: Commission Bug Fix - Client Acceptance"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ COMMISSION BUG FIX VERIFIED! When client accepts budget via POST /api/orcamento/{id}/aceitar, commission is correctly generated and returned in response. Commission calculation fixed to use only services (R$ 10,000) excluding materials (R$ 5,000). Commission account created in Contas a Pagar with tipo_comissao: 'vendedor'. Commission appears correctly in GET /api/vendedor/{id}/comissoes. All 7 test criteria from review request passed successfully."
+
   - task: "CRITICAL: Commission Logic - Services Only"
     implemented: true
     working: true
