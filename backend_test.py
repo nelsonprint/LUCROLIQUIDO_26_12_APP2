@@ -2751,30 +2751,62 @@ class CommissionBugFixTester:
 
 
 def main():
-    """Main function - Run Commission Bug Fix tests"""
-    print("🚀 Starting Commission Bug Fix Tests")
+    """Main function - Run Proportional Commission tests"""
+    print("🚀 Starting CRITICAL: Proportional Commission (Comissão Parcelada) Tests")
     print("=" * 80)
-    print("🎯 TESTING: Commission generation when client accepts budget via link")
-    print("=" * 80)
-    
-    # Initialize Commission Bug Fix Tester
-    commission_tester = CommissionBugFixTester()
-    
-    # Run Commission Bug Fix tests
-    commission_success = commission_tester.run_all_tests()
-    
-    # Final summary
-    print("\n" + "=" * 80)
-    print("🎯 FINAL TEST SUMMARY")
+    print("🎯 TESTING: Commission generated proportionally when installments are paid")
+    print("📋 Business Rules:")
+    print("   • Commission NO LONGER generated when budget is approved")
+    print("   • Commission IS generated when each installment is marked as RECEBIDO")
+    print("   • Commission calculated ONLY on services portion, NOT materials")
+    print("   • Each installment generates its own proportional commission")
     print("=" * 80)
     
-    if commission_success:
-        print("🎉 ALL COMMISSION BUG FIX TESTS PASSED!")
-        print("✅ Commission generation working correctly when client accepts budget")
-        return True
-    else:
-        print("⚠️ SOME COMMISSION TESTS FAILED!")
-        print("❌ Commission bug may not be fully fixed - check logs above")
+    # Initialize session and login
+    session = requests.Session()
+    
+    # Login with admin credentials
+    login_data = {
+        "email": "admin@lucroliquido.com",
+        "password": "admin123"
+    }
+    
+    try:
+        response = session.post(f"{API_BASE}/auth/login", json=login_data)
+        if response.status_code != 200:
+            print(f"❌ Login failed: {response.status_code} - {response.text}")
+            return False
+        
+        user_data = response.json()
+        company_id = "cf901b3e-0eca-429c-9b8e-d723b31ecbd4"  # From test_result.md
+        
+        print(f"✅ Login successful! User ID: {user_data['user_id']}")
+        print(f"🏢 Company ID: {company_id}")
+        
+        # Initialize Proportional Commission Tester
+        commission_tester = ProportionalCommissionTester(session, user_data, company_id)
+        
+        # Run Proportional Commission tests
+        commission_success = commission_tester.run_all_tests()
+        
+        # Final summary
+        print("\n" + "=" * 80)
+        print("🎯 FINAL TEST SUMMARY")
+        print("=" * 80)
+        
+        if commission_success:
+            print("🎉 ALL PROPORTIONAL COMMISSION TESTS PASSED!")
+            print("✅ Proportional commission system working correctly")
+            print("✅ Old commission logic properly removed from budget acceptance")
+            print("✅ New commission logic working in installment payments")
+            return True
+        else:
+            print("⚠️ SOME PROPORTIONAL COMMISSION TESTS FAILED!")
+            print("❌ Proportional commission system may not be working correctly")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error in main execution: {str(e)}")
         return False
 
 class AgendaTester:
