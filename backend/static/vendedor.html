@@ -870,6 +870,66 @@ async function capturePhoto(box) {
   }
 }
 
+// ===== Audio Recording =====
+let mediaRecorders = {};
+let audioChunks = {};
+let recordingTimers = {};
+
+async function toggleRecording(btn, itemId) {
+  if (mediaRecorders[itemId] && mediaRecorders[itemId].state === 'recording') {
+    // Parar gravação
+    mediaRecorders[itemId].stop();
+    btn.classList.remove('recording');
+    btn.textContent = '🎤';
+    document.getElementById('recStatus' + itemId).textContent = 'Processando...';
+    clearInterval(recordingTimers[itemId]);
+  } else {
+    // Iniciar gravação
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorders[itemId] = new MediaRecorder(stream);
+      audioChunks[itemId] = [];
+      
+      mediaRecorders[itemId].ondataavailable = e => {
+        if (e.data.size > 0) audioChunks[itemId].push(e.data);
+      };
+      
+      mediaRecorders[itemId].onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(audioChunks[itemId], { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result;
+          document.getElementById('itemAudio' + itemId).value = base64;
+          const player = document.getElementById('audioPlayer' + itemId);
+          player.src = base64;
+          player.style.display = 'block';
+          document.getElementById('recStatus' + itemId).textContent = 'Áudio gravado ✓';
+        };
+        reader.readAsDataURL(blob);
+      };
+      
+      mediaRecorders[itemId].start();
+      btn.classList.add('recording');
+      btn.textContent = '⏹️';
+      document.getElementById('recStatus' + itemId).textContent = 'Gravando...';
+      
+      // Timer
+      let seconds = 0;
+      recordingTimers[itemId] = setInterval(() => {
+        seconds++;
+        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const secs = (seconds % 60).toString().padStart(2, '0');
+        document.getElementById('timer' + itemId).textContent = mins + ':' + secs;
+      }, 1000);
+      
+    } catch (e) {
+      showToast('Erro ao acessar microfone');
+      console.error(e);
+    }
+  }
+}
+
 document.getElementById('btnCancelarPre').onclick = () => document.getElementById('modalPreOrcamento').classList.remove('show');
 
 document.getElementById('btnSalvarPre').onclick = async () => {
@@ -877,11 +937,15 @@ document.getElementById('btnSalvarPre').onclick = async () => {
   if (!clienteId) { showToast('Selecione um cliente'); return; }
   
   const cliente = clientes.find(c => c.id === clienteId);
-  const itens = [...document.querySelectorAll('.item-card')].map(card => ({
-    descricao: card.querySelector('.item-desc').value,
-    quantidade: parseInt(card.querySelector('.item-qtd').value) || 1,
-    foto_url: card.querySelector('.item-foto').value || null
-  })).filter(i => i.descricao);
+  const itens = [...document.querySelectorAll('.item-card')].map(card => {
+    const itemId = card.id.replace('preItem', '');
+    return {
+      descricao: card.querySelector('.item-desc').value,
+      quantidade: parseInt(card.querySelector('.item-qtd').value) || 1,
+      foto_url: card.querySelector('.item-foto').value || null,
+      audio_url: document.getElementById('itemAudio' + itemId)?.value || null
+    };
+  }).filter(i => i.descricao);
   
   if (itens.length === 0) { showToast('Adicione pelo menos um item'); return; }
   
