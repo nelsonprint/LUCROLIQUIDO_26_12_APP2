@@ -1390,6 +1390,566 @@ class WhatsAppBudgetFlowTester:
             self.log("⚠️ SOME TESTS FAILED! Check logs above for details.")
             return False
 
+class ProportionalCommissionTester:
+    """Test suite for CRITICAL: Proportional Commission (Comissão Parcelada) functionality"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        self.vendedor_id = None
+        self.cliente_id = None
+        self.orcamento_id = None
+        self.orcamento_token = None
+        self.installment_ids = []
+        self.commission_ids = []
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_create_vendedor_with_commission(self):
+        """Test creating a vendedor (funcionário) with commission percentage"""
+        self.log("👤 Testing create vendedor with commission...")
+        
+        import time
+        timestamp = int(time.time())
+        
+        # First get or create Vendedor category
+        try:
+            categories_response = self.session.get(f"{API_BASE}/funcionarios/categorias/{self.company_id}")
+            if categories_response.status_code == 200:
+                categories = categories_response.json()
+                vendedor_category = None
+                for cat in categories:
+                    if cat.get('nome') == 'Vendedor':
+                        vendedor_category = cat
+                        break
+                
+                if not vendedor_category:
+                    self.log("❌ Vendedor category not found", "ERROR")
+                    return False
+                
+                vendedor_data = {
+                    "empresa_id": self.company_id,
+                    "nome_completo": f"João Vendedor {timestamp}",
+                    "cpf": f"123.456.{timestamp % 1000:03d}-99",
+                    "whatsapp": "(11) 99999-5555",
+                    "email": f"joao.vendedor{timestamp}@teste.com",
+                    "salario": 3000,
+                    "categoria_id": vendedor_category['id'],
+                    "status": "Ativo",
+                    "percentual_comissao": 10.0  # 10% commission
+                }
+                
+                response = self.session.post(f"{API_BASE}/funcionarios", json=vendedor_data)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    funcionario_data = result.get('funcionario', {})
+                    self.vendedor_id = funcionario_data.get('id')
+                    
+                    self.log(f"✅ Vendedor created successfully! ID: {self.vendedor_id}")
+                    self.log(f"   💰 Commission: {vendedor_data['percentual_comissao']}%")
+                    
+                    # Verify commission percentage was saved
+                    verify_response = self.session.get(f"{API_BASE}/funcionario/{self.vendedor_id}")
+                    if verify_response.status_code == 200:
+                        vendedor = verify_response.json()
+                        if vendedor.get('percentual_comissao') == 10.0:
+                            self.log("✅ Commission percentage saved correctly!")
+                            return True
+                        else:
+                            self.log(f"❌ Commission percentage incorrect: {vendedor.get('percentual_comissao')}", "ERROR")
+                            return False
+                    else:
+                        self.log("⚠️ Could not verify vendedor creation", "WARN")
+                        return True
+                else:
+                    self.log(f"❌ Failed to create vendedor: {response.status_code} - {response.text}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to get categories: {categories_response.status_code}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating vendedor: {str(e)}", "ERROR")
+            return False
+    
+    def test_create_client(self):
+        """Test creating a client for the budget"""
+        self.log("👥 Testing create client...")
+        
+        import time
+        timestamp = int(time.time())
+        
+        client_data = {
+            "empresa_id": self.company_id,
+            "tipo": "PF",
+            "nome": f"Cliente Teste Comissão {timestamp}",
+            "cpf": f"987.654.{timestamp % 1000:03d}-11",
+            "whatsapp": "11999998888",
+            "email": f"cliente.comissao{timestamp}@teste.com",
+            "logradouro": "Rua das Comissões, 123",
+            "cidade": "São Paulo",
+            "estado": "SP",
+            "cep": "01234-567"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/clientes", json=client_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                cliente_data = result.get('cliente', {})
+                self.cliente_id = cliente_data.get('id')
+                
+                self.log(f"✅ Client created successfully! ID: {self.cliente_id}")
+                self.log(f"   👤 Name: {client_data['nome']}")
+                return True
+            else:
+                self.log(f"❌ Failed to create client: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating client: {str(e)}", "ERROR")
+            return False
+    
+    def test_create_budget_with_services_and_materials(self):
+        """Test creating budget with services and materials breakdown"""
+        self.log("💼 Testing create budget with services and materials...")
+        
+        if not self.vendedor_id or not self.cliente_id:
+            self.log("❌ Missing vendedor or client ID", "ERROR")
+            return False
+        
+        import time
+        timestamp = int(time.time())
+        
+        # Get client data for budget
+        client_response = self.session.get(f"{API_BASE}/cliente/{self.cliente_id}")
+        if client_response.status_code != 200:
+            self.log("❌ Could not get client data", "ERROR")
+            return False
+        
+        client = client_response.json()
+        
+        # Get vendedor data for budget
+        vendedor_response = self.session.get(f"{API_BASE}/funcionario/{self.vendedor_id}")
+        if vendedor_response.status_code != 200:
+            self.log("❌ Could not get vendedor data", "ERROR")
+            return False
+        
+        vendedor = vendedor_response.json()
+        
+        budget_data = {
+            "empresa_id": self.company_id,
+            "usuario_id": self.user_data['user_id'],
+            # Vendedor data
+            "vendedor_id": self.vendedor_id,
+            "vendedor_nome": vendedor.get('nome_completo'),
+            # Client data
+            "cliente_nome": client.get('nome'),
+            "cliente_documento": client.get('cpf'),
+            "cliente_email": client.get('email'),
+            "cliente_whatsapp": client.get('whatsapp'),
+            "cliente_endereco": f"{client.get('logradouro', '')}, {client.get('cidade', '')}/{client.get('estado', '')}",
+            # Budget data
+            "tipo": "servico_m2",
+            "descricao_servico_ou_produto": f"Obra Teste Comissão Proporcional {timestamp}",
+            "area_m2": 100.0,
+            "quantidade": 100.0,
+            "custo_total": 8000.0,
+            "preco_minimo": 12000.0,
+            "preco_sugerido": 15000.0,
+            "preco_praticado": 15000.0,  # Total: R$ 15,000
+            # Commercial conditions
+            "validade_proposta": "2025-02-28",
+            "condicoes_pagamento": "Entrada + 2 parcelas",
+            "prazo_execucao": "30 dias úteis",
+            "observacoes": "Teste de comissão proporcional",
+            # Payment details - installments
+            "forma_pagamento": "entrada_parcelas",
+            "entrada_percentual": 20.0,  # 20% down payment
+            "valor_entrada": 3000.0,     # R$ 3,000
+            "num_parcelas": 2,
+            "parcelas": [
+                {"numero": 1, "valor": 6000.0, "editado": False},  # R$ 6,000
+                {"numero": 2, "valor": 6000.0, "editado": False}   # R$ 6,000
+            ],
+            # CRITICAL: Services and materials breakdown
+            "detalhes_itens": {
+                "totals": {
+                    "services_total": 10000.0,  # R$ 10,000 in services
+                    "materials_total": 5000.0   # R$ 5,000 in materials
+                }
+            }
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/orcamentos", json=budget_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.orcamento_id = result.get('orcamento_id')
+                budget_number = result.get('numero_orcamento')
+                
+                self.log(f"✅ Budget created successfully! ID: {self.orcamento_id}")
+                self.log(f"   📄 Number: {budget_number}")
+                self.log(f"   💰 Total: R$ 15,000 (Services: R$ 10,000 + Materials: R$ 5,000)")
+                self.log(f"   👤 Vendedor: {vendedor.get('nome_completo')} (10% commission)")
+                self.log(f"   💳 Payment: R$ 3,000 down + 2x R$ 6,000")
+                
+                # Verify budget data was saved correctly
+                verify_response = self.session.get(f"{API_BASE}/orcamento/{self.orcamento_id}")
+                if verify_response.status_code == 200:
+                    budget = verify_response.json()
+                    detalhes = budget.get('detalhes_itens', {})
+                    totals = detalhes.get('totals', {})
+                    
+                    if (budget.get('vendedor_id') == self.vendedor_id and
+                        totals.get('services_total') == 10000.0 and
+                        totals.get('materials_total') == 5000.0 and
+                        budget.get('preco_praticado') == 15000.0):
+                        self.log("✅ Budget data saved correctly!")
+                        return True
+                    else:
+                        self.log("❌ Budget data not saved correctly", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify budget creation", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to create budget: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating budget: {str(e)}", "ERROR")
+            return False
+    
+    def test_budget_acceptance_no_commission(self):
+        """Test that budget acceptance does NOT generate commission anymore"""
+        self.log("🚫 Testing budget acceptance does NOT generate commission...")
+        
+        if not self.orcamento_id:
+            self.log("❌ No budget ID available", "ERROR")
+            return False
+        
+        try:
+            # Accept the budget
+            response = self.session.post(f"{API_BASE}/orcamento/{self.orcamento_id}/aceitar")
+            
+            if response.status_code == 200:
+                result = response.json()
+                contas_geradas = result.get('contas_geradas', 0)
+                contas_ids = result.get('contas_ids', [])
+                
+                self.log(f"✅ Budget accepted successfully!")
+                self.log(f"   📊 Accounts generated: {contas_geradas}")
+                
+                # Store installment IDs for later testing
+                self.installment_ids = contas_ids
+                
+                # CRITICAL: Verify response does NOT contain commission field
+                if 'comissao' in result:
+                    self.log("❌ CRITICAL ERROR: Budget acceptance still generates commission!", "ERROR")
+                    self.log(f"   Commission data: {result['comissao']}", "ERROR")
+                    return False
+                else:
+                    self.log("✅ CORRECT: Budget acceptance does NOT generate commission")
+                
+                # Verify no commission was created in contas_a_pagar
+                commission_response = self.session.get(f"{API_BASE}/contas/pagar?company_id={self.company_id}&tipo_comissao=vendedor")
+                if commission_response.status_code == 200:
+                    commissions = commission_response.json()
+                    budget_commissions = [c for c in commissions if c.get('orcamento_id') == self.orcamento_id]
+                    
+                    if len(budget_commissions) == 0:
+                        self.log("✅ CORRECT: No commission created in contas_a_pagar")
+                        return True
+                    else:
+                        self.log(f"❌ CRITICAL ERROR: {len(budget_commissions)} commission(s) found in contas_a_pagar!", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify commission absence", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to accept budget: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error accepting budget: {str(e)}", "ERROR")
+            return False
+    
+    def test_installment_payment_generates_proportional_commission(self):
+        """Test that marking installment as RECEBIDO generates proportional commission"""
+        self.log("💰 Testing installment payment generates proportional commission...")
+        
+        if not self.installment_ids or len(self.installment_ids) < 3:
+            self.log("❌ Not enough installment IDs available", "ERROR")
+            return False
+        
+        try:
+            # Get the first installment (down payment - R$ 3,000)
+            first_installment_id = self.installment_ids[0]
+            
+            # Get installment details
+            installment_response = self.session.get(f"{API_BASE}/contas/receber?company_id={self.company_id}")
+            if installment_response.status_code != 200:
+                self.log("❌ Could not get installment details", "ERROR")
+                return False
+            
+            accounts = installment_response.json()
+            first_installment = None
+            for account in accounts:
+                if account.get('id') == first_installment_id:
+                    first_installment = account
+                    break
+            
+            if not first_installment:
+                self.log("❌ First installment not found", "ERROR")
+                return False
+            
+            installment_value = first_installment.get('valor', 0)
+            self.log(f"   📋 First installment: R$ {installment_value} ({first_installment.get('descricao')})")
+            
+            # Mark first installment as RECEBIDO
+            status_data = {
+                "conta_id": first_installment_id,
+                "status": "RECEBIDO"
+            }
+            
+            response = self.session.patch(f"{API_BASE}/contas/receber/status", json=status_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                self.log("✅ Installment marked as RECEBIDO!")
+                
+                # CRITICAL: Verify response contains commission field
+                if 'comissao' not in result:
+                    self.log("❌ CRITICAL ERROR: Installment payment did NOT generate commission!", "ERROR")
+                    return False
+                
+                comissao = result['comissao']
+                self.log("✅ CORRECT: Installment payment generated commission!")
+                self.log(f"   👤 Vendedor: {comissao.get('vendedor')}")
+                self.log(f"   📊 Percentage: {comissao.get('percentual')}%")
+                self.log(f"   💰 Commission value: R$ {comissao.get('valor_comissao')}")
+                self.log(f"   🔧 Services portion: R$ {comissao.get('valor_servicos_parcela')}")
+                
+                commission_id = comissao.get('comissao_id')
+                if commission_id:
+                    self.commission_ids.append(commission_id)
+                
+                # Verify commission calculation
+                # Expected: R$ 3,000 installment * (R$ 10,000 services / R$ 15,000 total) * 10% commission
+                # = R$ 3,000 * 0.6667 * 0.10 = R$ 200
+                expected_services_portion = installment_value * (10000.0 / 15000.0)  # R$ 2,000
+                expected_commission = expected_services_portion * 0.10  # R$ 200
+                
+                actual_services_portion = comissao.get('valor_servicos_parcela', 0)
+                actual_commission = comissao.get('valor_comissao', 0)
+                
+                # Allow small rounding differences
+                if (abs(actual_services_portion - expected_services_portion) < 0.01 and
+                    abs(actual_commission - expected_commission) < 0.01):
+                    self.log(f"✅ Commission calculation CORRECT!")
+                    self.log(f"   Expected services portion: R$ {expected_services_portion:.2f}")
+                    self.log(f"   Actual services portion: R$ {actual_services_portion:.2f}")
+                    self.log(f"   Expected commission: R$ {expected_commission:.2f}")
+                    self.log(f"   Actual commission: R$ {actual_commission:.2f}")
+                    return True
+                else:
+                    self.log(f"❌ Commission calculation INCORRECT!", "ERROR")
+                    self.log(f"   Expected services portion: R$ {expected_services_portion:.2f}, got R$ {actual_services_portion:.2f}")
+                    self.log(f"   Expected commission: R$ {expected_commission:.2f}, got R$ {actual_commission:.2f}")
+                    return False
+            else:
+                self.log(f"❌ Failed to mark installment as RECEBIDO: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing installment payment: {str(e)}", "ERROR")
+            return False
+    
+    def test_second_installment_generates_separate_commission(self):
+        """Test that second installment generates its own separate commission"""
+        self.log("💰 Testing second installment generates separate commission...")
+        
+        if not self.installment_ids or len(self.installment_ids) < 3:
+            self.log("❌ Not enough installment IDs available", "ERROR")
+            return False
+        
+        try:
+            # Get the second installment (first regular installment - R$ 6,000)
+            second_installment_id = self.installment_ids[1]
+            
+            # Mark second installment as RECEBIDO
+            status_data = {
+                "conta_id": second_installment_id,
+                "status": "RECEBIDO"
+            }
+            
+            response = self.session.patch(f"{API_BASE}/contas/receber/status", json=status_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                self.log("✅ Second installment marked as RECEBIDO!")
+                
+                # CRITICAL: Verify response contains commission field
+                if 'comissao' not in result:
+                    self.log("❌ CRITICAL ERROR: Second installment did NOT generate commission!", "ERROR")
+                    return False
+                
+                comissao = result['comissao']
+                self.log("✅ CORRECT: Second installment generated separate commission!")
+                self.log(f"   💰 Commission value: R$ {comissao.get('valor_comissao')}")
+                
+                commission_id = comissao.get('comissao_id')
+                if commission_id:
+                    self.commission_ids.append(commission_id)
+                
+                # Verify we now have 2 separate commission entries
+                commission_response = self.session.get(f"{API_BASE}/contas/pagar?company_id={self.company_id}&tipo_comissao=vendedor")
+                if commission_response.status_code == 200:
+                    commissions = commission_response.json()
+                    budget_commissions = [c for c in commissions if c.get('orcamento_id') == self.orcamento_id]
+                    
+                    if len(budget_commissions) == 2:
+                        self.log("✅ CORRECT: 2 separate commission entries created!")
+                        
+                        # Verify each commission is linked to different installments
+                        installment_links = set()
+                        for comm in budget_commissions:
+                            installment_links.add(comm.get('conta_receber_id'))
+                        
+                        if len(installment_links) == 2:
+                            self.log("✅ CORRECT: Each commission linked to different installment!")
+                            return True
+                        else:
+                            self.log("❌ Commissions not properly linked to different installments", "ERROR")
+                            return False
+                    else:
+                        self.log(f"❌ Expected 2 commission entries, found {len(budget_commissions)}", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify commission entries", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to mark second installment as RECEBIDO: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing second installment: {str(e)}", "ERROR")
+            return False
+    
+    def test_commission_entries_in_contas_pagar(self):
+        """Test that commission entries are properly created in contas_a_pagar"""
+        self.log("📋 Testing commission entries in contas_a_pagar...")
+        
+        if not self.commission_ids:
+            self.log("❌ No commission IDs available", "ERROR")
+            return False
+        
+        try:
+            # Get all commission entries
+            response = self.session.get(f"{API_BASE}/contas/pagar?company_id={self.company_id}&tipo_comissao=vendedor")
+            
+            if response.status_code == 200:
+                commissions = response.json()
+                budget_commissions = [c for c in commissions if c.get('orcamento_id') == self.orcamento_id]
+                
+                self.log(f"✅ Found {len(budget_commissions)} commission entries for this budget")
+                
+                for i, comm in enumerate(budget_commissions):
+                    self.log(f"   📋 Commission {i+1}:")
+                    self.log(f"      💰 Value: R$ {comm.get('valor', 0)}")
+                    self.log(f"      📄 Description: {comm.get('descricao')}")
+                    self.log(f"      📊 Status: {comm.get('status')}")
+                    self.log(f"      👤 Vendedor: {comm.get('vendedor_nome')}")
+                    self.log(f"      🔗 Linked to installment: {comm.get('conta_receber_id')}")
+                    
+                    # Verify required fields
+                    required_fields = ['id', 'tipo_comissao', 'vendedor_id', 'orcamento_id', 'conta_receber_id', 'percentual_comissao']
+                    for field in required_fields:
+                        if field not in comm:
+                            self.log(f"❌ Missing required field: {field}", "ERROR")
+                            return False
+                    
+                    # Verify commission type
+                    if comm.get('tipo_comissao') != 'vendedor':
+                        self.log(f"❌ Incorrect commission type: {comm.get('tipo_comissao')}", "ERROR")
+                        return False
+                
+                self.log("✅ All commission entries have correct structure!")
+                return True
+            else:
+                self.log(f"❌ Failed to get commission entries: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error checking commission entries: {str(e)}", "ERROR")
+            return False
+    
+    def run_all_tests(self):
+        """Execute all Proportional Commission tests"""
+        self.log("🚀 Starting CRITICAL: Proportional Commission (Comissão Parcelada) tests")
+        self.log("=" * 80)
+        
+        tests = [
+            ("Create Vendedor with Commission", self.test_create_vendedor_with_commission),
+            ("Create Client", self.test_create_client),
+            ("Create Budget with Services and Materials", self.test_create_budget_with_services_and_materials),
+            ("Budget Acceptance Does NOT Generate Commission", self.test_budget_acceptance_no_commission),
+            ("First Installment Payment Generates Proportional Commission", self.test_installment_payment_generates_proportional_commission),
+            ("Second Installment Generates Separate Commission", self.test_second_installment_generates_separate_commission),
+            ("Commission Entries in Contas a Pagar", self.test_commission_entries_in_contas_pagar)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 80)
+        self.log("📊 PROPORTIONAL COMMISSION TEST SUMMARY")
+        self.log("=" * 80)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL PROPORTIONAL COMMISSION TESTS PASSED! System working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME PROPORTIONAL COMMISSION TESTS FAILED! Check logs above for details.")
+            return False
+
+
 class SellerAppTester:
     """Test suite for Seller App (App do Vendedor) functionality"""
     
