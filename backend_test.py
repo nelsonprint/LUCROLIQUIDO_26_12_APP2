@@ -2254,7 +2254,7 @@ class PreOrcamentoTester:
 
 def main_pre_orcamento_tests():
     """Main function to run Pre-Orçamento tests"""
-    print("🚀 STARTING PRE-ORÇAMENTO ENDPOINT TESTS")
+    print("🚀 STARTING PRE-ORÇAMENTO AND AGENDA ENDPOINT TESTS")
     print("=" * 80)
     
     session = requests.Session()
@@ -2280,8 +2280,14 @@ def main_pre_orcamento_tests():
     # Use the company ID from the review request
     company_id = "cf901b3e-0eca-429c-9b8e-d723b31ecbd4"
     
-    # Initialize Pre-Orçamento Tester
+    # Initialize testers
+    agenda_tester = AgendaTester(session, user_data, company_id)
     pre_orcamento_tester = PreOrcamentoTester(session, user_data, company_id)
+    
+    # Run Agenda tests first (to check the failing task)
+    print("\n🔥 AGENDA CRUD TESTS")
+    print("=" * 50)
+    agenda_success = agenda_tester.run_all_tests()
     
     # Run Pre-Orçamento tests
     print("\n🔥 PRE-ORÇAMENTO TESTS")
@@ -2290,15 +2296,19 @@ def main_pre_orcamento_tests():
     
     # Final summary
     print("\n" + "=" * 80)
-    print("🎯 FINAL PRE-ORÇAMENTO TEST SUMMARY")
+    print("🎯 FINAL TEST SUMMARY")
     print("=" * 80)
     
-    if pre_orcamento_success:
-        print("🎉 ALL PRE-ORÇAMENTO TESTS PASSED!")
-        print("✅ Sistema de Pré-Orçamentos funcionando corretamente")
+    if agenda_success and pre_orcamento_success:
+        print("🎉 ALL TESTS PASSED!")
+        print("✅ Sistema de Agenda e Pré-Orçamentos funcionando corretamente")
         return True
     else:
-        print("⚠️ SOME PRE-ORÇAMENTO TESTS FAILED!")
+        print("⚠️ SOME TESTS FAILED!")
+        if not agenda_success:
+            print("❌ Agenda CRUD tests failed")
+        if not pre_orcamento_success:
+            print("❌ Pre-Orçamento tests failed")
         print("❌ Verificar logs acima para detalhes dos erros")
         return False
 
