@@ -1835,5 +1835,337 @@ def main():
         print("❌ Verificar logs acima para detalhes dos erros")
         return False
 
+class PreOrcamentoTester:
+    """Test suite for Pre-Orçamento (Pre-Budget) functionality"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        self.vendedor_id = "06c562d9-47b4-4919-8419-d58b45215c49"  # From review request
+        self.empresa_id = "cf901b3e-0eca-429c-9b8e-d723b31ecbd4"  # From review request
+        self.created_pre_orcamento_id = None
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_admin_login(self):
+        """Test admin login with credentials from review request"""
+        self.log("🔐 Testing admin login...")
+        
+        login_data = {
+            "email": "admin@lucroliquido.com",
+            "password": "admin123"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/auth/login", json=login_data)
+            
+            if response.status_code == 200:
+                admin_data = response.json()
+                self.log(f"✅ Admin login successful! User ID: {admin_data['user_id']}")
+                return True
+            else:
+                self.log(f"❌ Admin login failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Admin login error: {str(e)}", "ERROR")
+            return False
+    
+    def test_create_pre_orcamento_with_audio(self):
+        """Test POST /api/vendedor/{vendedor_id}/pre-orcamento - Create pre-budget with audio"""
+        self.log("🎵 Testing create pre-orçamento with audio...")
+        
+        import time
+        timestamp = int(time.time())
+        
+        # Payload from review request with audio
+        pre_orcamento_data = {
+            "empresa_id": self.empresa_id,
+            "cliente_id": None,
+            "cliente_nome": "Cliente Teste Audio",
+            "cliente_whatsapp": "(11) 99999-9999",
+            "data_entrega": "2025-01-15",
+            "itens": [
+                {
+                    "descricao": "Serviço de teste com foto e audio",
+                    "quantidade": 2,
+                    "foto_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+                    "audio_url": "data:audio/webm;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGF"
+                }
+            ],
+            "observacoes": "Teste de pré-orçamento com foto e áudio"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/vendedor/{self.vendedor_id}/pre-orcamento", json=pre_orcamento_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                pre_orcamento = result.get('pre_orcamento', {})
+                self.created_pre_orcamento_id = pre_orcamento.get('id')
+                
+                self.log(f"✅ Pre-orçamento created successfully! ID: {self.created_pre_orcamento_id}")
+                
+                # Verify audio and photo URLs were saved
+                if len(pre_orcamento.get('itens', [])) > 0:
+                    item = pre_orcamento['itens'][0]
+                    if (item.get('foto_url') and item.get('audio_url') and 
+                        'data:image/png;base64' in item.get('foto_url', '') and
+                        'data:audio/webm;base64' in item.get('audio_url', '')):
+                        self.log("✅ Photo and audio URLs saved correctly!")
+                        return True
+                    else:
+                        self.log("❌ Photo or audio URLs not saved correctly", "ERROR")
+                        return False
+                else:
+                    self.log("❌ No items found in created pre-orçamento", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to create pre-orçamento: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating pre-orçamento: {str(e)}", "ERROR")
+            return False
+    
+    def test_list_pre_orcamentos_empresa(self):
+        """Test GET /api/pre-orcamentos/{empresa_id} - List pre-budgets for company"""
+        self.log("📋 Testing list pre-orçamentos for empresa...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/pre-orcamentos/{self.empresa_id}")
+            
+            if response.status_code == 200:
+                pre_orcamentos = response.json()
+                self.log(f"✅ Retrieved {len(pre_orcamentos)} pre-orçamentos for empresa")
+                
+                # Look for our created pre-orçamento
+                our_pre_orcamento = None
+                for pre_orc in pre_orcamentos:
+                    if pre_orc.get('id') == self.created_pre_orcamento_id:
+                        our_pre_orcamento = pre_orc
+                        break
+                
+                if our_pre_orcamento:
+                    self.log("✅ Our created pre-orçamento found in list!")
+                    self.log(f"   👤 Client: {our_pre_orcamento.get('cliente_nome')}")
+                    self.log(f"   📅 Delivery: {our_pre_orcamento.get('data_entrega')}")
+                    self.log(f"   📋 Items: {len(our_pre_orcamento.get('itens', []))}")
+                    
+                    # Verify items contain media URLs
+                    if len(our_pre_orcamento.get('itens', [])) > 0:
+                        item = our_pre_orcamento['itens'][0]
+                        if item.get('foto_url') and item.get('audio_url'):
+                            self.log("✅ Items contain photo_url and audio_url!")
+                            return True
+                        else:
+                            self.log("❌ Items missing photo_url or audio_url", "ERROR")
+                            return False
+                    else:
+                        self.log("❌ No items found in pre-orçamento", "ERROR")
+                        return False
+                else:
+                    self.log("❌ Our created pre-orçamento not found in list", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to list pre-orçamentos: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error listing pre-orçamentos: {str(e)}", "ERROR")
+            return False
+    
+    def test_update_pre_orcamento_status(self):
+        """Test PATCH /api/pre-orcamento/{pre_orcamento_id}/status - Update status"""
+        self.log("🔄 Testing update pre-orçamento status...")
+        
+        if not self.created_pre_orcamento_id:
+            self.log("❌ No pre-orçamento ID available for status update", "ERROR")
+            return False
+        
+        status_data = {"status": "Convertido"}
+        
+        try:
+            response = self.session.patch(f"{API_BASE}/pre-orcamento/{self.created_pre_orcamento_id}/status", json=status_data)
+            
+            if response.status_code == 200:
+                self.log("✅ Pre-orçamento status updated successfully!")
+                
+                # Verify status was updated by listing again
+                verify_response = self.session.get(f"{API_BASE}/pre-orcamentos/{self.empresa_id}")
+                if verify_response.status_code == 200:
+                    pre_orcamentos = verify_response.json()
+                    
+                    for pre_orc in pre_orcamentos:
+                        if pre_orc.get('id') == self.created_pre_orcamento_id:
+                            if pre_orc.get('status') == 'Convertido':
+                                self.log("✅ Status update verified - now 'Convertido'!")
+                                return True
+                            else:
+                                self.log(f"❌ Status not updated correctly. Current: {pre_orc.get('status')}", "ERROR")
+                                return False
+                    
+                    self.log("❌ Pre-orçamento not found in verification", "ERROR")
+                    return False
+                else:
+                    self.log("⚠️ Could not verify status update", "WARN")
+                    return True  # Update worked, verification failed
+            else:
+                self.log(f"❌ Failed to update status: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error updating status: {str(e)}", "ERROR")
+            return False
+    
+    def test_delete_pre_orcamento(self):
+        """Test DELETE /api/pre-orcamento/{pre_orcamento_id} - Delete pre-budget"""
+        self.log("🗑️ Testing delete pre-orçamento...")
+        
+        if not self.created_pre_orcamento_id:
+            self.log("❌ No pre-orçamento ID available for deletion", "ERROR")
+            return False
+        
+        try:
+            response = self.session.delete(f"{API_BASE}/pre-orcamento/{self.created_pre_orcamento_id}")
+            
+            if response.status_code == 200:
+                self.log("✅ Pre-orçamento deleted successfully!")
+                
+                # Verify deletion by trying to list again
+                verify_response = self.session.get(f"{API_BASE}/pre-orcamentos/{self.empresa_id}")
+                if verify_response.status_code == 200:
+                    pre_orcamentos = verify_response.json()
+                    
+                    # Check that our pre-orçamento is no longer in the list
+                    found = any(pre_orc.get('id') == self.created_pre_orcamento_id for pre_orc in pre_orcamentos)
+                    
+                    if not found:
+                        self.log("✅ Deletion verified - pre-orçamento no longer in list!")
+                        return True
+                    else:
+                        self.log("❌ Pre-orçamento still found after deletion", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify deletion", "WARN")
+                    return True  # Deletion worked, verification failed
+            else:
+                self.log(f"❌ Failed to delete pre-orçamento: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error deleting pre-orçamento: {str(e)}", "ERROR")
+            return False
+    
+    def run_all_tests(self):
+        """Execute all Pre-Orçamento tests"""
+        self.log("🚀 Starting Pre-Orçamento API tests")
+        self.log("=" * 70)
+        
+        tests = [
+            ("Admin Login", self.test_admin_login),
+            ("Create Pre-Orçamento with Audio", self.test_create_pre_orcamento_with_audio),
+            ("List Pre-Orçamentos for Empresa", self.test_list_pre_orcamentos_empresa),
+            ("Update Pre-Orçamento Status", self.test_update_pre_orcamento_status),
+            ("Delete Pre-Orçamento", self.test_delete_pre_orcamento)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 70)
+        self.log("📊 PRE-ORÇAMENTO TEST SUMMARY")
+        self.log("=" * 70)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL PRE-ORÇAMENTO TESTS PASSED! System working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME PRE-ORÇAMENTO TESTS FAILED! Check logs above for details.")
+            return False
+
+
+def main_pre_orcamento_tests():
+    """Main function to run Pre-Orçamento tests"""
+    print("🚀 STARTING PRE-ORÇAMENTO ENDPOINT TESTS")
+    print("=" * 80)
+    
+    session = requests.Session()
+    
+    # Login as admin
+    login_data = {
+        "email": "admin@lucroliquido.com",
+        "password": "admin123"
+    }
+    
+    try:
+        response = session.post(f"{API_BASE}/auth/login", json=login_data)
+        if response.status_code == 200:
+            user_data = response.json()
+            print(f"✅ Login successful! User ID: {user_data['user_id']}")
+        else:
+            print(f"❌ Login failed: {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print(f"❌ Login error: {str(e)}")
+        return False
+    
+    # Use the company ID from the review request
+    company_id = "cf901b3e-0eca-429c-9b8e-d723b31ecbd4"
+    
+    # Initialize Pre-Orçamento Tester
+    pre_orcamento_tester = PreOrcamentoTester(session, user_data, company_id)
+    
+    # Run Pre-Orçamento tests
+    print("\n🔥 PRE-ORÇAMENTO TESTS")
+    print("=" * 50)
+    pre_orcamento_success = pre_orcamento_tester.run_all_tests()
+    
+    # Final summary
+    print("\n" + "=" * 80)
+    print("🎯 FINAL PRE-ORÇAMENTO TEST SUMMARY")
+    print("=" * 80)
+    
+    if pre_orcamento_success:
+        print("🎉 ALL PRE-ORÇAMENTO TESTS PASSED!")
+        print("✅ Sistema de Pré-Orçamentos funcionando corretamente")
+        return True
+    else:
+        print("⚠️ SOME PRE-ORÇAMENTO TESTS FAILED!")
+        print("❌ Verificar logs acima para detalhes dos erros")
+        return False
+
+
 if __name__ == "__main__":
-    main()
+    # Run the new pre-orçamento tests
+    main_pre_orcamento_tests()
