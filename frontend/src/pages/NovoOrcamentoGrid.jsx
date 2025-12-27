@@ -590,7 +590,7 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
     <div className="flex min-h-screen bg-zinc-950 text-white">
       <Sidebar user={user} onLogout={onLogout} activePage="orcamentos" onNavigate={handleNavigate} />
 
-      <div className="flex-1 p-8 ml-64">
+      <div className={`flex-1 p-8 ml-64 transition-all duration-300 ${showPreOrcamentoPainel ? 'mr-80' : ''}`}>
         <div className="max-w-6xl mx-auto space-y-6">
           <SubscriptionCard user={user} />
 
@@ -615,21 +615,37 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
               </div>
             </div>
 
-            {/* Resumo do valor */}
-            <Card className="bg-zinc-900 border-zinc-800 px-6 py-3">
-              <div className="text-right">
-                <p className="text-xs text-zinc-400">Total do Orçamento</p>
-                <p className="text-2xl font-bold text-green-400">
-                  {formatBRL(totalGeral)}
-                </p>
-                {totalMateriais > 0 && (
-                  <p className="text-xs text-zinc-500">
-                    Serviços: {formatBRL(totalServicos)} | 
-                    Materiais: {formatBRL(totalMateriais)}
-                  </p>
+            <div className="flex items-center gap-3">
+              {/* Botão para abrir painel de pré-orçamento */}
+              <Button
+                variant="outline"
+                onClick={() => setShowPreOrcamentoPainel(!showPreOrcamentoPainel)}
+                className={`border-orange-500 ${showPreOrcamentoPainel ? 'bg-orange-500 text-white' : 'text-orange-500 hover:bg-orange-500/10'}`}
+              >
+                {showPreOrcamentoPainel ? (
+                  <PanelRightClose className="w-4 h-4 mr-2" />
+                ) : (
+                  <PanelRightOpen className="w-4 h-4 mr-2" />
                 )}
-              </div>
-            </Card>
+                Pré-Orçamentos
+              </Button>
+
+              {/* Resumo do valor */}
+              <Card className="bg-zinc-900 border-zinc-800 px-6 py-3">
+                <div className="text-right">
+                  <p className="text-xs text-zinc-400">Total do Orçamento</p>
+                  <p className="text-2xl font-bold text-green-400">
+                    {formatBRL(totalGeral)}
+                  </p>
+                  {totalMateriais > 0 && (
+                    <p className="text-xs text-zinc-500">
+                      Serviços: {formatBRL(totalServicos)} | 
+                      Materiais: {formatBRL(totalMateriais)}
+                    </p>
+                  )}
+                </div>
+              </Card>
+            </div>
           </div>
 
           {/* Tabs */}
