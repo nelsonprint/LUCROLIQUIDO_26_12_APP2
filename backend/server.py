@@ -7127,6 +7127,53 @@ async def buscar_pre_orcamento(vendedor_id: str, pre_orcamento_id: str):
     return pre_orcamento
 
 
+# Endpoints de pré-orçamento para o Sistema Mãe
+@api_router.get("/pre-orcamentos/{empresa_id}")
+async def listar_pre_orcamentos_empresa(empresa_id: str, status: Optional[str] = None):
+    """Listar todos os pré-orçamentos de uma empresa"""
+    filtro = {"empresa_id": empresa_id}
+    if status:
+        filtro["status"] = status
+    
+    pre_orcamentos = await db.pre_orcamentos.find(
+        filtro,
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+    
+    return pre_orcamentos
+
+
+@api_router.delete("/pre-orcamento/{pre_orcamento_id}")
+async def deletar_pre_orcamento(pre_orcamento_id: str):
+    """Deletar um pré-orçamento"""
+    result = await db.pre_orcamentos.delete_one({"id": pre_orcamento_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Pré-orçamento não encontrado")
+    
+    return {"message": "Pré-orçamento removido com sucesso"}
+
+
+@api_router.patch("/pre-orcamento/{pre_orcamento_id}/status")
+async def atualizar_status_pre_orcamento(pre_orcamento_id: str, status_data: dict = Body(...)):
+    """Atualizar status do pré-orçamento (ex: Convertido quando virar orçamento)"""
+    result = await db.pre_orcamentos.update_one(
+        {"id": pre_orcamento_id},
+        {
+            "$set": {
+                "status": status_data.get("status", "Pendente"),
+                "orcamento_id": status_data.get("orcamento_id"),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Pré-orçamento não encontrado")
+    
+    return {"message": "Status atualizado"}
+
+
 @api_router.post("/vendedor/upload/media")
 async def upload_media_vendedor(file: UploadFile = File(...)):
     """Upload de mídia (foto ou áudio) do vendedor"""
