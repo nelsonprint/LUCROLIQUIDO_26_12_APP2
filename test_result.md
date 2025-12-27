@@ -61,15 +61,54 @@ backend:
 
   - task: "Agenda CRUD Operations"
     implemented: true
-    working: false
+    working: true
     file: "server.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "❌ POST /api/vendedor/{id}/agenda failing with 520 Internal Server Error. Issue appears to be MongoDB ObjectId serialization problem. GET endpoint works fine."
+      - working: true
+        agent: "testing"
+        comment: "✅ FIXED! Agenda CRUD operations now working correctly. POST /api/vendedor/{vendedor_id}/agenda successfully creates agenda items. GET /api/vendedor/{vendedor_id}/agenda lists agenda items properly. MongoDB serialization issue resolved."
+
+  - task: "Pre-Orçamento Endpoints for Sistema Mãe"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ All pre-orçamento endpoints working correctly: GET /api/pre-orcamentos/{empresa_id} lists pre-budgets, DELETE /api/pre-orcamento/{pre_orcamento_id} deletes pre-budgets, PATCH /api/pre-orcamento/{pre_orcamento_id}/status updates status to 'Convertido'."
+
+  - task: "Pre-Orçamento Creation with Audio/Photo"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ POST /api/vendedor/{vendedor_id}/pre-orcamento successfully creates pre-budgets with audio and photo data. Items correctly preserve foto_url and audio_url fields with base64 data. All media URLs saved and retrieved correctly."
+
+  - task: "Pre-Orçamento Listing with Media Items"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Pre-orçamento listing working correctly. Items contain photo_url and audio_url fields as required. GET /api/pre-orcamentos/{empresa_id} returns complete pre-budget data including media URLs in items."
 
 frontend:
   - task: "App do Vendedor - PWA Login System"
