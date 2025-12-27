@@ -274,6 +274,32 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
     }
   };
 
+  // Usar dados do pré-orçamento
+  const handleUsarDadosPreOrcamento = (preOrcamento) => {
+    if (!preOrcamento) return;
+    
+    // Se tem cliente_id, selecionar o cliente
+    if (preOrcamento.cliente_id) {
+      setClienteSelecionado(preOrcamento.cliente_id);
+      handleClienteChange(preOrcamento.cliente_id);
+    } else if (preOrcamento.cliente_nome) {
+      // Se não tem cliente_id mas tem nome, preencher manualmente
+      setOrcamentoData(prev => ({
+        ...prev,
+        cliente_nome: preOrcamento.cliente_nome || '',
+        cliente_whatsapp: preOrcamento.cliente_whatsapp || '',
+      }));
+    }
+    
+    // Se tem data de entrega
+    if (preOrcamento.data_entrega) {
+      setOrcamentoData(prev => ({
+        ...prev,
+        previsao_entrega: preOrcamento.data_entrega,
+      }));
+    }
+  };
+
   // Criar novo cliente
   const handleCriarNovoCliente = async (e) => {
     e.preventDefault();
