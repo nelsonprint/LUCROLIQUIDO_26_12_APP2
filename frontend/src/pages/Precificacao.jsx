@@ -220,6 +220,9 @@ const Precificacao = ({ user, onLogout }) => {
     condicoes_pagamento: '',
     prazo_execucao: '',
     observacoes: '',
+    // Vendedor responsável
+    vendedor_id: '',
+    vendedor_nome: '',
   });
 
   // ========== ESTADOS PARA PRODUTO (LÓGICA ANTIGA) ==========
