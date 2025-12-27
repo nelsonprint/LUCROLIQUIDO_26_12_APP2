@@ -2696,5 +2696,5 @@ def main_pre_orcamento_tests():
 
 
 if __name__ == "__main__":
-    # Run the new pre-orçamento tests
-    main_pre_orcamento_tests()
+    # Run the commission bug fix tests
+    main()
