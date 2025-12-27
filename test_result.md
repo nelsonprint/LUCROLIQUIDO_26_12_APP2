@@ -61,15 +61,18 @@ backend:
 
   - task: "CRITICAL: Proportional Commission (Parcelada)"
     implemented: true
-    working: false
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Implementation complete. Old logic removed from endpoints cliente_aceitar_orcamento and update_orcamento_status. New logic exists in update_status_conta_receber. NEEDS TESTING."
+      - working: true
+        agent: "testing"
+        comment: "✅ CRITICAL TEST PASSED! Proportional commission system working correctly. All 7 test criteria verified: 1) Budget acceptance does NOT generate commission ✅ 2) Each installment payment generates proportional commission ✅ 3) Commission calculated ONLY on services portion (R$ 10,000), excluding materials (R$ 5,000) ✅ 4) First installment (R$ 3,000) generated R$ 200 commission (R$ 3,000 × 66.67% services × 10%) ✅ 5) Second installment (R$ 6,000) generated R$ 400 commission separately ✅ 6) Each commission entry properly linked to different installments ✅ 7) Commission entries created in contas_a_pagar with tipo_comissao: 'vendedor' ✅. Old commission logic properly removed from budget acceptance. New proportional logic working correctly in PATCH /api/contas/receber/{conta_id}/status endpoint."
 
   - task: "Vendedor Link Generation"
     implemented: true
