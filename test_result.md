@@ -137,6 +137,18 @@ backend:
         agent: "testing"
         comment: "✅ Pre-orçamento listing working correctly. Items contain photo_url and audio_url fields as required. GET /api/pre-orcamentos/{empresa_id} returns complete pre-budget data including media URLs in items."
 
+  - task: "Vendedor Field in Precificação (Classic Pricing)"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VENDEDOR FIELD IN PRECIFICAÇÃO TESTS PASSED! All 4 test criteria verified: 1) GET /api/vendedores/{empresa_id} endpoint working correctly, returns vendedores with id, nome_completo, and percentual_comissao fields ✅ 2) Budget creation with vendedor_id and vendedor_nome fields working via POST /api/orcamentos ✅ 3) Vendedor fields correctly saved and preserved in budget data ✅ 4) Budget listing preserves vendedor information correctly ✅. Feature working as specified in review request - vendedor dropdown functionality and budget creation with vendedor assignment fully functional."
+
 frontend:
   - task: "App do Vendedor - PWA Login System"
     implemented: true
