@@ -5390,7 +5390,9 @@ async def update_status_conta_receber(conta_id: str, status_data: ContaStatusUpd
         "updated_at": dt.now(timezone.utc).isoformat()
     }
     
-    # Se marcar como RECEBIDO, criar lançamento automático
+    comissao_info = None
+    
+    # Se marcar como RECEBIDO, criar lançamento automático E gerar comissão do vendedor
     if status_data.status == "RECEBIDO" and not conta.get('lancamento_id'):
         data_pagamento = status_data.data_pagamento or dt.now().strftime("%Y-%m-%d")
         update_fields['data_pagamento'] = data_pagamento
@@ -5408,7 +5410,101 @@ async def update_status_conta_receber(conta_id: str, status_data: ContaStatusUpd
             {"$set": {"lancamento_id": lancamento_id}}
         )
         
-        return {"message": "Conta marcada como RECEBIDA e lançamento criado!", "lancamento_id": lancamento_id}
+        # ===== GERAR COMISSÃO PROPORCIONAL DO VENDEDOR =====
+        # Só gera se a conta estiver vinculada a um orçamento
+        if conta.get('orcamento_id') and not conta.get('comissao_gerada'):
+            orcamento = await db.orcamentos.find_one({"id": conta['orcamento_id']}, {"_id": 0})
+            
+            if orcamento and orcamento.get('vendedor_id'):
+                vendedor = await db.funcionarios.find_one({"id": orcamento['vendedor_id']}, {"_id": 0})
+                
+                if vendedor and vendedor.get('percentual_comissao', 0) > 0:
+                    # Calcular proporção de serviços no orçamento total
+                    detalhes_itens = orcamento.get('detalhes_itens', {})
+                    totals = detalhes_itens.get('totals', {})
+                    valor_servicos_total = totals.get('services_total', 0)
+                    valor_materiais_total = totals.get('materials_total', 0)
+                    
+                    # Se não tiver a estrutura de totals, calcular dos arrays
+                    if not valor_servicos_total and not valor_materiais_total:
+                        servicos = detalhes_itens.get('servicos', [])
+                        valor_servicos_total = sum(item.get('valor_total', 0) for item in servicos)
+                        materiais = detalhes_itens.get('materiais', [])
+                        valor_materiais_total = sum(item.get('valor_total', 0) for item in materiais)
+                    
+                    valor_total_orcamento = orcamento.get('preco_praticado', 0)
+                    
+                    # Calcular proporção de serviços (evitar divisão por zero)
+                    if valor_total_orcamento > 0:
+                        proporcao_servicos = valor_servicos_total / valor_total_orcamento
+                    else:
+                        proporcao_servicos = 1  # Se não tem total, assume 100% serviços
+                    
+                    # Valor da parcela recebida que corresponde a serviços
+                    valor_parcela = conta.get('valor', 0)
+                    valor_servicos_parcela = valor_parcela * proporcao_servicos
+                    
+                    # Calcular comissão sobre os serviços desta parcela
+                    percentual = vendedor.get('percentual_comissao', 0)
+                    valor_comissao = valor_servicos_parcela * (percentual / 100)
+                    
+                    if valor_comissao > 0:
+                        # Identificar qual parcela é (entrada, parcela 1, etc)
+                        descricao_parcela = conta.get('descricao', '')
+                        
+                        # Criar conta a pagar para a comissão desta parcela
+                        comissao_id = str(uuid.uuid4())
+                        agora = dt.now(timezone.utc)
+                        
+                        conta_comissao = {
+                            "id": comissao_id,
+                            "company_id": conta['company_id'],
+                            "user_id": conta.get('user_id'),
+                            "tipo": "PAGAR",
+                            "descricao": f"Comissão - {descricao_parcela}",
+                            "categoria": "Comissão",
+                            "data_emissao": agora.strftime('%Y-%m-%d'),
+                            "data_vencimento": (agora + timedelta(days=30)).strftime('%Y-%m-%d'),
+                            "valor": round(valor_comissao, 2),
+                            "status": "PENDENTE",
+                            "forma_pagamento": "PIX",
+                            "observacoes": f"Comissão de {percentual}% sobre serviços. Parcela recebida: R$ {valor_parcela:.2f}. Proporção serviços: {proporcao_servicos*100:.1f}%. Base comissão: R$ {valor_servicos_parcela:.2f}. Vendedor: {vendedor.get('nome_completo')}",
+                            # Campos para rastreamento
+                            "tipo_comissao": "vendedor",
+                            "vendedor_id": vendedor.get('id'),
+                            "vendedor_nome": vendedor.get('nome_completo'),
+                            "orcamento_id": orcamento.get('id'),
+                            "orcamento_numero": orcamento.get('numero_orcamento'),
+                            "conta_receber_id": conta_id,  # Vincula à parcela recebida
+                            "percentual_comissao": percentual,
+                            "valor_parcela_recebida": valor_parcela,
+                            "valor_servicos_parcela": round(valor_servicos_parcela, 2),
+                            "proporcao_servicos": proporcao_servicos,
+                            "created_at": agora.isoformat(),
+                            "updated_at": agora.isoformat()
+                        }
+                        await db.contas.insert_one(conta_comissao)
+                        
+                        # Marcar que esta parcela já gerou comissão
+                        await db.contas.update_one(
+                            {"id": conta_id},
+                            {"$set": {"comissao_gerada": True, "comissao_id": comissao_id}}
+                        )
+                        
+                        comissao_info = {
+                            "vendedor": vendedor.get('nome_completo'),
+                            "percentual": percentual,
+                            "valor_comissao": round(valor_comissao, 2),
+                            "valor_servicos_parcela": round(valor_servicos_parcela, 2),
+                            "comissao_id": comissao_id
+                        }
+                        
+                        logger.info(f"Comissão parcial gerada: R$ {valor_comissao:.2f} para {vendedor.get('nome_completo')} (parcela: R$ {valor_parcela:.2f}, serviços: R$ {valor_servicos_parcela:.2f})")
+        
+        response = {"message": "Conta marcada como RECEBIDA e lançamento criado!", "lancamento_id": lancamento_id}
+        if comissao_info:
+            response["comissao"] = comissao_info
+        return response
     
     # Se voltar para PENDENTE, cancelar lançamento
     elif status_data.status == "PENDENTE" and conta.get('lancamento_id'):
