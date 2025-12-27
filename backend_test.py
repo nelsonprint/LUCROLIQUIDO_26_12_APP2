@@ -2789,16 +2789,9 @@ class CommissionBugFixTester:
 
 
 def main():
-    """Main function - Run Proportional Commission tests"""
-    print("🚀 Starting CRITICAL: Proportional Commission (Comissão Parcelada) Tests")
-    print("=" * 80)
-    print("🎯 TESTING: Commission generated proportionally when installments are paid")
-    print("📋 Business Rules:")
-    print("   • Commission NO LONGER generated when budget is approved")
-    print("   • Commission IS generated when each installment is marked as RECEBIDO")
-    print("   • Commission calculated ONLY on services portion, NOT materials")
-    print("   • Each installment generates its own proportional commission")
-    print("=" * 80)
+    """Main function - Run all tests including Vendedor Field in Precificação"""
+    print("🚀 Starting Lucro Líquido System API Tests")
+    print("=" * 70)
     
     # Initialize session and login
     session = requests.Session()
@@ -2821,26 +2814,26 @@ def main():
         print(f"✅ Login successful! User ID: {user_data['user_id']}")
         print(f"🏢 Company ID: {company_id}")
         
-        # Initialize Proportional Commission Tester
-        commission_tester = ProportionalCommissionTester(session, user_data, company_id)
-        
-        # Run Proportional Commission tests
-        commission_success = commission_tester.run_all_tests()
+        # Run Vendedor Field in Precificação tests
+        print("\n" + "=" * 70)
+        vendedor_field_tester = VendedorFieldPrecificacaoTester(session, user_data, company_id)
+        vendedor_field_success = vendedor_field_tester.run_all_tests()
         
         # Final summary
-        print("\n" + "=" * 80)
+        print("\n" + "=" * 70)
         print("🎯 FINAL TEST SUMMARY")
-        print("=" * 80)
+        print("=" * 70)
         
-        if commission_success:
-            print("🎉 ALL PROPORTIONAL COMMISSION TESTS PASSED!")
-            print("✅ Proportional commission system working correctly")
-            print("✅ Old commission logic properly removed from budget acceptance")
-            print("✅ New commission logic working in installment payments")
+        if vendedor_field_success:
+            print("🎉 ALL VENDEDOR FIELD IN PRECIFICAÇÃO TESTS PASSED!")
+            print("✅ Vendedor field functionality working correctly")
+            print("✅ GET /api/vendedores endpoint working")
+            print("✅ Budget creation with vendedor_id and vendedor_nome working")
+            print("✅ Budget listing preserves vendedor information")
             return True
         else:
-            print("⚠️ SOME PROPORTIONAL COMMISSION TESTS FAILED!")
-            print("❌ Proportional commission system may not be working correctly")
+            print("⚠️ SOME VENDEDOR FIELD TESTS FAILED!")
+            print("❌ Vendedor field functionality may not be working correctly")
             return False
             
     except Exception as e:
