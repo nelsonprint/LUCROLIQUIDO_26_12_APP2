@@ -3119,7 +3119,7 @@ Acesse o sistema para mais detalhes."""
     }
     await db.notificacoes.insert_one(notificacao)
     
-    return {
+    response = {
         "message": "Orçamento aceito com sucesso!",
         "orcamento_id": orcamento_id,
         "numero_orcamento": orcamento['numero_orcamento'],
@@ -3127,6 +3127,12 @@ Acesse o sistema para mais detalhes."""
         "contas_ids": contas_geradas,
         "notificacao_whatsapp_url": whatsapp_url
     }
+    
+    # Adicionar info da comissão se foi gerada
+    if comissao_gerada_info:
+        response["comissao"] = comissao_gerada_info
+    
+    return response
 
 
 # ========== NOTIFICAÇÕES ==========
