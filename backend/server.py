@@ -3069,7 +3069,8 @@ async def aceitar_orcamento(orcamento_id: str, request: Request):
                 "vendedor": vendedor.get('nome_completo'),
                 "percentual": percentual,
                 "valor": valor_comissao,
-                "base_servicos": valor_servicos
+                "valor_base": valor_servicos,
+                "conta_id": comissao_id
             }
             
             logger.info(f"Comissão gerada no aceite: R$ {valor_comissao:.2f} para vendedor {vendedor.get('nome_completo')} (base: R$ {valor_servicos:.2f} em serviços)")
