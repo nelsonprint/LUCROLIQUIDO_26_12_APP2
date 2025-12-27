@@ -3008,10 +3008,6 @@ Acesse o sistema para mais detalhes."""
         "notificacao_whatsapp_url": whatsapp_url
     }
     
-    # Adicionar info da comissão se foi gerada
-    if comissao_gerada_info:
-        response["comissao"] = comissao_gerada_info
-    
     return response
 
 
