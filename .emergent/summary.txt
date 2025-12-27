@@ -1,71 +1,73 @@
 <analysis>
 **original_problem_statement:**
-O usuário solicitou inicialmente um conjunto de funcionalidades para um sistema de orçamentos, incluindo formatação monetária (BRL), validação de CPF/CNPJ, e um sistema de notificações. O escopo foi expandido para incluir um módulo de funcionários, uma página PWA para supervisores (com upload de mídia) e uma página de visualização para clientes.
+O usuário solicitou inicialmente um conjunto de funcionalidades para um sistema de orçamentos. O escopo foi expandido para incluir um App Mobile do Vendedor (PWA) para gerenciar visitas, criar orçamentos e receber comissões.
 
-A solicitação mais recente do usuário é a implementação de um **App Mobile do Vendedor**. Este aplicativo, em formato PWA, deve permitir que os vendedores:
-1.  Acessem através de um login (definido no cadastro de funcionários).
-2.  Gerenciem uma agenda de visitas a clientes.
-3.  Criem orçamentos de forma simplificada, em campo.
-4.  Recebam comissões automaticamente quando um orçamento criado por eles for aprovado.
-
-O usuário forneceu arquivos de referência (, , ) para guiar o design e a funcionalidade.
+As solicitações mais recentes e críticas são:
+1.  **Comissão Proporcional**: A comissão do vendedor não deve ser gerada integralmente quando o orçamento é aprovado. Em vez disso, uma comissão proporcional deve ser criada em Contas a Pagar cada vez que o cliente paga uma das parcelas do serviço. A comissão incide apenas sobre o valor dos **serviços**, não dos materiais.
+2.  **App do Vendedor - Gravação de Áudio**: Adicionar um recurso para gravar um áudio associado a cada foto no pré-orçamento.
+3.  **Sistema Mãe - Painel de Pré-Orçamento**: Na tela de criação de orçamento do sistema principal, adicionar um painel lateral para visualizar os pré-orçamentos (fotos, descrições, áudios) criados pelo vendedor no app.
+4.  **Correção de Bugs**: Vários bugs foram relatados e corrigidos, incluindo a instalação do PWA do supervisor, erros ao quitar contas a pagar/receber e a não atualização do saldo de comissões no app do vendedor.
 
 **User's preferred language**: Português
 
 **what currently exists?**
--   Uma aplicação full-stack (React/FastAPI/MongoDB) com módulos funcionais para Orçamentos, Clientes e Funcionários.
--   A **Página PWA do Supervisor** e a **Página de Visualização do Cliente** estão completas e funcionais. O bug crítico de captura de mídia (fotos/áudio) foi resolvido reescrevendo  com base em um código funcional fornecido pelo usuário. O problema do link do cliente (que retornava JSON e tinha URLs quebradas) também foi corrigido.
--   As bases para o **App do Vendedor** foram implementadas no sistema principal (Sistema Mãe):
-    -   **Backend:**
-        -   O modelo  agora inclui o campo .
-        -   O modelo  agora inclui os campos  e .
-        -   Foi adicionada uma lógica que gera automaticamente uma conta a pagar para a comissão do vendedor quando um orçamento é aprovado.
-        -   Foi criado um novo endpoint () para listar funcionários da categoria Vendedor.
-    -   **Frontend:**
-        -   O formulário de funcionários agora exibe o campo  quando a categoria Vendedor é selecionada.
-        -   O formulário de criação/edição de orçamentos () agora possui um campo obrigatório para selecionar o vendedor responsável.
+-   Uma aplicação full-stack (React/FastAPI/MongoDB) com módulos de Orçamentos, Clientes e Funcionários.
+-   Um **App do Vendedor** (PWA) funcional, que permite login, visualização de orçamentos e comissões, agendamento de visitas e criação de pré-orçamentos com captura de fotos e áudio.
+-   Um **App do Supervisor** (PWA) funcional. A questão da instalação do PWA foi resolvida com a adição de um Service Worker, ícones PNG e um botão de instalação manual.
+-   Um **Painel de Pré-Orçamento** na tela de criação de orçamentos do sistema principal, que permite visualizar os dados coletados pelo vendedor.
+-   A lógica de comissão foi parcialmente ajustada. O cálculo agora considera apenas o valor dos serviços, e o erro ao quitar contas foi corrigido, fazendo com que o saldo no app do vendedor atualize corretamente.
+-   **ATENÇÃO:** A lógica para gerar a comissão completa no momento da aprovação do orçamento **ainda existe** e precisa ser removida. O agente iniciou a implementação da nova lógica de comissão parcelada, mas não a concluiu.
 
 **Last working item**:
--   **Last item agent was working:** O agente concluiu a implementação e o teste das alterações no Sistema Mãe (backend e frontend principal) necessárias como pré-requisito para a construção do App do Vendedor.
--   **Status:** USER VERIFICATION PENDING
--   **Agent Testing Done:** Y
--   **Which testing method agent to use?** NA
+-   **Last item agent was working:** O agente estava no meio da implementação da funcionalidade de **comissão parcelada**. O objetivo é gerar uma conta a pagar para a comissão do vendedor de forma proporcional, somente quando uma parcela do cliente é marcada como Recebida. O agente corretamente identificou que a lógica deveria ser inserida no endpoint que quita uma conta a receber, mas o trabalho foi interrompido.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** backend testing agent
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   Não há issues pendentes no momento.
-
-**In progress Task List**:
--   **Task 1: Implementação do App do Vendedor (P0)**
-    -   **Description:** Construir o PWA para vendedores, incluindo a agenda e o formulário de orçamento simplificado.
+-   **Issue 1: Implementar e Corrigir Geração de Comissão Parcelada (P0)**
+    -   **Description:** A comissão do vendedor está sendo gerada integralmente quando o orçamento é aprovado. O requisito é que a comissão seja gerada em parcelas, proporcionalmente, cada vez que um pagamento do cliente é recebido.
     -   **Priority:** P0
 
-**Task Detail:**
--   **Task 1: Implementação do App do Vendedor**
-    -   **Where to resume:** O trabalho deve ser retomado com a criação dos novos arquivos PWA para o vendedor (, ) e os endpoints de backend correspondentes para login, gerenciamento de agenda e criação de orçamentos pelo vendedor. Os arquivos de referência fornecidos pelo usuário (, , ) devem ser usados como base.
-    -   **What will be achieved with this?** Entregar a funcionalidade principal solicitada pelo usuário, permitindo que a equipe de vendas gerencie suas atividades e crie orçamentos em campo.
+**Issues Detail:**
+-   **Issue 1: Implementar e Corrigir Geração de Comissão Parcelada**
+    -   **Attempted fixes:** O agente começou a modificar o endpoint  em  para adicionar a nova lógica.
+    -   **Next debug checklist:**
+        1.  **REMOVER LÓGICA ANTIGA (CRÍTICO):** No arquivo , encontrar e remover completamente o código que gera a comissão integral dentro dos endpoints  e . Se isso não for feito, a comissão será gerada em duplicidade.
+        2.  **FINALIZAR NOVA LÓGICA:** No endpoint  (que lida com ), finalizar a implementação que:
+            a. Verifica se a conta recebida pertence a um orçamento com vendedor.
+            b. Calcula o valor da comissão proporcional ao valor da parcela recebida (considerando apenas a porcentagem sobre os serviços).
+            c. Cria uma nova entrada em  para a comissão do vendedor.
+    -   **Why fix this issue and what will be achieved with this?** Para alinhar o sistema com a regra de negócio fundamental do usuário sobre como e quando as comissões devem ser pagas.
     -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Both
-    -   **Blocked on something:** Não.
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Backend
+    -   **Blocked on other issue:** None
+
+**In progress Task List**:
+-   Não há. O item de trabalho atual é a correção de um fluxo de negócio crítico.
 
 **Upcoming and Future Tasks**
 *   **Upcoming Tasks:**
     *   (P1) **Importação de serviços via CSV** na página .
-    *   (P2) **Refinar a UI/UX da página do supervisor**, garantindo que o fluxo de salvar o cronograma após adicionar mídias seja claro.
 *   **Future Tasks:**
-    *   (P3) **Refatorar **: Desmembrar o arquivo monolítico em uma estrutura modular (, , ).
-    *   (P4) **Remover o arquivo obsoleto ** e sua rota associada em .
+    *   (P2) **Refinar a UI/UX da página do supervisor**.
+    -   (P3) **Refatorar **: Desmembrar o arquivo monolítico em uma estrutura modular (, , ).
+    -   (P4) **Remover o arquivo obsoleto ** e sua rota.
 
 **Completed work in this session**
--   **Correção da Captura de Mídia do Supervisor:** Resolvido o bug crítico na página  que impedia a captura e exibição de fotos e áudios, reescrevendo a página com base na sugestão do usuário.
--   **Correção da Página de Visualização do Cliente:** Corrigido o endpoint que retornava JSON em vez de HTML, e normalizadas as URLs de imagens que estavam quebradas devido a domínios antigos e caminhos relativos.
--   **Correção do Link de Cliente para WhatsApp:** O link enviado ao cliente agora é absoluto (), tornando-o clicável em aplicativos de mensagens.
--   **Preparação para o App do Vendedor:** Implementadas todas as alterações necessárias no backend e frontend do sistema principal para suportar a nova funcionalidade de vendedor e comissões. O trabalho foi validado com sucesso pelo testing agent.
+-   **Feature: Áudio no Pré-Orçamento**: Implementado o recurso de gravação de áudio para cada item no pré-orçamento do App do Vendedor.
+-   **Feature: Painel de Pré-Orçamento**: Adicionado um painel lateral na tela de criação de orçamento do sistema principal para visualizar os dados coletados pelo vendedor.
+-   **Bug Fix: Instalação do PWA do Supervisor**: Corrigido o problema que impedia o banner de instalação de aparecer, adicionando Service Worker, ícones PNG e um botão de instalação manual, garantindo consistência com o App do Vendedor.
+-   **Bug Fix: Erro ao Quitar Contas**: Resolvido um erro de servidor (Pydantic validation error) que ocorria ao quitar contas a pagar e a receber.
+-   **Bug Fix: Saldo de Comissão no App**: Corrigido o fluxo para que, após uma comissão ser paga, o saldo de Comissão Liberada seja atualizado corretamente no App do Vendedor.
+-   **Bug Fix: Revisão de Links**: Foi feita uma auditoria geral que confirmou que os links dos apps do vendedor e supervisor e seus respectivos conteúdos estavam corretos, descartando a suspeita de que haviam sido trocados.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Refatoração do **
-    -   **Debug checklist:** O arquivo  tem mais de 6.600 linhas e precisa ser dividido em uma estrutura de pastas (ex: , ) para melhorar a manutenção.
-    -   **Why to solve this issue and what will be achieved with this?** A refatoração melhorará a organização, manutenibilidade e escalabilidade do projeto.
+    -   **Debug checklist:** O arquivo  é excessivamente grande (>7.000 linhas) e precisa ser modularizado.
+    -   **Why to solve this issue and what will be achieved with this?** Melhorar drasticamente a manutenibilidade, organização e escalabilidade do backend.
     -   **Should Test frontend/backend/both after fix:** Backend (extensivamente).
     -   **Is recurring issue?** Y
 
@@ -76,68 +78,65 @@ O usuário forneceu arquivos de referência (, , ) para guiar o design e a funci
 
 
 **Key Technical Concepts**
--   PWA (Progressive Web App) com HTML/JS/CSS estático e IndexedDB.
--   FastAPI para a API de backend.
--   React para a aplicação web principal.
--   Geração de contas a pagar para comissões, acionada pela mudança de status do orçamento.
+-   PWA com Service Workers, Manifest e eventos .
+-   FastAPI para o backend.
+-   React para o frontend.
+-   Captura de mídia (áudio/foto) com  e .
+-   Armazenamento em IndexedDB no cliente e upload de blobs.
 
 **key DB schema**
--   **funcionarios**: (MODIFICADO) Adicionado campo .
--   **orcamentos**: (MODIFICADO) Adicionados campos  e .
--   **contas_a_pagar**: (UTILIZADO) Agora armazena as comissões a serem pagas aos vendedores.
+-   **contas_a_pagar**: Armazena as comissões. Agora precisa suportar comissões parceladas.
+-   **contas_a_receber**: Armazena as parcelas do cliente. A quitação de uma parcela aqui deve disparar a criação de uma comissão em .
+-   **pre_orcamentos**: Armazena dados dos pré-orçamentos, incluindo blobs de áudio.
 
 **changes in tech stack**
 -   Nenhuma.
 
 **All files of reference**
--   **/app/backend/server.py**: Arquivo central do backend, modificado para adicionar a lógica do vendedor.
--   **/app/frontend/src/pages/Funcionarios.jsx**: Página de gerenciamento de funcionários, atualizada.
--   **/app/frontend/src/pages/NovoOrcamentoGrid.jsx**: Página de criação de orçamentos, atualizada.
--   **/app/backend/static/supervisor.html**: Página PWA do supervisor, corrigida.
--   **/app/backend/static/cliente-cronograma.html**: Página de visualização do cliente, corrigida.
--   **Artefatos do usuário:** , ,  (para guiar a implementação do App do Vendedor).
+-   **/app/backend/server.py**: Arquivo central do backend. Contém a lógica de comissão (antiga e a nova em progresso).
+-   **/app/backend/static/vendedor.html**: App do Vendedor, onde o áudio foi adicionado.
+-   **/app/frontend/src/pages/NovoOrcamentoGrid.jsx**: Tela de criação de orçamento, modificada para incluir o painel lateral.
+-   **/app/frontend/src/components/PreOrcamentoPainel.jsx**: Componente do painel lateral.
 
 **Areas that need refactoring**:
--   ****: A refatoração continua sendo uma necessidade crítica devido ao seu tamanho e complexidade.
+-   ****: A refatoração é crítica e urgente.
 
 **key api endpoints**
--   **Novos:**
-    -   : Lista todos os funcionários com a categoria Vendedor.
--   **Modificados:**
-    -   : Agora gera uma comissão quando o status muda para APROVADO.
-    -   : Agora serve o arquivo HTML.
-    -   : Novo endpoint para servir os dados JSON da página do cliente.
-    -   : A rota para servir arquivos de upload agora está sob o prefixo .
+-   **A ser modificado (REMOVER LÓGICA):**
+    -   
+    -   
+-   **A ser modificado (ADICIONAR LÓGICA):**
+    -   
 
 **Critical Info for New Agent**
--   A prioridade máxima é continuar a implementação do **App do Vendedor**. O trabalho preparatório no sistema principal já foi concluído e testado.
--   A próxima etapa é construir a interface do PWA (os arquivos HTML/JS/CSS) e os endpoints específicos do backend que o aplicativo do vendedor usará (login, agenda, criação de orçamento simplificada).
--   Utilize os arquivos ,  e  fornecidos pelo usuário como guia para a implementação. O usuário especificou um tema de cor laranja.
+-   A prioridade máxima (P0) é finalizar a implementação da **comissão parcelada**.
+-   **Passo CRÍTICO:** Antes de finalizar a nova lógica, você **DEVE** remover a lógica antiga que gera a comissão integral nos endpoints  e  em  para evitar pagamentos duplicados.
+-   A nova lógica deve ser implementada no endpoint que marca uma conta a receber como paga. A comissão deve ser calculada proporcionalmente ao valor recebido e apenas sobre a parte de serviços do orçamento.
 
 **documents and test reports created in this job**
--   /app/test_result.md (foi atualizado várias vezes durante os testes).
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Usuário:** Pede para implementar o App Mobile do Vendedor e anexa os arquivos de especificação. (PENDING IMPLEMENTATION)
-2.  **Agente:** Confirma que analisará os arquivos.
-3.  **Agente:** Apresenta o plano de implementação para o App do Vendedor.
-4.  **Usuário:** Aprova o plano, define o design (tema laranja) e a prioridade (começar pelos ajustes no sistema principal). (COMPLETED)
-5.  **Agente:** Inicia o trabalho no sistema principal.
-6.  **Agente:** Finaliza as alterações no sistema principal e resume o que foi feito. (USER VERIFICATION PENDING)
-7.  **Usuário:** Confirma que a correção do link do cliente funcionou. (COMPLETED)
-8.  **Agente:** Resume o trabalho feito na página do cliente e lista as próximas tarefas.
-9.  **Usuário:** Confirma que o problema da mídia no app do supervisor foi resolvido (100%), mas o link enviado ao cliente não funciona. (COMPLETED)
-10. **Agente:** Finaliza a correção da mídia no app do supervisor e resume o trabalho.
+1.  **Usuário:** Pede gravação de áudio no app do vendedor e um painel de pré-orçamento no sistema mãe. (COMPLETED)
+2.  **Usuário:** Reporta que a comissão não é gerada quando o cliente paga a primeira parcela. (IN PROGRESS)
+3.  **Agente:** Identifica a causa raiz (comissão só era gerada manualmente, não via link do cliente).
+4.  **Agente:** Implementa uma correção para gerar comissão via link do cliente. (COMPLETED - MAS AGORA OBSOLETO)
+5.  **Agente:** Testa a correção.
+6.  **Agente:** Resume o trabalho feito.
+7.  **Usuário:** Esclarece o requisito final: a comissão deve ser parcelada, seguindo os pagamentos do cliente. (CURRENT TASK)
+8.  **Agente:** Entende o requisito de comissão parcelada.
+9.  **Agente:** Identifica o local correto no código para a nova implementação.
+10. **Usuário:** Confirma o plano do agente (sim). (PENDING IMPLEMENTATION)
 
 **Project Health Check:**
--   **Broken:** Nenhum.
--   **Working:** Módulos de Orçamento, Clientes, Funcionários, PWA do Supervisor, PWA do Cliente e as alterações no sistema principal para o App do Vendedor.
+-   **Broken:** O fluxo de geração de comissão está incorreto e no meio de uma refatoração. A lógica antiga ainda existe e a nova está incompleta.
+-   **Working:** App do Vendedor (com áudio), App do Supervisor, Painel de Pré-orçamento, CRUDs principais.
 -   **Mocked:** Nenhum.
 
 **3rd Party Integrations**
 -   Mercado Pago — requer User API Key
 -   OpenAI GPT-4o-mini — usa Emergent LLM Key
--    — Integrado no frontend para gerar PDFs.
+-    — Integrado no frontend.
 -    — APIs do navegador.
 
 **Testing status**
@@ -148,15 +147,17 @@ O usuário forneceu arquivos de referência (, , ) para guiar o design e a funci
 
 **Credentials to test flow:**
 -   **Admin User:**  / 
--   **Supervisor User:**  / 
--   **Observação:** Será necessário criar um novo funcionário com a categoria Vendedor para testar o novo fluxo.
+-   **Vendedor User:** É necessário criar um funcionário com a categoria Vendedor.
 
 **What agent forgot to execute**
--   A refatoração de  e a remoção de  continuam como tarefas futuras planejadas, mas não foram esquecidas.
+-   O agente estava no meio da implementação da comissão parcelada. A tarefa mais crítica que não foi concluída é a **remoção da lógica de geração de comissão antiga e incorreta**. Falhar em remover essa lógica antes de finalizar a nova causará um bug grave de pagamento duplicado.
+Assim que o cliente pagar a primeira parcela, vai a comissão dos serviços referente a esta parcela paga pelocliente como comissão para o vendededor no contas a Pagar.
+Se o cliente paga a entrada e mais x parcelas, sempre que ele pagar uma parcela e for dado baixa no contas a receber da empresa, aí vai a comissão dessa parcela para o contas a pagar como comissão do vendedor.
+Exeplo: 
+Valor do serviço, sem o material: R$ 10.000,000
+O cliente pagou R$ 2.000,00,sendo que neste valor está a aparcela do serviço mais o material. Então, deve ser pago a comissão do vendedor proporcinalmente e somente sobre o valor do serviço, nunca incluir valor de material, pois o vendedor recebe do valor dos serviços apenas.
+Se o cliente pagou os R$ 8.000 em mais 2 parcelas, a comissão do vendedor inside sobre cada parcela, sendo que ele recebe comissão sobre valor de serviço.
+Sempre que for dado baixa no contas a receber da parcela do cliente, gera automaticamente a comissão do vendedor (somente sobre o serviço) no contas a pagar.
 
-Foi implementado o app do vendedor. no entanto, a tela do vendedor, mostra o mesmo conteúdo do supervisor. 
-vamos reajustar isso.
-antes disso, é preciso fazer um ajuste cirúrgico nas comissões do Vendedor, as quais já entram no sistema em contas a pagar, inclusive todas as parcelas com suas respectivas datas.
-Mas tem um ponto de suma importância:
-A COMISSÃO DO VENDEDOR INSIDE SOMENTE SOBRE O(S)  SERVIÇO(S) CONTRATADO(S).  NÃO INCIDEM SOBRE O VALOR DOS MATERIAIS QUE ESTÃO SENDO VENDIDOS AO CLIENTE.
+
 </analysis>
