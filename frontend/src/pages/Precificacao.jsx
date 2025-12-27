@@ -1715,7 +1715,7 @@ const Precificacao = ({ user, onLogout }) => {
                   </Select>
                   {vendedores.length === 0 && (
                     <p className="text-xs text-yellow-500 mt-1">
-                      ⚠️ Nenhum vendedor cadastrado. Cadastre funcionários com categoria "Vendedor".
+                      ⚠️ Nenhum vendedor cadastrado. Cadastre funcionários com categoria Vendedor.
                     </p>
                   )}
                 </div>
