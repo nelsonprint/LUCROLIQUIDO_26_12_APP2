@@ -56,6 +56,10 @@ const Precificacao = ({ user, onLogout }) => {
   const [clienteSelecionado, setClienteSelecionado] = useState('');
   const [showNovoClienteModal, setShowNovoClienteModal] = useState(false);
   const [loadingClientes, setLoadingClientes] = useState(false);
+  
+  // Estados para Vendedores
+  const [vendedores, setVendedores] = useState([]);
+  const [loadingVendedores, setLoadingVendedores] = useState(false);
   const [tipoNovoCliente, setTipoNovoCliente] = useState('PF');
   const [novoClienteForm, setNovoClienteForm] = useState({
     tipo: 'PF',
