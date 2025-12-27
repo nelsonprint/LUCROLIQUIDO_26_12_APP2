@@ -1485,11 +1485,30 @@ class ProportionalCommissionTester:
         import time
         timestamp = int(time.time())
         
+        # Generate a valid CPF for testing
+        def generate_valid_cpf():
+            """Generate a valid CPF for testing"""
+            # Use a known valid CPF pattern and modify the last digits
+            base = "123.456.789"
+            # Calculate check digits
+            digits = [int(d) for d in base.replace('.', '')]
+            
+            # First check digit
+            sum1 = sum(digits[i] * (10 - i) for i in range(9))
+            digit1 = (sum1 * 10 % 11) % 10
+            
+            # Second check digit  
+            digits.append(digit1)
+            sum2 = sum(digits[i] * (11 - i) for i in range(10))
+            digit2 = (sum2 * 10 % 11) % 10
+            
+            return f"{base}-{digit1}{digit2}"
+        
         client_data = {
             "empresa_id": self.company_id,
             "tipo": "PF",
             "nome": f"Cliente Teste Comissão {timestamp}",
-            "cpf": f"987.654.{timestamp % 1000:03d}-11",
+            "cpf": generate_valid_cpf(),
             "whatsapp": "11999998888",
             "email": f"cliente.comissao{timestamp}@teste.com",
             "logradouro": "Rua das Comissões, 123",
