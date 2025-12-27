@@ -1784,55 +1784,30 @@ class SellerAppTester:
 
 
 def main():
-    """Main function - Run Seller App tests"""
-    print("🚀 Starting Seller App (App do Vendedor) System Tests")
+    """Main function - Run Commission Bug Fix tests"""
+    print("🚀 Starting Commission Bug Fix Tests")
+    print("=" * 80)
+    print("🎯 TESTING: Commission generation when client accepts budget via link")
     print("=" * 80)
     
-    # Initialize session and login
-    session = requests.Session()
+    # Initialize Commission Bug Fix Tester
+    commission_tester = CommissionBugFixTester()
     
-    # Login first
-    print("\n🔐 Logging in...")
-    login_data = {
-        "email": "admin@lucroliquido.com",
-        "password": "admin123"
-    }
-    
-    try:
-        response = session.post(f"{API_BASE}/auth/login", json=login_data)
-        if response.status_code == 200:
-            user_data = response.json()
-            print(f"✅ Login successful! User ID: {user_data['user_id']}")
-        else:
-            print(f"❌ Login failed: {response.status_code} - {response.text}")
-            return False
-    except Exception as e:
-        print(f"❌ Login error: {str(e)}")
-        return False
-    
-    # Use the company ID from the review request
-    company_id = "43b194f2-ad75-4b4b-8dbf-597fb02d20f8"
-    
-    # Initialize Seller App Tester
-    seller_tester = SellerAppTester(session, user_data, company_id)
-    
-    # Run Seller App tests
-    print("\n🔥 SELLER APP TESTS")
-    print("=" * 50)
-    seller_success = seller_tester.run_all_tests()
+    # Run Commission Bug Fix tests
+    commission_success = commission_tester.run_all_tests()
     
     # Final summary
     print("\n" + "=" * 80)
     print("🎯 FINAL TEST SUMMARY")
     print("=" * 80)
     
-    if seller_success:
-        print("🎉 ALL SELLER APP TESTS PASSED!")
-        print("✅ Sistema do Vendedor funcionando corretamente")
+    if commission_success:
+        print("🎉 ALL COMMISSION BUG FIX TESTS PASSED!")
+        print("✅ Commission generation working correctly when client accepts budget")
         return True
     else:
-        print("⚠️ SOME SELLER APP TESTS FAILED!")
-        print("❌ Verificar logs acima para detalhes dos erros")
+        print("⚠️ SOME COMMISSION TESTS FAILED!")
+        print("❌ Commission bug may not be fully fixed - check logs above")
         return False
 
 class AgendaTester:
