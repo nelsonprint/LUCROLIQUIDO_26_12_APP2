@@ -59,6 +59,18 @@ backend:
         agent: "testing"
         comment: "✅ CRITICAL TEST PASSED! Commission calculation working correctly - calculates ONLY on services (R$ 10,000), excludes materials (R$ 5,000). 5% commission = R$ 500. Fixed null pointer issue in detalhes_itens handling."
 
+  - task: "CRITICAL: Proportional Commission (Parcelada)"
+    implemented: true
+    working: false
+    file: "server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Implementation complete. Old logic removed from endpoints cliente_aceitar_orcamento and update_orcamento_status. New logic exists in update_status_conta_receber. NEEDS TESTING."
+
   - task: "Vendedor Link Generation"
     implemented: true
     working: true
