@@ -1835,6 +1835,143 @@ def main():
         print("❌ Verificar logs acima para detalhes dos erros")
         return False
 
+class AgendaTester:
+    """Test suite for Agenda CRUD operations"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        self.vendedor_id = "06c562d9-47b4-4919-8419-d58b45215c49"  # From review request
+        self.empresa_id = "cf901b3e-0eca-429c-9b8e-d723b31ecbd4"  # From review request
+        self.created_agenda_id = None
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_create_agenda(self):
+        """Test POST /api/vendedor/{vendedor_id}/agenda - Create agenda"""
+        self.log("📅 Testing create agenda...")
+        
+        agenda_data = {
+            "empresa_id": self.empresa_id,
+            "cliente_id": None,
+            "cliente_nome": "Cliente Teste Agenda",
+            "titulo": "Visita Técnica",
+            "descricao": "Visita para levantamento de requisitos",
+            "data": "2025-01-20",
+            "hora_inicio": "09:00",
+            "hora_fim": "10:00",
+            "status": "Pendente",
+            "observacoes": "Primeira visita ao cliente"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/vendedor/{self.vendedor_id}/agenda", json=agenda_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                agenda = result.get('agenda', {})
+                self.created_agenda_id = agenda.get('id')
+                
+                self.log(f"✅ Agenda created successfully! ID: {self.created_agenda_id}")
+                self.log(f"   📋 Title: {agenda.get('titulo')}")
+                self.log(f"   👤 Client: {agenda.get('cliente_nome')}")
+                self.log(f"   📅 Date: {agenda.get('data')} {agenda.get('hora_inicio')}-{agenda.get('hora_fim')}")
+                return True
+            else:
+                self.log(f"❌ Failed to create agenda: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating agenda: {str(e)}", "ERROR")
+            return False
+    
+    def test_list_agenda(self):
+        """Test GET /api/vendedor/{vendedor_id}/agenda - List agenda"""
+        self.log("📋 Testing list agenda...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/vendedor/{self.vendedor_id}/agenda")
+            
+            if response.status_code == 200:
+                agendas = response.json()
+                self.log(f"✅ Retrieved {len(agendas)} agenda items")
+                
+                # Look for our created agenda
+                our_agenda = None
+                for agenda in agendas:
+                    if agenda.get('id') == self.created_agenda_id:
+                        our_agenda = agenda
+                        break
+                
+                if our_agenda:
+                    self.log("✅ Our created agenda found in list!")
+                    return True
+                else:
+                    self.log("❌ Our created agenda not found in list", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to list agenda: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error listing agenda: {str(e)}", "ERROR")
+            return False
+    
+    def run_all_tests(self):
+        """Execute all Agenda tests"""
+        self.log("🚀 Starting Agenda CRUD API tests")
+        self.log("=" * 70)
+        
+        tests = [
+            ("Create Agenda", self.test_create_agenda),
+            ("List Agenda", self.test_list_agenda)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 70)
+        self.log("📊 AGENDA TEST SUMMARY")
+        self.log("=" * 70)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL AGENDA TESTS PASSED! System working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME AGENDA TESTS FAILED! Check logs above for details.")
+            return False
+
+
 class PreOrcamentoTester:
     """Test suite for Pre-Orçamento (Pre-Budget) functionality"""
     
