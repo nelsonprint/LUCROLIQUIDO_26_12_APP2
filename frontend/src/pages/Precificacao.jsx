@@ -1665,6 +1665,58 @@ const Precificacao = ({ user, onLogout }) => {
                     className="bg-zinc-800 border-zinc-700"
                   />
                 </div>
+
+                {/* Vendedor Responsável */}
+                <div className="md:col-span-2 p-4 bg-gradient-to-r from-orange-900/20 to-yellow-900/20 rounded-lg border border-orange-500/30">
+                  <Label className="text-orange-400 flex items-center gap-2 mb-1">
+                    <Users size={16} />
+                    Vendedor Responsável
+                  </Label>
+                  <p className="text-xs text-zinc-400 mb-2">
+                    Selecione o vendedor responsável por este orçamento (comissão será gerada automaticamente).
+                  </p>
+                  <Select 
+                    value={orcamentoData.vendedor_id || 'none'} 
+                    onValueChange={(vendedorId) => {
+                      if (vendedorId === 'none') {
+                        setOrcamentoData(prev => ({
+                          ...prev,
+                          vendedor_id: '',
+                          vendedor_nome: ''
+                        }));
+                      } else {
+                        const vendedor = vendedores.find(v => v.id === vendedorId);
+                        setOrcamentoData(prev => ({
+                          ...prev,
+                          vendedor_id: vendedorId,
+                          vendedor_nome: vendedor?.nome_completo || ''
+                        }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue placeholder="Selecione um vendedor..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-800 border-zinc-700">
+                      <SelectItem value="none">
+                        <span className="text-zinc-500">Nenhum vendedor</span>
+                      </SelectItem>
+                      {vendedores.map((vendedor) => (
+                        <SelectItem key={vendedor.id} value={vendedor.id}>
+                          {vendedor.nome_completo}
+                          {vendedor.percentual_comissao > 0 && (
+                            <span className="text-orange-400 ml-2">({vendedor.percentual_comissao}%)</span>
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {vendedores.length === 0 && (
+                    <p className="text-xs text-yellow-500 mt-1">
+                      ⚠️ Nenhum vendedor cadastrado. Cadastre funcionários com categoria "Vendedor".
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
