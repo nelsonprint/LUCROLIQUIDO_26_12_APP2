@@ -770,29 +770,40 @@ document.getElementById('btnAddItem').onclick = addPreItem;
 
 function addPreItem() {
   preItensCount++;
+  const itemId = preItensCount;
   const div = document.createElement('div');
   div.className = 'item-card';
-  div.id = 'preItem' + preItensCount;
+  div.id = 'preItem' + itemId;
   div.innerHTML = `
     <div class="item-header">
-      <span class="item-number">Item ${String(preItensCount).padStart(3, '0')}</span>
+      <span class="item-number">Item ${String(itemId).padStart(3, '0')}</span>
       <button class="remove-item" onclick="this.parentElement.parentElement.remove()">×</button>
     </div>
     <div class="form-group">
       <label class="label">Descrição (até 125 caracteres)</label>
       <textarea class="input item-desc" maxlength="125" rows="2" placeholder="Descreva o serviço..."></textarea>
     </div>
-    <div class="form-row cols-2">
-      <div class="form-group">
-        <label class="label">Quantidade</label>
-        <input type="number" class="input item-qtd" value="1" min="1"/>
+    <div class="form-group">
+      <label class="label">Quantidade</label>
+      <input type="number" class="input item-qtd" value="1" min="1" style="max-width:120px"/>
+    </div>
+    <div class="form-group">
+      <label class="label">📷 Foto</label>
+      <div class="photo-box" onclick="capturePhoto(this)">
+        <div class="photo-hint">📷 Tirar Foto</div>
       </div>
-      <div class="form-group">
-        <label class="label">Foto</label>
-        <div class="photo-box" onclick="capturePhoto(this)">
-          <div class="photo-hint">📷 Tirar Foto</div>
+      <input type="hidden" class="item-foto"/>
+    </div>
+    <div class="form-group">
+      <label class="label">🎤 Áudio</label>
+      <div class="audio-controls" data-item="${itemId}">
+        <div class="audio-record-bar">
+          <button type="button" class="mic-btn" onclick="toggleRecording(this, ${itemId})">🎤</button>
+          <span class="timer" id="timer${itemId}">00:00</span>
+          <span class="rec-status" id="recStatus${itemId}">Toque para gravar</span>
         </div>
-        <input type="hidden" class="item-foto"/>
+        <audio class="audio-player" id="audioPlayer${itemId}" controls style="display:none;width:100%;margin-top:8px"></audio>
+        <input type="hidden" class="item-audio" id="itemAudio${itemId}"/>
       </div>
     </div>
   `;
