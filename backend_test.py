@@ -1826,11 +1826,10 @@ class ProportionalCommissionTester:
             
             # Mark second installment as RECEBIDO
             status_data = {
-                "conta_id": second_installment_id,
                 "status": "RECEBIDO"
             }
             
-            response = self.session.patch(f"{API_BASE}/contas/receber/status", json=status_data)
+            response = self.session.patch(f"{API_BASE}/contas/receber/{second_installment_id}/status", json=status_data)
             
             if response.status_code == 200:
                 result = response.json()
