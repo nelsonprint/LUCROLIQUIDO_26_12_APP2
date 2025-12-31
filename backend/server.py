@@ -4883,7 +4883,32 @@ async def get_subscription_status(user_id: str):
         days_remaining = (trial_end - now).days
         subscription['days_remaining'] = max(0, days_remaining)
     
+    # Adicionar flag de permissão de escrita
+    subscription['can_write'] = subscription['status'] in ['trial', 'active']
+    
     return subscription
+
+@api_router.get("/subscription/can-write/{user_id}")
+async def check_can_write(user_id: str):
+    """Verifica se o usuário pode realizar operações de escrita (criar/editar/excluir)"""
+    subscription = await check_and_update_trial_status(user_id)
+    
+    if not subscription:
+        return {"can_write": False, "reason": "Assinatura não encontrada"}
+    
+    can_write = subscription['status'] in ['trial', 'active']
+    reason = ""
+    
+    if subscription['status'] == 'expired':
+        reason = "Seu período de teste expirou. Assine para continuar usando todas as funcionalidades."
+    elif subscription['status'] == 'cancelled':
+        reason = "Sua assinatura foi cancelada. Reative para continuar usando todas as funcionalidades."
+    
+    return {
+        "can_write": can_write,
+        "status": subscription['status'],
+        "reason": reason
+    }
 
 @api_router.post("/subscription/create-payment")
 async def create_payment(data: dict):
