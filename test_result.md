@@ -278,9 +278,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Pre-Orçamento Endpoints for Sistema Mãe"
-    - "Pre-Orçamento Creation with Audio/Photo"
-    - "Pre-Orçamento Listing with Media Items"
+    - "Trial Expiration - Automatic Status Update"
+    - "Trial Expiration - Banner Display"
+    - "Trial Expiration - Write Blocking"
+    - "App URL Field in Company Settings"
+    - "Vendedor/Supervisor Link Generation with Custom URL"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
