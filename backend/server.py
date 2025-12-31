@@ -6762,7 +6762,7 @@ Olá {funcionario['nome_completo']}!
 
 💡 _Instale como App no celular!_"""
 
-    whatsapp_url = f"https://wa.me/55{whatsapp_numero}?text={quote(mensagem)}"
+    whatsapp_url = f"https://wa.me/55{whatsapp_numero}?text={quote(mensagem, safe='')}"
     
     return {
         "supervisor_url": supervisor_url,
@@ -7294,7 +7294,7 @@ Olá {funcionario['nome_completo']}!
 
 💡 _Instale como App no celular!_"""
 
-    whatsapp_url = f"https://wa.me/55{whatsapp_numero}?text={quote(mensagem)}"
+    whatsapp_url = f"https://wa.me/55{whatsapp_numero}?text={quote(mensagem, safe='')}"
     
     return {
         "vendedor_url": vendedor_url,
