@@ -4844,9 +4844,34 @@ async def generate_complete_analysis(data: dict):
 
 # ========== ASSINATURA E PAGAMENTO ==========
 
+# Função helper para verificar e atualizar status de trial expirado
+async def check_and_update_trial_status(user_id: str):
+    """Verifica se o trial expirou e atualiza o status automaticamente"""
+    subscription = await db.subscriptions.find_one({"user_id": user_id}, {"_id": 0})
+    
+    if not subscription:
+        return None
+    
+    # Verificar se é trial e se expirou
+    if subscription['status'] == 'trial':
+        trial_end = datetime.fromisoformat(subscription['trial_end'])
+        now = datetime.now(timezone.utc)
+        
+        if now > trial_end:
+            # Trial expirou - atualizar para expired
+            await db.subscriptions.update_one(
+                {"user_id": user_id},
+                {"$set": {"status": "expired"}}
+            )
+            subscription['status'] = 'expired'
+            logger.info(f"Trial expirado para user_id: {user_id}")
+    
+    return subscription
+
 @api_router.get("/subscription/status/{user_id}")
 async def get_subscription_status(user_id: str):
-    subscription = await db.subscriptions.find_one({"user_id": user_id}, {"_id": 0})
+    # Verificar e atualizar status do trial automaticamente
+    subscription = await check_and_update_trial_status(user_id)
     
     if not subscription:
         raise HTTPException(status_code=404, detail="Assinatura não encontrada")
