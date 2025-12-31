@@ -4,6 +4,12 @@ import axios from 'axios';
 import { Toaster } from '@/components/ui/sonner';
 import './App.css';
 
+// Contexts
+import { SubscriptionProvider } from './contexts/SubscriptionContext';
+
+// Components
+import { SubscriptionExpiredBanner } from './components/SubscriptionExpiredBanner';
+
 // Pages
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
