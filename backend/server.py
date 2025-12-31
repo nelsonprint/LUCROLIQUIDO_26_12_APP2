@@ -7287,7 +7287,15 @@ async def gerar_link_vendedor(funcionario_id: str):
     if not funcionario.get("login_email") or not funcionario.get("login_senha"):
         raise HTTPException(status_code=400, detail="Configure o login do vendedor primeiro")
     
-    base_url = os.environ.get("BACKEND_URL", os.environ.get("REACT_APP_BACKEND_URL", ""))
+    # Buscar a empresa para obter o app_url personalizado
+    empresa = await db.companies.find_one({"id": funcionario.get("empresa_id")}, {"_id": 0})
+    
+    # Usar app_url da empresa se disponível, senão usar variável de ambiente
+    if empresa and empresa.get("app_url"):
+        base_url = empresa.get("app_url").rstrip('/')
+    else:
+        base_url = os.environ.get("BACKEND_URL", os.environ.get("REACT_APP_BACKEND_URL", ""))
+    
     vendedor_url = f"{base_url}/api/vendedor/app"
     
     whatsapp_numero = funcionario.get("whatsapp", "")
