@@ -18,7 +18,7 @@ from datetime import datetime
 import math
 
 # Configuration
-BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salestrak-1.preview.emergentagent.com')
+BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://biz-quote-manager.preview.emergentagent.com')
 API_BASE = f"{BACKEND_URL}/api"
 
 class FuncionariosTester:
