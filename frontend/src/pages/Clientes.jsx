@@ -136,6 +136,9 @@ export const Clientes = ({ user, onLogout }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Verificar permissão de escrita
+    if (!checkCanWrite(editingCliente ? 'editar cliente' : 'criar cliente')) return;
+    
     // Validação de CPF/CNPJ antes de enviar
     if (tipoCliente === 'PF') {
       if (formData.cpf && !isValidCPF(formData.cpf)) {
