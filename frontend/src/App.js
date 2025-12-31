@@ -70,34 +70,22 @@ function App() {
   return (
     <BrowserRouter>
       <Toaster position="top-right" richColors />
-      <Routes>
-        <Route
-          path="/"
-          element={
-            user ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              <LandingPage setUser={setUser} />
-            )
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            user ? (
-              <Dashboard user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/lancamentos"
-          element={
-            user ? (
-              <Lancamentos user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
+      {user ? (
+        <SubscriptionProvider user={user}>
+          <SubscriptionExpiredBanner />
+          <Routes>
+            <Route
+              path="/"
+              element={<Navigate to="/dashboard" replace />}
+            />
+            <Route
+              path="/dashboard"
+              element={<Dashboard user={user} onLogout={handleLogout} />}
+            />
+            <Route
+              path="/lancamentos"
+              element={<Lancamentos user={user} onLogout={handleLogout} />}
+            />
             )
           }
         />
