@@ -191,6 +191,7 @@ export const Clientes = ({ user, onLogout }) => {
   };
 
   const handleDelete = async (clienteId) => {
+    if (!checkCanWrite('excluir cliente')) return;
     if (!window.confirm('Deseja realmente excluir este cliente?')) return;
 
     try {
