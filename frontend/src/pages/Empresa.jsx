@@ -105,6 +105,7 @@ const Empresa = ({ user, onLogout }) => {
           email_empresa: response.data.email_empresa || '',
           site: response.data.site || '',
           contato_principal: response.data.contato_principal || '',
+          app_url: response.data.app_url || '',
         });
       }
     } catch (error) {
