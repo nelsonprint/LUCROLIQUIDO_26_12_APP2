@@ -13,6 +13,7 @@ import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { FileText, Download, MessageCircle, Eye, Edit, Trash2, Plus, Calculator, ChevronDown, Grid3X3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useCanWrite } from '../hooks/useCanWrite';
 
 const Orcamentos = ({ user, onLogout }) => {
   const [orcamentos, setOrcamentos] = useState([]);
@@ -20,6 +21,7 @@ const Orcamentos = ({ user, onLogout }) => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCliente, setFilterCliente] = useState('');
   const navigate = useNavigate();
+  const { canWrite, checkCanWrite } = useCanWrite();
 
   const company = JSON.parse(localStorage.getItem('company') || '{}');
 
