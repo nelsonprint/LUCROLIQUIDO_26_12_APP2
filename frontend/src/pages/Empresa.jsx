@@ -417,6 +417,19 @@ const Empresa = ({ user, onLogout }) => {
                 </div>
 
                 <div className="md:col-span-2">
+                  <Label>URL do App (Domínio para links de vendedor/supervisor)</Label>
+                  <Input
+                    value={formData.app_url}
+                    onChange={(e) => setFormData({ ...formData, app_url: e.target.value })}
+                    placeholder="https://seudominio.com"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Ex: https://lucroliquido.com — Usado nos links enviados via WhatsApp
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
                   <Label>Nome do Contato Principal</Label>
                   <Input
                     value={formData.contato_principal}
