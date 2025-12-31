@@ -244,8 +244,14 @@ export const Clientes = ({ user, onLogout }) => {
             <p className="text-gray-400">{selectedCompany.name}</p>
           </div>
           <Button
-            onClick={() => handleOpenModal()}
+            onClick={() => {
+              if (checkCanWrite('criar cliente')) {
+                handleOpenModal();
+              }
+            }}
             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            disabled={!canWrite}
+            title={!canWrite ? 'Assine para criar novos clientes' : ''}
           >
             <Plus className="mr-2" size={18} />
             Novo Cliente
