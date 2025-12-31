@@ -1637,6 +1637,36 @@ class TrialExpirationTester:
             self.log(f"❌ Error generating supervisor link: {str(e)}", "ERROR")
             return False
     
+    def _create_test_funcionario_with_login(self):
+        """Helper method to create a test funcionário with login credentials"""
+        self.log("👤 Creating test funcionário with login credentials...")
+        
+        import time
+        timestamp = int(time.time())
+        
+        funcionario_data = {
+            "empresa_id": self.company_id,
+            "nome_completo": f"Funcionário Teste Login {timestamp}",
+            "cpf": f"123.456.{timestamp % 1000:03d}-00",
+            "status": "Ativo",
+            "login_email": f"funcionario{timestamp}@teste.com",
+            "login_senha": "senha123"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/funcionarios", json=funcionario_data)
+            if response.status_code == 200:
+                result = response.json()
+                funcionario_id = result.get('funcionario', {}).get('id')
+                self.log(f"✅ Test funcionário with login created: {funcionario_id}")
+                return funcionario_id
+            else:
+                self.log(f"❌ Failed to create test funcionário with login: {response.status_code}", "ERROR")
+                return None
+        except Exception as e:
+            self.log(f"❌ Error creating test funcionário with login: {str(e)}", "ERROR")
+            return None
+    
     def _create_test_funcionario(self):
         """Helper method to create a test funcionário"""
         self.log("👤 Creating test funcionário for link testing...")
