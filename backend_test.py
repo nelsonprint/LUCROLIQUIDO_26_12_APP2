@@ -1390,6 +1390,330 @@ class WhatsAppBudgetFlowTester:
             self.log("⚠️ SOME TESTS FAILED! Check logs above for details.")
             return False
 
+class TrialExpirationTester:
+    """Test suite for Trial Expiration and App URL features"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        self.expired_user_id = "c56c5655-09a6-4655-9457-0abfee8091cc"
+        self.admin_user_id = "c316972c-f43f-43b4-ab29-5e38c50b4fb3"
+        self.funcionario_id = None
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_trial_expired_status_update(self):
+        """Test GET /api/subscription/status/{user_id} - Trial expiration automatic status update"""
+        self.log("⏰ Testing trial expiration automatic status update...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/subscription/status/{self.expired_user_id}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                status = result.get('status')
+                can_write = result.get('can_write')
+                
+                self.log(f"✅ Subscription status endpoint successful!")
+                self.log(f"   📊 Status: {status}")
+                self.log(f"   ✍️ Can Write: {can_write}")
+                
+                # Verify expired trial status
+                if status == "expired" and can_write == False:
+                    self.log("✅ Trial expiration status correctly detected!")
+                    return True
+                else:
+                    self.log(f"❌ Expected status='expired' and can_write=False, got status='{status}' and can_write={can_write}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to get subscription status: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error getting subscription status: {str(e)}", "ERROR")
+            return False
+    
+    def test_trial_expired_write_permission(self):
+        """Test GET /api/subscription/can-write/{user_id} - Trial expiration write permission check"""
+        self.log("✍️ Testing trial expiration write permission check...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/subscription/can-write/{self.expired_user_id}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                can_write = result.get('can_write')
+                reason = result.get('reason')
+                
+                self.log(f"✅ Write permission endpoint successful!")
+                self.log(f"   ✍️ Can Write: {can_write}")
+                self.log(f"   💬 Reason: {reason}")
+                
+                # Verify write permission is blocked for expired trial
+                if can_write == False and reason and "trial" in reason.lower():
+                    self.log("✅ Write permission correctly blocked for expired trial!")
+                    return True
+                else:
+                    self.log(f"❌ Expected can_write=False with trial expiration reason, got can_write={can_write} and reason='{reason}'", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to get write permission: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error getting write permission: {str(e)}", "ERROR")
+            return False
+    
+    def test_company_app_url_field(self):
+        """Test PUT /api/company/{company_id} - App URL field in company settings"""
+        self.log("🔗 Testing app_url field in company settings...")
+        
+        # First get current company data
+        try:
+            get_response = self.session.get(f"{API_BASE}/company/{self.company_id}")
+            if get_response.status_code != 200:
+                self.log(f"❌ Failed to get company data: {get_response.status_code}", "ERROR")
+                return False
+            
+            company_data = get_response.json()
+            
+            # Update with app_url
+            import time
+            timestamp = int(time.time())
+            test_app_url = f"https://meuapp{timestamp}.com.br"
+            
+            update_data = company_data.copy()
+            update_data['app_url'] = test_app_url
+            
+            response = self.session.put(f"{API_BASE}/company/{self.company_id}", json=update_data)
+            
+            if response.status_code == 200:
+                self.log("✅ Company update successful!")
+                
+                # Verify app_url was saved
+                verify_response = self.session.get(f"{API_BASE}/company/{self.company_id}")
+                if verify_response.status_code == 200:
+                    updated_company = verify_response.json()
+                    saved_app_url = updated_company.get('app_url')
+                    
+                    if saved_app_url == test_app_url:
+                        self.log(f"✅ App URL field saved correctly: {saved_app_url}")
+                        return True
+                    else:
+                        self.log(f"❌ App URL not saved correctly. Expected: {test_app_url}, Got: {saved_app_url}", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify app_url save", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to update company: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error updating company app_url: {str(e)}", "ERROR")
+            return False
+    
+    def test_vendedor_link_with_custom_url(self):
+        """Test GET /api/funcionario/{funcionario_id}/link-vendedor - Vendedor link with custom app_url"""
+        self.log("🔗 Testing vendedor link generation with custom app_url...")
+        
+        # First, find or create a funcionário
+        try:
+            funcionarios_response = self.session.get(f"{API_BASE}/funcionarios/{self.company_id}")
+            if funcionarios_response.status_code == 200:
+                funcionarios = funcionarios_response.json()
+                if len(funcionarios) > 0:
+                    self.funcionario_id = funcionarios[0]['id']
+                    self.log(f"✅ Using existing funcionário: {funcionarios[0]['nome_completo']}")
+                else:
+                    # Create a test funcionário
+                    self.funcionario_id = self._create_test_funcionario()
+                    if not self.funcionario_id:
+                        return False
+            else:
+                self.log(f"❌ Failed to get funcionários: {funcionarios_response.status_code}", "ERROR")
+                return False
+            
+            # Test vendedor link generation
+            response = self.session.get(f"{API_BASE}/funcionario/{self.funcionario_id}/link-vendedor")
+            
+            if response.status_code == 200:
+                result = response.json()
+                vendedor_url = result.get('vendedor_url')
+                whatsapp_url = result.get('whatsapp_url')
+                
+                self.log(f"✅ Vendedor link generation successful!")
+                self.log(f"   🔗 Vendedor URL: {vendedor_url}")
+                self.log(f"   📱 WhatsApp URL: {whatsapp_url}")
+                
+                # Check if custom app_url is being used
+                if vendedor_url:
+                    # Get company data to check if custom app_url is set
+                    company_response = self.session.get(f"{API_BASE}/company/{self.company_id}")
+                    if company_response.status_code == 200:
+                        company = company_response.json()
+                        custom_app_url = company.get('app_url')
+                        
+                        if custom_app_url and custom_app_url in vendedor_url:
+                            self.log(f"✅ Custom app_url correctly used in vendedor link!")
+                            return True
+                        elif not custom_app_url:
+                            self.log("✅ No custom app_url set, using default URL")
+                            return True
+                        else:
+                            self.log(f"❌ Custom app_url not used in vendedor link. Expected: {custom_app_url}, Got URL: {vendedor_url}", "ERROR")
+                            return False
+                    else:
+                        self.log("⚠️ Could not verify custom app_url usage", "WARN")
+                        return True
+                else:
+                    self.log("❌ No vendedor URL returned", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to generate vendedor link: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error generating vendedor link: {str(e)}", "ERROR")
+            return False
+    
+    def test_supervisor_link_with_custom_url(self):
+        """Test GET /api/funcionario/{funcionario_id}/link-supervisor - Supervisor link with custom app_url"""
+        self.log("🔗 Testing supervisor link generation with custom app_url...")
+        
+        if not self.funcionario_id:
+            self.log("❌ No funcionário ID available for supervisor link test", "ERROR")
+            return False
+        
+        try:
+            response = self.session.get(f"{API_BASE}/funcionario/{self.funcionario_id}/link-supervisor")
+            
+            if response.status_code == 200:
+                result = response.json()
+                supervisor_url = result.get('supervisor_url')
+                whatsapp_url = result.get('whatsapp_url')
+                
+                self.log(f"✅ Supervisor link generation successful!")
+                self.log(f"   🔗 Supervisor URL: {supervisor_url}")
+                self.log(f"   📱 WhatsApp URL: {whatsapp_url}")
+                
+                # Check if custom app_url is being used
+                if supervisor_url:
+                    # Get company data to check if custom app_url is set
+                    company_response = self.session.get(f"{API_BASE}/company/{self.company_id}")
+                    if company_response.status_code == 200:
+                        company = company_response.json()
+                        custom_app_url = company.get('app_url')
+                        
+                        if custom_app_url and custom_app_url in supervisor_url:
+                            self.log(f"✅ Custom app_url correctly used in supervisor link!")
+                            return True
+                        elif not custom_app_url:
+                            self.log("✅ No custom app_url set, using default URL")
+                            return True
+                        else:
+                            self.log(f"❌ Custom app_url not used in supervisor link. Expected: {custom_app_url}, Got URL: {supervisor_url}", "ERROR")
+                            return False
+                    else:
+                        self.log("⚠️ Could not verify custom app_url usage", "WARN")
+                        return True
+                else:
+                    self.log("❌ No supervisor URL returned", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to generate supervisor link: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error generating supervisor link: {str(e)}", "ERROR")
+            return False
+    
+    def _create_test_funcionario(self):
+        """Helper method to create a test funcionário"""
+        self.log("👤 Creating test funcionário for link testing...")
+        
+        import time
+        timestamp = int(time.time())
+        
+        funcionario_data = {
+            "empresa_id": self.company_id,
+            "nome_completo": f"Funcionário Teste {timestamp}",
+            "cpf": f"123.456.{timestamp % 1000:03d}-00",
+            "status": "Ativo"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/funcionarios", json=funcionario_data)
+            if response.status_code == 200:
+                result = response.json()
+                funcionario_id = result.get('funcionario', {}).get('id')
+                self.log(f"✅ Test funcionário created: {funcionario_id}")
+                return funcionario_id
+            else:
+                self.log(f"❌ Failed to create test funcionário: {response.status_code}", "ERROR")
+                return None
+        except Exception as e:
+            self.log(f"❌ Error creating test funcionário: {str(e)}", "ERROR")
+            return None
+    
+    def run_all_tests(self):
+        """Execute all Trial Expiration and App URL tests"""
+        self.log("🚀 Starting Trial Expiration and App URL API tests")
+        self.log("=" * 70)
+        
+        tests = [
+            ("Trial Expired - Status Update", self.test_trial_expired_status_update),
+            ("Trial Expired - Write Permission", self.test_trial_expired_write_permission),
+            ("Company App URL Field", self.test_company_app_url_field),
+            ("Vendedor Link with Custom URL", self.test_vendedor_link_with_custom_url),
+            ("Supervisor Link with Custom URL", self.test_supervisor_link_with_custom_url)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 70)
+        self.log("📊 TRIAL EXPIRATION AND APP URL TEST SUMMARY")
+        self.log("=" * 70)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL TRIAL EXPIRATION AND APP URL TESTS PASSED! Features working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME TRIAL EXPIRATION AND APP URL TESTS FAILED! Check logs above for details.")
+            return False
+
+
 class ProportionalCommissionTester:
     """Test suite for CRITICAL: Proportional Commission (Comissão Parcelada) functionality"""
     
