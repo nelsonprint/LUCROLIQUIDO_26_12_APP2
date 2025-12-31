@@ -325,12 +325,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Trial Expiration - Automatic Status Update"
-    - "Trial Expiration - Banner Display"
-    - "Trial Expiration - Write Blocking"
-    - "App URL Field in Company Settings"
-    - "Vendedor/Supervisor Link Generation with Custom URL"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
