@@ -3113,8 +3113,8 @@ class CommissionBugFixTester:
 
 
 def main():
-    """Main function - Run all tests including Vendedor Field in Precificação"""
-    print("🚀 Starting Lucro Líquido System API Tests")
+    """Main function - Run Trial Expiration and App URL tests"""
+    print("🚀 Starting Trial Expiration and App URL API Tests")
     print("=" * 70)
     
     # Initialize session and login
@@ -3138,26 +3138,26 @@ def main():
         print(f"✅ Login successful! User ID: {user_data['user_id']}")
         print(f"🏢 Company ID: {company_id}")
         
-        # Run Vendedor Field in Precificação tests
+        # Run Trial Expiration and App URL tests
         print("\n" + "=" * 70)
-        vendedor_field_tester = VendedorFieldPrecificacaoTester(session, user_data, company_id)
-        vendedor_field_success = vendedor_field_tester.run_all_tests()
+        trial_tester = TrialExpirationTester(session, user_data, company_id)
+        trial_success = trial_tester.run_all_tests()
         
         # Final summary
         print("\n" + "=" * 70)
         print("🎯 FINAL TEST SUMMARY")
         print("=" * 70)
         
-        if vendedor_field_success:
-            print("🎉 ALL VENDEDOR FIELD IN PRECIFICAÇÃO TESTS PASSED!")
-            print("✅ Vendedor field functionality working correctly")
-            print("✅ GET /api/vendedores endpoint working")
-            print("✅ Budget creation with vendedor_id and vendedor_nome working")
-            print("✅ Budget listing preserves vendedor information")
+        if trial_success:
+            print("🎉 ALL TRIAL EXPIRATION AND APP URL TESTS PASSED!")
+            print("✅ Trial expiration status update working correctly")
+            print("✅ Trial expiration write permission blocking working")
+            print("✅ Company app_url field working correctly")
+            print("✅ Vendedor/Supervisor link generation with custom URL working")
             return True
         else:
-            print("⚠️ SOME VENDEDOR FIELD TESTS FAILED!")
-            print("❌ Vendedor field functionality may not be working correctly")
+            print("⚠️ SOME TRIAL EXPIRATION AND APP URL TESTS FAILED!")
+            print("❌ Trial expiration or app URL functionality may not be working correctly")
             return False
             
     except Exception as e:
