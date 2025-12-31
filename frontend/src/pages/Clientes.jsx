@@ -11,6 +11,7 @@ import { maskPhone, isValidCPF, isValidCNPJ, onlyDigits } from '@/lib/formatters
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { Users, Plus, Edit, Trash2, Phone } from 'lucide-react';
+import { useCanWrite } from '../hooks/useCanWrite';
 
 export const Clientes = ({ user, onLogout }) => {
   const [selectedCompany, setSelectedCompany] = useState(null);
@@ -21,6 +22,7 @@ export const Clientes = ({ user, onLogout }) => {
   const [tipoCliente, setTipoCliente] = useState('PF'); // PF ou PJ
   const [cpfValido, setCpfValido] = useState(true);
   const [cnpjValido, setCnpjValido] = useState(true);
+  const { canWrite, checkCanWrite } = useCanWrite();
 
   const [formData, setFormData] = useState({
     tipo: 'PF',
