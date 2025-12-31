@@ -149,7 +149,11 @@ const Orcamentos = ({ user, onLogout }) => {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                <Button 
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  disabled={!canWrite}
+                  title={!canWrite ? 'Assine para criar novos orçamentos' : ''}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Novo Orçamento
                   <ChevronDown className="w-4 h-4 ml-2" />
@@ -157,7 +161,11 @@ const Orcamentos = ({ user, onLogout }) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
                 <DropdownMenuItem 
-                  onClick={() => navigate('/orcamentos/novo')}
+                  onClick={() => {
+                    if (checkCanWrite('criar orçamento')) {
+                      navigate('/orcamentos/novo');
+                    }
+                  }}
                   className="cursor-pointer hover:bg-zinc-800"
                 >
                   <Grid3X3 className="w-4 h-4 mr-2 text-purple-400" />
@@ -167,7 +175,11 @@ const Orcamentos = ({ user, onLogout }) => {
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => navigate('/precificacao')}
+                  onClick={() => {
+                    if (checkCanWrite('criar orçamento')) {
+                      navigate('/precificacao');
+                    }
+                  }}
                   className="cursor-pointer hover:bg-zinc-800"
                 >
                   <Calculator className="w-4 h-4 mr-2 text-blue-400" />
