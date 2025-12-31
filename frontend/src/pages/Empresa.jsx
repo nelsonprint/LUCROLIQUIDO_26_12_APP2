@@ -33,6 +33,7 @@ const Empresa = ({ user, onLogout }) => {
     email_empresa: '',
     site: '',
     contato_principal: '',
+    app_url: '',
   });
 
   const [company, setCompany] = useState(JSON.parse(localStorage.getItem('company') || '{}'));
