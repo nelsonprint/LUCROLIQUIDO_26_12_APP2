@@ -1522,17 +1522,21 @@ class TrialExpirationTester:
         """Test GET /api/funcionario/{funcionario_id}/link-vendedor - Vendedor link with custom app_url"""
         self.log("🔗 Testing vendedor link generation with custom app_url...")
         
-        # First, find or create a funcionário
+        # First, find or create a funcionário with login credentials
         try:
             funcionarios_response = self.session.get(f"{API_BASE}/funcionarios/{self.company_id}")
             if funcionarios_response.status_code == 200:
                 funcionarios = funcionarios_response.json()
-                if len(funcionarios) > 0:
-                    self.funcionario_id = funcionarios[0]['id']
-                    self.log(f"✅ Using existing funcionário: {funcionarios[0]['nome_completo']}")
-                else:
-                    # Create a test funcionário
-                    self.funcionario_id = self._create_test_funcionario()
+                # Look for a funcionário with login credentials
+                for funcionario in funcionarios:
+                    if funcionario.get('login_email') and funcionario.get('login_senha'):
+                        self.funcionario_id = funcionario['id']
+                        self.log(f"✅ Using existing funcionário with login: {funcionario['nome_completo']}")
+                        break
+                
+                if not self.funcionario_id:
+                    # Create a test funcionário with login credentials
+                    self.funcionario_id = self._create_test_funcionario_with_login()
                     if not self.funcionario_id:
                         return False
             else:
