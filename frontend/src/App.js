@@ -67,210 +67,65 @@ function App() {
     );
   }
 
+  // Componente auxiliar para rotas protegidas
+  const ProtectedRoute = ({ children }) => {
+    if (!user) {
+      return <Navigate to="/" replace />;
+    }
+    return children;
+  };
+
+  // Se não há usuário logado, mostrar landing page
+  if (!user) {
+    return (
+      <BrowserRouter>
+        <Toaster position="top-right" richColors />
+        <Routes>
+          <Route path="/" element={<LandingPage setUser={setUser} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  // Usuário logado - mostrar app com provider de subscription
   return (
     <BrowserRouter>
       <Toaster position="top-right" richColors />
-      {user ? (
-        <SubscriptionProvider user={user}>
-          <SubscriptionExpiredBanner />
-          <Routes>
-            <Route
-              path="/"
-              element={<Navigate to="/dashboard" replace />}
-            />
-            <Route
-              path="/dashboard"
-              element={<Dashboard user={user} onLogout={handleLogout} />}
-            />
-            <Route
-              path="/lancamentos"
-              element={<Lancamentos user={user} onLogout={handleLogout} />}
-            />
-            )
-          }
-        />
-        <Route
-          path="/contas-pagar"
-          element={
-            user ? (
-              <ContasPagar user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/contas-receber"
-          element={
-            user ? (
-              <ContasReceber user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/categorias"
-          element={
-            user ? (
-              <CategoriasPersonalizadas user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/empresa"
-          element={
-            user ? (
-              <Empresa user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/meta-mensal"
-          element={
-            user ? (
-              <MetaMensal user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/precificacao"
-          element={
-            user ? (
-              <Precificacao user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/orcamentos"
-          element={
-            user ? (
-              <Orcamentos user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/orcamento/:id"
-          element={
-            user ? (
-              <OrcamentoDetalhe user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/orcamento/:id/editar"
-          element={
-            user ? (
-              <EditarOrcamento user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/orcamentos/novo"
-          element={
-            user ? (
-              <NovoOrcamentoGrid user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/materiais"
-          element={
-            user ? (
-              <Materiais user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/clientes"
-          element={
-            user ? (
-              <Clientes user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/funcionarios"
-          element={
-            user ? (
-              <Funcionarios user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/tabela-precos"
-          element={
-            user ? (
-              <TabelaPrecos user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/plano-contas"
-          element={
-            user ? (
-              <PlanoContas user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-
-        <Route
-          path="/config-orcamento"
-          element={
-            user ? (
-              <ConfiguracaoOrcamento user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/assinatura"
-          element={
-            user ? (
-              <Assinatura user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            user && user.role === 'admin' ? (
-              <AdminPanel user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/dashboard" replace />
-            )
-          }
-        />
-      </Routes>
+      <SubscriptionProvider user={user}>
+        <SubscriptionExpiredBanner />
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard user={user} onLogout={handleLogout} />} />
+          <Route path="/lancamentos" element={<Lancamentos user={user} onLogout={handleLogout} />} />
+          <Route path="/contas-pagar" element={<ContasPagar user={user} onLogout={handleLogout} />} />
+          <Route path="/contas-receber" element={<ContasReceber user={user} onLogout={handleLogout} />} />
+          <Route path="/categorias" element={<CategoriasPersonalizadas user={user} onLogout={handleLogout} />} />
+          <Route path="/empresa" element={<Empresa user={user} onLogout={handleLogout} />} />
+          <Route path="/meta-mensal" element={<MetaMensal user={user} onLogout={handleLogout} />} />
+          <Route path="/precificacao" element={<Precificacao user={user} onLogout={handleLogout} />} />
+          <Route path="/orcamentos" element={<Orcamentos user={user} onLogout={handleLogout} />} />
+          <Route path="/orcamento/:id" element={<OrcamentoDetalhe user={user} onLogout={handleLogout} />} />
+          <Route path="/orcamento/:id/editar" element={<EditarOrcamento user={user} onLogout={handleLogout} />} />
+          <Route path="/orcamentos/novo" element={<NovoOrcamentoGrid user={user} onLogout={handleLogout} />} />
+          <Route path="/materiais" element={<Materiais user={user} onLogout={handleLogout} />} />
+          <Route path="/clientes" element={<Clientes user={user} onLogout={handleLogout} />} />
+          <Route path="/funcionarios" element={<Funcionarios user={user} onLogout={handleLogout} />} />
+          <Route path="/tabela-precos" element={<TabelaPrecos user={user} onLogout={handleLogout} />} />
+          <Route path="/plano-contas" element={<PlanoContas user={user} onLogout={handleLogout} />} />
+          <Route path="/config-orcamento" element={<ConfiguracaoOrcamento user={user} onLogout={handleLogout} />} />
+          <Route path="/assinatura" element={<Assinatura user={user} onLogout={handleLogout} />} />
+          <Route 
+            path="/admin" 
+            element={
+              user.role === 'admin' 
+                ? <AdminPanel user={user} onLogout={handleLogout} /> 
+                : <Navigate to="/dashboard" replace />
+            } 
+          />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </SubscriptionProvider>
     </BrowserRouter>
   );
 }
