@@ -1455,7 +1455,7 @@ class TrialExpirationTester:
                 self.log(f"   💬 Reason: {reason}")
                 
                 # Verify write permission is blocked for expired trial
-                if can_write == False and reason and "trial" in reason.lower():
+                if can_write == False and reason and ("trial" in reason.lower() or "teste" in reason.lower() or "expirou" in reason.lower()):
                     self.log("✅ Write permission correctly blocked for expired trial!")
                     return True
                 else:
