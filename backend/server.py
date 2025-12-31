@@ -87,6 +87,8 @@ class CompanyCreate(BaseModel):
     email_empresa: Optional[str] = None
     site: Optional[str] = None
     contato_principal: Optional[str] = None
+    # URL do App (para links de vendedor/supervisor)
+    app_url: Optional[str] = None
 
 class Company(BaseModel):
     model_config = ConfigDict(extra="ignore")
