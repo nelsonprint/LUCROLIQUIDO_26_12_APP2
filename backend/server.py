@@ -116,6 +116,8 @@ class Company(BaseModel):
     email_empresa: Optional[str] = None
     site: Optional[str] = None
     contato_principal: Optional[str] = None
+    # URL do App (para links de vendedor/supervisor)
+    app_url: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
