@@ -149,6 +149,54 @@ backend:
         agent: "testing"
         comment: "✅ VENDEDOR FIELD IN PRECIFICAÇÃO TESTS PASSED! All 4 test criteria verified: 1) GET /api/vendedores/{empresa_id} endpoint working correctly, returns vendedores with id, nome_completo, and percentual_comissao fields ✅ 2) Budget creation with vendedor_id and vendedor_nome fields working via POST /api/orcamentos ✅ 3) Vendedor fields correctly saved and preserved in budget data ✅ 4) Budget listing preserves vendedor information correctly ✅. Feature working as specified in review request - vendedor dropdown functionality and budget creation with vendedor assignment fully functional."
 
+  - task: "Trial Expiration - Automatic Status Update"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ GET /api/subscription/status/{user_id} working correctly. For expired trial user (c56c5655-09a6-4655-9457-0abfee8091cc), status returns 'expired' and can_write returns false as expected. Automatic status update functioning properly."
+
+  - task: "Trial Expiration - Write Permission Check"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ GET /api/subscription/can-write/{user_id} working correctly. For expired trial user (c56c5655-09a6-4655-9457-0abfee8091cc), can_write returns false with proper Portuguese message 'Seu período de teste expirou. Assine para continuar usando todas as funcionalidades.' Write permission correctly blocked for expired trial."
+
+  - task: "App URL Field in Company Settings"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PUT /api/company/{company_id} with app_url field working correctly. Successfully saved and retrieved custom app_url (https://meuapp1767158961.com.br). Field is properly stored and can be updated in company settings."
+
+  - task: "Vendedor/Supervisor Link Generation with Custom URL"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Both GET /api/funcionario/{funcionario_id}/link-vendedor and GET /api/funcionario/{funcionario_id}/link-supervisor working correctly with custom app_url. When company has custom app_url set, both vendedor and supervisor links correctly use the custom URL instead of default. Generated URLs: vendedor (https://meuapp1767158961.com.br/api/vendedor/app) and supervisor (https://meuapp1767158961.com.br/api/supervisor/app) with proper WhatsApp integration."
+
 frontend:
   - task: "App do Vendedor - PWA Login System"
     implemented: true
