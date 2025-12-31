@@ -50,6 +50,7 @@ const Orcamentos = ({ user, onLogout }) => {
   };
 
   const handleDelete = async (id) => {
+    if (!checkCanWrite('excluir orçamento')) return;
     if (!window.confirm('Deseja realmente excluir este orçamento?')) return;
 
     try {
