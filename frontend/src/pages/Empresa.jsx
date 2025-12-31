@@ -75,6 +75,7 @@ const Empresa = ({ user, onLogout }) => {
             email_empresa: companyData.email_empresa || '',
             site: companyData.site || '',
             contato_principal: companyData.contato_principal || '',
+            app_url: companyData.app_url || '',
           });
         } else {
           // Nenhuma empresa encontrada - deixar formulário vazio para criar nova
