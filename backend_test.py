@@ -3146,6 +3146,450 @@ class CommissionBugFixTester:
             return False
 
 
+class SemComissaoTester:
+    """Test suite for 'sem_comissao' logic - no commission when vendedor_id is 'sem_comissao'"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        self.orcamento_id = None
+        self.installment_ids = []
+        self.vendedor_id = None
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_create_budget_with_sem_comissao(self):
+        """Test creating a budget with vendedor_id='sem_comissao'"""
+        self.log("🚫 Testing budget creation with vendedor_id='sem_comissao'...")
+        
+        if not self.user_data:
+            self.log("❌ No user data available for budget creation", "ERROR")
+            return False
+        
+        import time
+        timestamp = int(time.time())
+        
+        budget_data = {
+            "empresa_id": self.company_id,
+            "usuario_id": self.user_data['user_id'],
+            # Vendedor data - CRITICAL: using "sem_comissao"
+            "vendedor_id": "sem_comissao",
+            "vendedor_nome": "Sem comissão (Proprietário)",
+            # Client data
+            "cliente_nome": f"Cliente Teste Sem Comissão {timestamp}",
+            "cliente_documento": "123.456.789-00",
+            "cliente_email": "cliente@teste.com",
+            "cliente_telefone": "(11) 99999-9999",
+            "cliente_whatsapp": "11999999999",
+            "cliente_endereco": "Rua Teste, 123 - São Paulo/SP",
+            # Budget data
+            "tipo": "servico_hora",
+            "descricao_servico_ou_produto": f"Serviço teste sem comissão {timestamp}",
+            "quantidade": 10.0,
+            "custo_total": 500.0,
+            "preco_minimo": 800.0,
+            "preco_sugerido": 1000.0,
+            "preco_praticado": 1000.0,
+            # Commercial conditions
+            "validade_proposta": "2025-02-28",
+            "condicoes_pagamento": "Entrada + 2 parcelas",
+            "prazo_execucao": "15 dias úteis",
+            "observacoes": "Teste de orçamento sem comissão",
+            # Installment payment details
+            "forma_pagamento": "entrada_parcelas",
+            "entrada_percentual": 30.0,
+            "valor_entrada": 300.0,
+            "num_parcelas": 2,
+            "parcelas": [
+                {"numero": 1, "valor": 350.0, "editado": False},
+                {"numero": 2, "valor": 350.0, "editado": False}
+            ],
+            # Detailed items structure for commission calculation
+            "detalhes_itens": {
+                "servicos": [
+                    {
+                        "descricao": "Serviço Principal",
+                        "quantidade": 1,
+                        "valor_unitario": 600.0,
+                        "valor_total": 600.0
+                    }
+                ],
+                "materiais": [
+                    {
+                        "descricao": "Material Principal",
+                        "quantidade": 1,
+                        "valor_unitario": 400.0,
+                        "valor_total": 400.0
+                    }
+                ],
+                "totals": {
+                    "services_total": 600.0,
+                    "materials_total": 400.0,
+                    "grand_total": 1000.0
+                }
+            }
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/orcamentos", json=budget_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.orcamento_id = result.get('orcamento_id')
+                budget_number = result.get('numero_orcamento')
+                self.log(f"✅ Budget with 'sem_comissao' created successfully!")
+                self.log(f"   🆔 Budget ID: {self.orcamento_id}")
+                self.log(f"   🔢 Budget Number: {budget_number}")
+                self.log(f"   👤 Vendedor ID: sem_comissao")
+                self.log(f"   👤 Vendedor Nome: Sem comissão (Proprietário)")
+                
+                # Verify vendedor data was saved correctly
+                verify_response = self.session.get(f"{API_BASE}/orcamento/{self.orcamento_id}")
+                if verify_response.status_code == 200:
+                    budget = verify_response.json()
+                    if (budget.get('vendedor_id') == 'sem_comissao' and
+                        budget.get('vendedor_nome') == 'Sem comissão (Proprietário)'):
+                        self.log("✅ Vendedor 'sem_comissao' data saved correctly!")
+                        return True
+                    else:
+                        self.log("❌ Vendedor 'sem_comissao' data not saved correctly", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify budget creation", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to create budget: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating budget: {str(e)}", "ERROR")
+            return False
+    
+    def test_budget_acceptance_generates_accounts(self):
+        """Test that budget acceptance generates accounts receivable"""
+        self.log("📋 Testing budget acceptance generates accounts receivable...")
+        
+        if not self.orcamento_id:
+            self.log("❌ No budget ID available", "ERROR")
+            return False
+        
+        try:
+            # Accept the budget
+            response = self.session.post(f"{API_BASE}/orcamento/{self.orcamento_id}/aceitar")
+            
+            if response.status_code == 200:
+                result = response.json()
+                contas_geradas = result.get('contas_geradas', 0)
+                contas_ids = result.get('contas_ids', [])
+                
+                self.log(f"✅ Budget accepted successfully!")
+                self.log(f"   📊 Accounts generated: {contas_geradas}")
+                
+                # Store installment IDs for later testing
+                self.installment_ids = contas_ids
+                
+                # Verify expected number of accounts (1 down payment + 2 installments = 3)
+                if contas_geradas == 3 and len(contas_ids) == 3:
+                    self.log("✅ Correct number of accounts generated!")
+                    return True
+                else:
+                    self.log(f"❌ Incorrect number of accounts. Expected: 3, Got: {contas_geradas}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to accept budget: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error accepting budget: {str(e)}", "ERROR")
+            return False
+    
+    def test_mark_installment_as_received_no_commission(self):
+        """Test marking installment as RECEBIDO does NOT generate commission for 'sem_comissao'"""
+        self.log("🚫 Testing installment payment does NOT generate commission for 'sem_comissao'...")
+        
+        if not self.installment_ids or len(self.installment_ids) < 1:
+            self.log("❌ No installment IDs available", "ERROR")
+            return False
+        
+        try:
+            # Get the first installment (down payment - R$ 300)
+            first_installment_id = self.installment_ids[0]
+            
+            # Get installment details before marking as received
+            installment_response = self.session.get(f"{API_BASE}/contas/receber?company_id={self.company_id}")
+            if installment_response.status_code != 200:
+                self.log("❌ Could not get installment details", "ERROR")
+                return False
+            
+            installments = installment_response.json()
+            first_installment = None
+            for inst in installments:
+                if inst.get('id') == first_installment_id:
+                    first_installment = inst
+                    break
+            
+            if not first_installment:
+                self.log("❌ Could not find first installment", "ERROR")
+                return False
+            
+            self.log(f"   📋 Installment: {first_installment.get('descricao')}")
+            self.log(f"   💰 Value: R$ {first_installment.get('valor')}")
+            
+            # Count existing commissions before payment
+            commission_response_before = self.session.get(f"{API_BASE}/contas?company_id={self.company_id}&tipo=PAGAR")
+            commissions_before = 0
+            if commission_response_before.status_code == 200:
+                all_payables = commission_response_before.json()
+                commissions_before = len([c for c in all_payables if c.get('tipo_comissao') == 'vendedor' and c.get('orcamento_id') == self.orcamento_id])
+            
+            self.log(f"   📊 Commissions before payment: {commissions_before}")
+            
+            # Mark installment as RECEBIDO
+            status_data = {
+                "status": "RECEBIDO",
+                "data_pagamento": "2024-12-26"
+            }
+            
+            response = self.session.patch(f"{API_BASE}/contas/receber/{first_installment_id}/status", json=status_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.log("✅ Installment marked as RECEBIDO successfully!")
+                
+                # CRITICAL: Verify NO commission was generated
+                if 'comissao' in result:
+                    self.log("❌ CRITICAL ERROR: Commission generated for 'sem_comissao' vendedor!", "ERROR")
+                    self.log(f"   Commission data: {result['comissao']}", "ERROR")
+                    return False
+                else:
+                    self.log("✅ CORRECT: No commission field in response")
+                
+                # Verify no commission was created in contas_a_pagar
+                commission_response_after = self.session.get(f"{API_BASE}/contas?company_id={self.company_id}&tipo=PAGAR")
+                if commission_response_after.status_code == 200:
+                    all_payables = commission_response_after.json()
+                    commissions_after = len([c for c in all_payables if c.get('tipo_comissao') == 'vendedor' and c.get('orcamento_id') == self.orcamento_id])
+                    
+                    self.log(f"   📊 Commissions after payment: {commissions_after}")
+                    
+                    if commissions_after == commissions_before:
+                        self.log("✅ CORRECT: No new commission created in contas_a_pagar")
+                        return True
+                    else:
+                        self.log(f"❌ CRITICAL ERROR: Commission created! Before: {commissions_before}, After: {commissions_after}", "ERROR")
+                        
+                        # Show details of created commission
+                        new_commissions = [c for c in all_payables if c.get('tipo_comissao') == 'vendedor' and c.get('orcamento_id') == self.orcamento_id]
+                        for comm in new_commissions:
+                            self.log(f"   💰 Commission: {comm.get('descricao')} - R$ {comm.get('valor')}", "ERROR")
+                        
+                        return False
+                else:
+                    self.log("⚠️ Could not verify commission absence", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to mark installment as received: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error marking installment as received: {str(e)}", "ERROR")
+            return False
+    
+    def test_verify_normal_vendedor_still_generates_commission(self):
+        """Test that normal vendedor (not 'sem_comissao') still generates commission correctly"""
+        self.log("✅ Testing normal vendedor still generates commission...")
+        
+        # First, create a normal vendedor
+        import time
+        timestamp = int(time.time())
+        
+        vendedor_data = {
+            "empresa_id": self.company_id,
+            "nome_completo": f"Vendedor Normal {timestamp}",
+            "cpf": f"123.456.{timestamp % 1000:03d}-99",
+            "status": "Ativo",
+            "percentual_comissao": 5.0  # 5% commission
+        }
+        
+        try:
+            # Create vendedor
+            vendedor_response = self.session.post(f"{API_BASE}/funcionarios", json=vendedor_data)
+            if vendedor_response.status_code != 200:
+                self.log("❌ Could not create normal vendedor for comparison test", "ERROR")
+                return False
+            
+            vendedor_result = vendedor_response.json()
+            normal_vendedor_id = vendedor_result.get('funcionario', {}).get('id')
+            
+            # Create budget with normal vendedor
+            budget_data = {
+                "empresa_id": self.company_id,
+                "usuario_id": self.user_data['user_id'],
+                # Normal vendedor data
+                "vendedor_id": normal_vendedor_id,
+                "vendedor_nome": f"Vendedor Normal {timestamp}",
+                # Client data
+                "cliente_nome": f"Cliente Teste Normal {timestamp}",
+                "cliente_whatsapp": "11999999999",
+                # Budget data
+                "tipo": "servico_hora",
+                "descricao_servico_ou_produto": f"Serviço teste normal {timestamp}",
+                "quantidade": 1.0,
+                "custo_total": 500.0,
+                "preco_minimo": 800.0,
+                "preco_sugerido": 1000.0,
+                "preco_praticado": 1000.0,
+                "validade_proposta": "2025-02-28",
+                "condicoes_pagamento": "À vista",
+                "prazo_execucao": "15 dias úteis",
+                "forma_pagamento": "avista",
+                # Detailed items for commission calculation
+                "detalhes_itens": {
+                    "servicos": [
+                        {
+                            "descricao": "Serviço Principal",
+                            "quantidade": 1,
+                            "valor_unitario": 600.0,
+                            "valor_total": 600.0
+                        }
+                    ],
+                    "materiais": [
+                        {
+                            "descricao": "Material Principal",
+                            "quantidade": 1,
+                            "valor_unitario": 400.0,
+                            "valor_total": 400.0
+                        }
+                    ],
+                    "totals": {
+                        "services_total": 600.0,
+                        "materials_total": 400.0,
+                        "grand_total": 1000.0
+                    }
+                }
+            }
+            
+            # Create budget
+            budget_response = self.session.post(f"{API_BASE}/orcamentos", json=budget_data)
+            if budget_response.status_code != 200:
+                self.log("❌ Could not create normal vendedor budget", "ERROR")
+                return False
+            
+            normal_budget_id = budget_response.json().get('orcamento_id')
+            
+            # Accept budget
+            accept_response = self.session.post(f"{API_BASE}/orcamento/{normal_budget_id}/aceitar")
+            if accept_response.status_code != 200:
+                self.log("❌ Could not accept normal vendedor budget", "ERROR")
+                return False
+            
+            normal_installment_ids = accept_response.json().get('contas_ids', [])
+            if not normal_installment_ids:
+                self.log("❌ No installments created for normal vendedor budget", "ERROR")
+                return False
+            
+            # Mark first installment as received
+            status_data = {
+                "status": "RECEBIDO",
+                "data_pagamento": "2024-12-26"
+            }
+            
+            payment_response = self.session.patch(f"{API_BASE}/contas/receber/{normal_installment_ids[0]}/status", json=status_data)
+            
+            if payment_response.status_code == 200:
+                result = payment_response.json()
+                
+                # CRITICAL: Verify commission WAS generated for normal vendedor
+                if 'comissao' in result:
+                    comissao = result['comissao']
+                    self.log("✅ CORRECT: Commission generated for normal vendedor!")
+                    self.log(f"   👤 Vendedor: {comissao.get('vendedor')}")
+                    self.log(f"   💰 Commission: R$ {comissao.get('valor')}")
+                    self.log(f"   📊 Percentage: {comissao.get('percentual')}%")
+                    
+                    # Verify commission was created in contas_a_pagar
+                    commission_response = self.session.get(f"{API_BASE}/contas?company_id={self.company_id}&tipo=PAGAR")
+                    if commission_response.status_code == 200:
+                        all_payables = commission_response.json()
+                        normal_commissions = [c for c in all_payables if c.get('tipo_comissao') == 'vendedor' and c.get('orcamento_id') == normal_budget_id]
+                        
+                        if len(normal_commissions) > 0:
+                            self.log("✅ CORRECT: Commission found in contas_a_pagar for normal vendedor")
+                            return True
+                        else:
+                            self.log("❌ Commission not found in contas_a_pagar for normal vendedor", "ERROR")
+                            return False
+                    else:
+                        self.log("⚠️ Could not verify commission in contas_a_pagar", "WARN")
+                        return True
+                else:
+                    self.log("❌ CRITICAL ERROR: No commission generated for normal vendedor!", "ERROR")
+                    return False
+            else:
+                self.log("❌ Could not mark normal vendedor installment as received", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing normal vendedor commission: {str(e)}", "ERROR")
+            return False
+    
+    def run_all_tests(self):
+        """Execute all 'sem_comissao' tests"""
+        self.log("🚀 Starting 'sem_comissao' Logic API tests")
+        self.log("=" * 70)
+        
+        tests = [
+            ("Create Budget with 'sem_comissao'", self.test_create_budget_with_sem_comissao),
+            ("Budget Acceptance Generates Accounts", self.test_budget_acceptance_generates_accounts),
+            ("Mark Installment as Received - NO Commission", self.test_mark_installment_as_received_no_commission),
+            ("Verify Normal Vendedor Still Generates Commission", self.test_verify_normal_vendedor_still_generates_commission)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 70)
+        self.log("📊 'SEM_COMISSAO' LOGIC TEST SUMMARY")
+        self.log("=" * 70)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL 'SEM_COMISSAO' TESTS PASSED! Logic working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME 'SEM_COMISSAO' TESTS FAILED! Check logs above for details.")
+            return False
+
+
 def main():
     """Main function - Run Trial Expiration and App URL tests"""
     print("🚀 Starting Trial Expiration and App URL API Tests")
