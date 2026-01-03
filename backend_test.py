@@ -3513,7 +3513,7 @@ class SemComissaoTester:
                     self.log(f"   📊 Percentage: {comissao.get('percentual')}%")
                     
                     # Verify commission was created in contas_a_pagar
-                    commission_response = self.session.get(f"{API_BASE}/contas?company_id={self.company_id}&tipo=PAGAR")
+                    commission_response = self.session.get(f"{API_BASE}/contas/pagar?company_id={self.company_id}")
                     if commission_response.status_code == 200:
                         all_payables = commission_response.json()
                         normal_commissions = [c for c in all_payables if c.get('tipo_comissao') == 'vendedor' and c.get('orcamento_id') == normal_budget_id]
