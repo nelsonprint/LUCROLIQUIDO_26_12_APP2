@@ -5331,11 +5331,16 @@ async def update_status_conta_receber(conta_id: str, status_data: ContaStatusUpd
         
         # ===== GERAR COMISSÃO PROPORCIONAL DO VENDEDOR =====
         # Só gera se a conta estiver vinculada a um orçamento
+        # Não gera se vendedor_id for "sem_comissao" (venda do proprietário)
         if conta.get('orcamento_id') and not conta.get('comissao_gerada'):
             orcamento = await db.orcamentos.find_one({"id": conta['orcamento_id']}, {"_id": 0})
             
-            if orcamento and orcamento.get('vendedor_id'):
-                vendedor = await db.funcionarios.find_one({"id": orcamento['vendedor_id']}, {"_id": 0})
+            # Verificar se deve gerar comissão (não gera se for "sem_comissao")
+            vendedor_id = orcamento.get('vendedor_id') if orcamento else None
+            deve_gerar_comissao = vendedor_id and vendedor_id != 'sem_comissao' and orcamento.get('vendedor_comissao', True)
+            
+            if orcamento and deve_gerar_comissao:
+                vendedor = await db.funcionarios.find_one({"id": vendedor_id}, {"_id": 0})
                 
                 if vendedor and vendedor.get('percentual_comissao', 0) > 0:
                     # Calcular proporção de serviços no orçamento total
