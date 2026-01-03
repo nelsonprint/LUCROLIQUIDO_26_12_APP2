@@ -81,14 +81,18 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
     prazo_execucao: '',
     observacoes: '',
     // Forma de pagamento avançada
-    forma_pagamento: 'entrada_parcelas', // 'avista' ou 'entrada_parcelas'
+    forma_pagamento: 'entrada_parcelas', // 'avista', 'entrada_parcelas' ou 'boleto'
     entrada_percentual: 30, // Percentual de entrada
     valor_entrada: 0, // Valor calculado da entrada
     num_parcelas: 2, // Número de parcelas após entrada
     parcelas: [], // Array com detalhes de cada parcela [{numero, valor, editado}]
+    // Boleto bancário
+    boleto_num_parcelas: 1, // 1 a 20 parcelas
+    boleto_taxa: 0, // Taxa em R$
     // Vendedor responsável
     vendedor_id: '',
     vendedor_nome: '',
+    vendedor_comissao: true, // true = com comissão, false = sem comissão (dono da empresa)
   });
 
   // Vendedores
