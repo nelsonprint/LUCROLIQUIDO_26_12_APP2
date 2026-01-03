@@ -397,9 +397,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Modelos de Capa - ConfiguracaoOrcamento grid selection"
-    - "Modelos de Capa - Template Personalizado upload option"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
