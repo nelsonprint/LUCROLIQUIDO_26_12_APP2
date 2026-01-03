@@ -159,6 +159,12 @@ const Dashboard = ({ user, onLogout }) => {
       const currentMonth = new Date().toISOString().slice(0, 7);
       const response = await axiosInstance.get(`/contas/resumo-mensal?company_id=${selectedCompany.id}&mes=${currentMonth}`);
       setContasResumo(response.data);
+      
+      // Calcular lucro líquido do mês atual
+      const receitas = response.data?.total_receber || 0;
+      const despesas = response.data?.total_pagar || 0;
+      const lucro = receitas - despesas;
+      setLucroMesAtual({ receitas, despesas, lucro });
     } catch (error) {
       console.error('Erro ao buscar resumo de contas:', error);
     }
