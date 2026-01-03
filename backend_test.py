@@ -3341,7 +3341,7 @@ class SemComissaoTester:
             self.log(f"   💰 Value: R$ {first_installment.get('valor')}")
             
             # Count existing commissions before payment
-            commission_response_before = self.session.get(f"{API_BASE}/contas?company_id={self.company_id}&tipo=PAGAR")
+            commission_response_before = self.session.get(f"{API_BASE}/contas/pagar?company_id={self.company_id}")
             commissions_before = 0
             if commission_response_before.status_code == 200:
                 all_payables = commission_response_before.json()
