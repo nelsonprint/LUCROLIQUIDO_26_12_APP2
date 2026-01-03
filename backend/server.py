@@ -3441,6 +3441,44 @@ async def upload_logo(file: UploadFile = File(...)):
         logger.error(f"Erro no upload: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro ao fazer upload: {str(e)}")
 
+@api_router.post("/upload-capa")
+async def upload_capa(file: UploadFile = File(...)):
+    """Upload de imagem de capa personalizada para orçamento"""
+    try:
+        # Validar tipo de arquivo
+        allowed_types = ['image/jpeg', 'image/jpg', 'image/png']
+        if file.content_type not in allowed_types:
+            raise HTTPException(status_code=400, detail="Apenas JPG e PNG são permitidos para capa")
+        
+        # Validar tamanho (max 10MB para capas)
+        content = await file.read()
+        if len(content) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Imagem muito grande. Máximo: 10MB")
+        
+        # Criar pasta de uploads se não existir
+        uploads_dir = Path(ROOT_DIR) / "uploads" / "capas"
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Gerar nome único
+        ext = Path(file.filename).suffix.lower()
+        unique_filename = f"capa_{uuid.uuid4().hex}{ext}"
+        file_path = uploads_dir / unique_filename
+        
+        # Salvar arquivo
+        async with aiofiles.open(file_path, 'wb') as f:
+            await f.write(content)
+        
+        # Retornar URL do arquivo
+        capa_url = f"/uploads/capas/{unique_filename}"
+        
+        return {"capa_url": capa_url, "message": "Capa enviada com sucesso!"}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro no upload da capa: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao fazer upload: {str(e)}")
+
 @api_router.get("/orcamento-config/{company_id}")
 async def get_orcamento_config(company_id: str):
     """Buscar configuração de orçamento da empresa"""
