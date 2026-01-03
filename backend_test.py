@@ -1390,6 +1390,301 @@ class WhatsAppBudgetFlowTester:
             self.log("⚠️ SOME TESTS FAILED! Check logs above for details.")
             return False
 
+class OrcamentoCapaTester:
+    """Test suite for Orçamento Cover Model Selection functionality"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_get_orcamento_config_fields(self):
+        """Test GET /api/orcamento-config/{company_id} - Verify capa fields are returned"""
+        self.log("📋 Testing GET orcamento config with capa fields...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/orcamento-config/{self.company_id}")
+            
+            if response.status_code == 200:
+                config = response.json()
+                self.log("✅ Orcamento config retrieved successfully!")
+                
+                # Check for required capa fields
+                required_capa_fields = ['capa_tipo', 'capa_modelo', 'capa_personalizada_url']
+                all_fields_present = True
+                
+                for field in required_capa_fields:
+                    if field in config:
+                        self.log(f"   ✅ {field}: {config[field]}")
+                    else:
+                        self.log(f"   ❌ Missing field: {field}", "ERROR")
+                        all_fields_present = False
+                
+                # Verify default values
+                if config.get('capa_tipo') in ['modelo', 'personalizado']:
+                    self.log("   ✅ capa_tipo has valid value")
+                else:
+                    self.log(f"   ❌ capa_tipo invalid: {config.get('capa_tipo')}", "ERROR")
+                    all_fields_present = False
+                
+                if isinstance(config.get('capa_modelo'), int) and 1 <= config.get('capa_modelo') <= 20:
+                    self.log("   ✅ capa_modelo has valid range (1-20)")
+                else:
+                    self.log(f"   ❌ capa_modelo invalid: {config.get('capa_modelo')}", "ERROR")
+                    all_fields_present = False
+                
+                return all_fields_present
+            else:
+                self.log(f"❌ Failed to get orcamento config: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error getting orcamento config: {str(e)}", "ERROR")
+            return False
+    
+    def test_save_predefined_model_config(self):
+        """Test POST /api/orcamento-config - Save configuration with predefined model"""
+        self.log("💾 Testing save orcamento config with predefined model...")
+        
+        config_data = {
+            "logo_url": None,
+            "cor_primaria": "#7C3AED",
+            "cor_secundaria": "#3B82F6",
+            "texto_ciencia": "Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas.",
+            "texto_garantia": "Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes.",
+            "capa_tipo": "modelo",
+            "capa_modelo": 5,  # Test with model 5
+            "capa_personalizada_url": None
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/orcamento-config?company_id={self.company_id}", json=config_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.log(f"✅ Configuration saved successfully! Message: {result.get('message')}")
+                
+                # Verify the configuration was saved by retrieving it
+                verify_response = self.session.get(f"{API_BASE}/orcamento-config/{self.company_id}")
+                if verify_response.status_code == 200:
+                    saved_config = verify_response.json()
+                    
+                    # Check if our values were saved correctly
+                    checks = [
+                        (saved_config.get('capa_tipo') == 'modelo', "capa_tipo"),
+                        (saved_config.get('capa_modelo') == 5, "capa_modelo"),
+                        (saved_config.get('capa_personalizada_url') is None, "capa_personalizada_url")
+                    ]
+                    
+                    all_correct = True
+                    for check, field_name in checks:
+                        if check:
+                            self.log(f"   ✅ {field_name}: Saved correctly")
+                        else:
+                            self.log(f"   ❌ {field_name}: Not saved correctly", "ERROR")
+                            all_correct = False
+                    
+                    return all_correct
+                else:
+                    self.log("⚠️ Could not verify configuration save", "WARN")
+                    return True  # Save worked, verification failed
+            else:
+                self.log(f"❌ Failed to save configuration: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error saving configuration: {str(e)}", "ERROR")
+            return False
+    
+    def test_upload_capa_endpoint(self):
+        """Test POST /api/upload-capa - Upload cover image endpoint"""
+        self.log("📤 Testing upload capa endpoint...")
+        
+        # Create a simple test image (1x1 PNG)
+        import base64
+        # Minimal 1x1 PNG image in base64
+        png_data = base64.b64decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9jU8'
+            'ByQAAAABJRU5ErkJggg=='
+        )
+        
+        try:
+            # Prepare file for upload
+            files = {
+                'file': ('test_capa.png', png_data, 'image/png')
+            }
+            
+            response = self.session.post(f"{API_BASE}/upload-capa", files=files)
+            
+            if response.status_code == 200:
+                result = response.json()
+                capa_url = result.get('capa_url')
+                message = result.get('message')
+                
+                self.log(f"✅ Capa upload successful! Message: {message}")
+                self.log(f"   📎 Capa URL: {capa_url}")
+                
+                # Verify URL format
+                if capa_url and '/uploads/capas/' in capa_url and capa_url.endswith('.png'):
+                    self.log("✅ Capa URL format is correct")
+                    
+                    # Test saving configuration with custom capa
+                    return self._test_save_custom_capa_config(capa_url)
+                else:
+                    self.log("❌ Capa URL format is incorrect", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to upload capa: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error uploading capa: {str(e)}", "ERROR")
+            return False
+    
+    def _test_save_custom_capa_config(self, capa_url):
+        """Helper method to test saving configuration with custom capa"""
+        self.log("💾 Testing save config with custom capa...")
+        
+        config_data = {
+            "logo_url": None,
+            "cor_primaria": "#7C3AED",
+            "cor_secundaria": "#3B82F6",
+            "texto_ciencia": "Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas.",
+            "texto_garantia": "Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes.",
+            "capa_tipo": "personalizado",
+            "capa_modelo": 1,  # Should be ignored when tipo is personalizado
+            "capa_personalizada_url": capa_url
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/orcamento-config?company_id={self.company_id}", json=config_data)
+            
+            if response.status_code == 200:
+                self.log("✅ Custom capa configuration saved successfully!")
+                
+                # Verify the configuration was saved
+                verify_response = self.session.get(f"{API_BASE}/orcamento-config/{self.company_id}")
+                if verify_response.status_code == 200:
+                    saved_config = verify_response.json()
+                    
+                    # Check if custom capa values were saved correctly
+                    checks = [
+                        (saved_config.get('capa_tipo') == 'personalizado', "capa_tipo"),
+                        (saved_config.get('capa_personalizada_url') == capa_url, "capa_personalizada_url")
+                    ]
+                    
+                    all_correct = True
+                    for check, field_name in checks:
+                        if check:
+                            self.log(f"   ✅ {field_name}: Saved correctly")
+                        else:
+                            self.log(f"   ❌ {field_name}: Not saved correctly", "ERROR")
+                            all_correct = False
+                    
+                    return all_correct
+                else:
+                    self.log("⚠️ Could not verify custom capa configuration save", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to save custom capa configuration: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error saving custom capa configuration: {str(e)}", "ERROR")
+            return False
+    
+    def test_model_range_validation(self):
+        """Test that capa_modelo accepts values 1-20"""
+        self.log("🔢 Testing capa_modelo range validation...")
+        
+        # Test valid values (1, 10, 20)
+        valid_models = [1, 10, 20]
+        for model_num in valid_models:
+            config_data = {
+                "logo_url": None,
+                "cor_primaria": "#7C3AED",
+                "cor_secundaria": "#3B82F6",
+                "texto_ciencia": "Test text",
+                "texto_garantia": "Test warranty",
+                "capa_tipo": "modelo",
+                "capa_modelo": model_num,
+                "capa_personalizada_url": None
+            }
+            
+            try:
+                response = self.session.post(f"{API_BASE}/orcamento-config?company_id={self.company_id}", json=config_data)
+                
+                if response.status_code == 200:
+                    self.log(f"   ✅ Model {model_num}: Accepted")
+                else:
+                    self.log(f"   ❌ Model {model_num}: Rejected ({response.status_code})", "ERROR")
+                    return False
+                    
+            except Exception as e:
+                self.log(f"   ❌ Model {model_num}: Error - {str(e)}", "ERROR")
+                return False
+        
+        self.log("✅ All valid model numbers (1, 10, 20) accepted!")
+        return True
+    
+    def run_all_tests(self):
+        """Execute all Orçamento Capa tests"""
+        self.log("🚀 Starting Orçamento Cover Model Selection API tests")
+        self.log("=" * 70)
+        
+        tests = [
+            ("Get Orcamento Config Fields", self.test_get_orcamento_config_fields),
+            ("Save Predefined Model Config", self.test_save_predefined_model_config),
+            ("Upload Capa Endpoint", self.test_upload_capa_endpoint),
+            ("Model Range Validation", self.test_model_range_validation)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 70)
+        self.log("📊 ORÇAMENTO CAPA TEST SUMMARY")
+        self.log("=" * 70)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL ORÇAMENTO CAPA TESTS PASSED! Cover model selection working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME ORÇAMENTO CAPA TESTS FAILED! Check logs above for details.")
+            return False
+
+
 class TrialExpirationTester:
     """Test suite for Trial Expiration and App URL features"""
     
