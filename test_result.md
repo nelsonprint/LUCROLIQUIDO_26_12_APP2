@@ -209,6 +209,30 @@ backend:
         agent: "testing"
         comment: "✅ 'SEM_COMISSAO' LOGIC TESTS PASSED! All 4 test scenarios verified: 1) Budget creation with vendedor_id='sem_comissao' working correctly ✅ 2) Budget acceptance generates accounts receivable (3 accounts) ✅ 3) Marking installment as RECEBIDO does NOT generate commission for 'sem_comissao' vendedor ✅ 4) Normal vendedor (5% commission) still generates commission correctly ✅. Commission logic properly checks vendedor_id != 'sem_comissao' before generating commission. Tested with budget LL-2026-0003 - no commission created when installment marked as received. Proportional commission system working correctly for normal vendedores."
 
+  - task: "Modelos de Capa - Backend Configuration Endpoints"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ORÇAMENTO COVER MODEL BACKEND TESTS PASSED! All 4 test criteria verified: 1) GET /api/orcamento-config/{company_id} returns capa_tipo, capa_modelo, capa_personalizada_url fields correctly ✅ 2) POST /api/orcamento-config saves predefined model configuration (tested with model 5) ✅ 3) POST /api/upload-capa uploads cover images successfully and returns proper URL ✅ 4) Model range validation (1-20) working correctly ✅. Cover model selection backend functionality fully operational. Bug fix confirmed - fields always returned even for companies with existing configs created before these fields were added."
+
+  - task: "Modelos de Capa - Upload Endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ UPLOAD CAPA ENDPOINT WORKING! POST /api/upload-capa successfully accepts JPG/PNG images, validates file type and size (max 10MB), saves to /uploads/capas/ directory with unique filename, and returns proper capa_url. Tested with PNG image upload and verified URL format '/uploads/capas/capa_[uuid].png'. Custom capa configuration saving also working - can save capa_tipo='personalizado' with capa_personalizada_url correctly."
+
 frontend:
   - task: "Boleto Bancário - Form fields in NovoOrcamentoGrid"
     implemented: true
