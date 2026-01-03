@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Modelos de Capas - Análise</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      padding: 30px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .model-container {
+      text-align: center;
+    }
+    .model-title {
+      color: #a855f7;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+    .page {
+      width: 280px;
+      height: 396px;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+      margin: 0 auto;
+    }
+    .content {
+      position: relative;
+      z-index: 10;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 25px 20px;
+    }
+    .logo-box {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #7c3aed;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 15px;
+      background: white;
+    }
+    .logo-text {
+      font-size: 20px;
+      color: #7c3aed;
+      font-weight: bold;
+    }
+    .nome-fantasia {
+      font-size: 16px;
+      font-weight: 800;
+      color: #1f2937;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .razao-social {
+      font-size: 8px;
+      color: #6b7280;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .divider {
+      width: 40px;
+      height: 3px;
+      background: linear-gradient(90deg, #7c3aed, #a855f7);
+      margin: 20px 0 15px 0;
+    }
+    .doc-title {
+      font-size: 14px;
+      color: #7c3aed;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .footer-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(90deg, #7c3aed, #a855f7);
+      padding: 8px;
+    }
+    .footer-bar p {
+      font-size: 6px;
+      color: white;
+      text-align: center;
+    }
+
+    /* MODELO 1 - Círculos e Elipses */
+    .m1 .circle1 {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: #7c3aed;
+      top: -50px;
+      right: -70px;
+    }
+    .m1 .circle2 {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: #a855f7;
+      opacity: 0.7;
+      top: 20px;
+      right: -30px;
+    }
+    .m1 .circle3 {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: #7c3aed;
+      bottom: 40px;
+      left: -60px;
+    }
+    .m1 .circle4 {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #a855f7;
+      opacity: 0.5;
+      bottom: 80px;
+      left: 20px;
+    }
+    .m1 .ellipse1 {
+      position: absolute;
+      width: 100px;
+      height: 50px;
+      border-radius: 50%;
+      border: 3px solid #7c3aed;
+      opacity: 0.3;
+      top: 180px;
+      left: 30px;
+      transform: rotate(-20deg);
+    }
+
+    /* MODELO 2 - Skyline de Prédios */
+    .m2 .skyline {
+      position: absolute;
+      bottom: 30px;
+      left: 0;
+      right: 0;
+      height: 150px;
+    }
+    .m2 .building {
+      position: absolute;
+      bottom: 0;
+      background: #7c3aed;
+    }
+    .m2 .b1 { width: 35px; height: 100px; left: 10px; }
+    .m2 .b2 { width: 25px; height: 130px; left: 50px; background: #a855f7; }
+    .m2 .b3 { width: 40px; height: 80px; left: 80px; }
+    .m2 .b4 { width: 30px; height: 150px; left: 125px; background: #a855f7; }
+    .m2 .b5 { width: 35px; height: 110px; left: 160px; }
+    .m2 .b6 { width: 25px; height: 90px; left: 200px; background: #a855f7; }
+    .m2 .b7 { width: 40px; height: 120px; left: 230px; }
+    .m2 .window {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: rgba(255,255,255,0.5);
+    }
+    .m2 .crane {
+      position: absolute;
+      bottom: 140px;
+      right: 40px;
+      width: 3px;
+      height: 60px;
+      background: #7c3aed;
+    }
+    .m2 .crane::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -30px;
+      width: 60px;
+      height: 3px;
+      background: #7c3aed;
+    }
+
+    /* MODELO 3 - Hexágonos */
+    .m3 .hex-container {
+      position: absolute;
+      top: -20px;
+      right: -40px;
+    }
+    .m3 .hexagon {
+      position: absolute;
+      width: 60px;
+      height: 35px;
+      background: #7c3aed;
+    }
+    .m3 .hexagon::before,
+    .m3 .hexagon::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      border-left: 30px solid transparent;
+      border-right: 30px solid transparent;
+    }
+    .m3 .hexagon::before {
+      bottom: 100%;
+      border-bottom: 17px solid #7c3aed;
+    }
+    .m3 .hexagon::after {
+      top: 100%;
+      border-top: 17px solid #7c3aed;
+    }
+    .m3 .hex1 { top: 20px; right: 30px; }
+    .m3 .hex2 { top: 90px; right: 80px; background: #a855f7; }
+    .m3 .hex2::before { border-bottom-color: #a855f7; }
+    .m3 .hex2::after { border-top-color: #a855f7; }
+    .m3 .hex3 { top: 90px; right: -10px; opacity: 0.6; }
+    .m3 .hex4 { top: 160px; right: 40px; background: #a855f7; opacity: 0.8; }
+    .m3 .hex4::before { border-bottom-color: #a855f7; }
+    .m3 .hex4::after { border-top-color: #a855f7; }
+    .m3 .hex-bottom {
+      position: absolute;
+      bottom: 40px;
+      left: -20px;
+    }
+    .m3 .hex5 { top: 0; left: 0; opacity: 0.5; }
+    .m3 .hex6 { top: 70px; left: 50px; background: #a855f7; opacity: 0.7; }
+    .m3 .hex6::before { border-bottom-color: #a855f7; }
+    .m3 .hex6::after { border-top-color: #a855f7; }
+
+    /* MODELO 4 - Ondas */
+    .m4 .wave {
+      position: absolute;
+      width: 400px;
+      height: 100px;
+      border-radius: 50%;
+    }
+    .m4 .wave1 {
+      background: #7c3aed;
+      top: -50px;
+      right: -100px;
+      width: 300px;
+      height: 200px;
+    }
+    .m4 .wave2 {
+      background: #a855f7;
+      opacity: 0.7;
+      top: 10px;
+      right: -80px;
+      width: 250px;
+      height: 180px;
+    }
+    .m4 .wave3 {
+      background: #7c3aed;
+      bottom: -80px;
+      left: -150px;
+      width: 350px;
+      height: 200px;
+    }
+    .m4 .wave4 {
+      background: #a855f7;
+      opacity: 0.6;
+      bottom: -60px;
+      left: -100px;
+      width: 280px;
+      height: 160px;
+    }
+
+    /* MODELO 5 - Engrenagens */
+    .m5 .gear {
+      position: absolute;
+      border-radius: 50%;
+      border: 8px solid #7c3aed;
+    }
+    .m5 .gear::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 30%;
+      height: 30%;
+      background: #7c3aed;
+      border-radius: 50%;
+    }
+    .m5 .gear1 {
+      width: 100px;
+      height: 100px;
+      top: 20px;
+      right: 20px;
+    }
+    .m5 .gear2 {
+      width: 70px;
+      height: 70px;
+      top: 100px;
+      right: 100px;
+      border-color: #a855f7;
+    }
+    .m5 .gear2::before { background: #a855f7; }
+    .m5 .gear3 {
+      width: 80px;
+      height: 80px;
+      bottom: 60px;
+      left: 20px;
+    }
+    .m5 .gear4 {
+      width: 50px;
+      height: 50px;
+      bottom: 120px;
+      left: 80px;
+      border-color: #a855f7;
+    }
+    .m5 .gear4::before { background: #a855f7; }
+    .m5 .cog {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #7c3aed;
+    }
+
+    /* MODELO 6 - Arcos e Colunas */
+    .m6 .arch-group {
+      position: absolute;
+      bottom: 30px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+    }
+    .m6 .arch {
+      width: 50px;
+      height: 80px;
+      border: 4px solid #7c3aed;
+      border-bottom: none;
+      border-radius: 25px 25px 0 0;
+    }
+    .m6 .arch:nth-child(2) { border-color: #a855f7; height: 100px; }
+    .m6 .arch:nth-child(3) { height: 120px; }
+    .m6 .arch:nth-child(4) { border-color: #a855f7; height: 100px; }
+    .m6 .column {
+      position: absolute;
+      width: 15px;
+      background: linear-gradient(to bottom, #7c3aed, #a855f7);
+    }
+    .m6 .col1 { height: 150px; top: 30px; right: 20px; }
+    .m6 .col2 { height: 120px; top: 60px; right: 45px; opacity: 0.7; }
+    .m6 .col3 { height: 100px; top: 80px; left: 20px; }
+    .m6 .corner-ornament {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 60px;
+      height: 60px;
+      border-left: 4px solid #7c3aed;
+      border-top: 4px solid #7c3aed;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid">
+    
+    <!-- MODELO 1 - Círculos e Elipses -->
+    <div class="model-container">
+      <p class="model-title">MODELO 1 - Círculos e Elipses</p>
+      <div class="page m1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+        <div class="ellipse1"></div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+    <!-- MODELO 2 - Skyline -->
+    <div class="model-container">
+      <p class="model-title">MODELO 2 - Skyline / Construção</p>
+      <div class="page m2">
+        <div class="skyline">
+          <div class="building b1"></div>
+          <div class="building b2"></div>
+          <div class="building b3"></div>
+          <div class="building b4"></div>
+          <div class="building b5"></div>
+          <div class="building b6"></div>
+          <div class="building b7"></div>
+        </div>
+        <div class="crane"></div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+    <!-- MODELO 3 - Hexágonos -->
+    <div class="model-container">
+      <p class="model-title">MODELO 3 - Hexágonos / Colmeia</p>
+      <div class="page m3">
+        <div class="hex-container">
+          <div class="hexagon hex1"></div>
+          <div class="hexagon hex2"></div>
+          <div class="hexagon hex3"></div>
+          <div class="hexagon hex4"></div>
+        </div>
+        <div class="hex-bottom">
+          <div class="hexagon hex5"></div>
+          <div class="hexagon hex6"></div>
+        </div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+    <!-- MODELO 4 - Ondas -->
+    <div class="model-container">
+      <p class="model-title">MODELO 4 - Ondas / Curvas</p>
+      <div class="page m4">
+        <div class="wave wave1"></div>
+        <div class="wave wave2"></div>
+        <div class="wave wave3"></div>
+        <div class="wave wave4"></div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+    <!-- MODELO 5 - Engrenagens -->
+    <div class="model-container">
+      <p class="model-title">MODELO 5 - Engrenagens</p>
+      <div class="page m5">
+        <div class="gear gear1"></div>
+        <div class="gear gear2"></div>
+        <div class="gear gear3"></div>
+        <div class="gear gear4"></div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+    <!-- MODELO 6 - Arcos e Colunas -->
+    <div class="model-container">
+      <p class="model-title">MODELO 6 - Arcos e Colunas</p>
+      <div class="page m6">
+        <div class="corner-ornament"></div>
+        <div class="column col1"></div>
+        <div class="column col2"></div>
+        <div class="column col3"></div>
+        <div class="arch-group">
+          <div class="arch"></div>
+          <div class="arch"></div>
+          <div class="arch"></div>
+          <div class="arch"></div>
+        </div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
