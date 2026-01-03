@@ -2758,8 +2758,8 @@ async def generate_orcamento_html(orcamento_id: str):
   <!-- Páginas geradas -->
   <div id="pages"></div>
 
-  <!-- Botões (fora do PDF) -->
-  <div class="actions" data-html2canvas-ignore>
+  <!-- Barra de Ações Fixa na Parte Inferior -->
+  <div class="actions-bar" data-html2canvas-ignore>
     <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
     <button class="btn orange" onclick="baixarPDF()">⬇️ Baixar PDF</button>
     {gerar_botao_fechar_negocio(orcamento)}
