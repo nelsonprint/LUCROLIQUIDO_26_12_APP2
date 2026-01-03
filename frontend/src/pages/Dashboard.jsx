@@ -161,8 +161,9 @@ const Dashboard = ({ user, onLogout }) => {
       setContasResumo(response.data);
       
       // Calcular lucro líquido do mês atual
-      const receitas = response.data?.total_receber || 0;
-      const despesas = response.data?.total_pagar || 0;
+      // Usar total de receber e pagar do resumo mensal
+      const receitas = response.data?.receber?.total || 0;
+      const despesas = response.data?.pagar?.total || 0;
       const lucro = receitas - despesas;
       setLucroMesAtual({ receitas, despesas, lucro });
     } catch (error) {
