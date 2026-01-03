@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Modelos de Capas - Construção Civil e Elétrica</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      padding: 30px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .model-container {
+      text-align: center;
+    }
+    .model-title {
+      color: #f59e0b;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+    .page {
+      width: 280px;
+      height: 396px;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+      margin: 0 auto;
+    }
+    .content {
+      position: relative;
+      z-index: 10;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 25px 20px;
+    }
+    .logo-box {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #f59e0b;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 15px;
+      background: white;
+    }
+    .logo-text {
+      font-size: 20px;
+      color: #f59e0b;
+      font-weight: bold;
+    }
+    .nome-fantasia {
+      font-size: 16px;
+      font-weight: 800;
+      color: #1f2937;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .razao-social {
+      font-size: 8px;
+      color: #6b7280;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .divider {
+      width: 40px;
+      height: 3px;
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
+      margin: 20px 0 15px 0;
+    }
+    .doc-title {
+      font-size: 14px;
+      color: #f59e0b;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .footer-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
+      padding: 8px;
+    }
+    .footer-bar p {
+      font-size: 6px;
+      color: white;
+      text-align: center;
+    }
+
+    /* MODELO 1 - Tijolos */
+    .m1 .brick-wall {
+      position: absolute;
+      bottom: 30px;
+      left: 0;
+      right: 0;
+    }
+    .m1 .brick-row {
+      display: flex;
+      justify-content: flex-start;
+    }
+    .m1 .brick {
+      width: 40px;
+      height: 18px;
+      background: #f59e0b;
+      margin: 1px;
+      border-radius: 2px;
+    }
+    .m1 .brick-row:nth-child(even) {
+      margin-left: 20px;
+    }
+    .m1 .brick:nth-child(even) {
+      background: #fbbf24;
+    }
+    .m1 .brick-row:nth-child(3) .brick,
+    .m1 .brick-row:nth-child(5) .brick {
+      opacity: 0.7;
+    }
+    .m1 .trowel {
+      position: absolute;
+      top: 200px;
+      right: 30px;
+      width: 60px;
+      height: 20px;
+      background: #f59e0b;
+      border-radius: 0 10px 10px 0;
+      transform: rotate(-30deg);
+    }
+    .m1 .trowel::before {
+      content: '';
+      position: absolute;
+      left: -15px;
+      top: 5px;
+      width: 20px;
+      height: 10px;
+      background: #92400e;
+      border-radius: 3px;
+    }
+
+    /* MODELO 2 - Raios / Elétrica */
+    .m2 .lightning {
+      position: absolute;
+      width: 0;
+      height: 0;
+    }
+    .m2 .bolt1 {
+      top: 20px;
+      right: 40px;
+      border-left: 25px solid transparent;
+      border-right: 25px solid transparent;
+      border-top: 80px solid #f59e0b;
+      transform: skewX(-10deg);
+    }
+    .m2 .bolt1::after {
+      content: '';
+      position: absolute;
+      top: -30px;
+      left: -10px;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-bottom: 60px solid #f59e0b;
+      transform: skewX(10deg);
+    }
+    .m2 .bolt2 {
+      top: 60px;
+      right: 80px;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 50px solid #fbbf24;
+      transform: skewX(-10deg);
+      opacity: 0.7;
+    }
+    .m2 .circuit-line {
+      position: absolute;
+      background: #f59e0b;
+      height: 3px;
+    }
+    .m2 .cl1 { width: 80px; bottom: 150px; left: 20px; }
+    .m2 .cl2 { width: 3px; height: 40px; bottom: 110px; left: 20px; }
+    .m2 .cl3 { width: 50px; bottom: 110px; left: 20px; }
+    .m2 .cl4 { width: 3px; height: 30px; bottom: 80px; left: 70px; }
+    .m2 .node {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #f59e0b;
+      border-radius: 50%;
+    }
+    .m2 .n1 { bottom: 147px; left: 95px; }
+    .m2 .n2 { bottom: 107px; left: 65px; }
+    .m2 .n3 { bottom: 77px; left: 65px; }
+    .m2 .outlet {
+      position: absolute;
+      bottom: 60px;
+      right: 30px;
+      width: 35px;
+      height: 50px;
+      border: 3px solid #f59e0b;
+      border-radius: 5px;
+    }
+    .m2 .outlet::before,
+    .m2 .outlet::after {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 12px;
+      background: #f59e0b;
+      border-radius: 3px;
+      top: 10px;
+    }
+    .m2 .outlet::before { left: 6px; }
+    .m2 .outlet::after { right: 6px; }
+
+    /* MODELO 3 - Guindaste/Grua */
+    .m3 .crane-base {
+      position: absolute;
+      bottom: 30px;
+      right: 50px;
+      width: 40px;
+      height: 8px;
+      background: #f59e0b;
+    }
+    .m3 .crane-tower {
+      position: absolute;
+      bottom: 38px;
+      right: 60px;
+      width: 12px;
+      height: 200px;
+      background: linear-gradient(to top, #f59e0b, #fbbf24);
+    }
+    .m3 .crane-arm {
+      position: absolute;
+      bottom: 230px;
+      right: 0px;
+      width: 150px;
+      height: 8px;
+      background: #f59e0b;
+    }
+    .m3 .crane-counter {
+      position: absolute;
+      bottom: 230px;
+      right: 140px;
+      width: 50px;
+      height: 8px;
+      background: #fbbf24;
+    }
+    .m3 .crane-cable {
+      position: absolute;
+      bottom: 160px;
+      right: 20px;
+      width: 2px;
+      height: 70px;
+      background: #92400e;
+    }
+    .m3 .crane-hook {
+      position: absolute;
+      bottom: 150px;
+      right: 15px;
+      width: 15px;
+      height: 15px;
+      border: 3px solid #92400e;
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+    }
+    .m3 .building-frame {
+      position: absolute;
+      bottom: 30px;
+      left: 20px;
+      width: 80px;
+      height: 120px;
+      border: 4px solid #f59e0b;
+      border-bottom: none;
+    }
+    .m3 .floor {
+      position: absolute;
+      width: 100%;
+      height: 3px;
+      background: #f59e0b;
+    }
+    .m3 .floor1 { bottom: 40px; }
+    .m3 .floor2 { bottom: 80px; }
+
+    /* MODELO 4 - Planta Baixa / Blueprint */
+    .m4 .blueprint {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 30px;
+      background: 
+        linear-gradient(rgba(245,158,11,0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245,158,11,0.1) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    .m4 .wall {
+      position: absolute;
+      background: #f59e0b;
+    }
+    .m4 .w1 { width: 120px; height: 4px; bottom: 100px; left: 30px; }
+    .m4 .w2 { width: 4px; height: 80px; bottom: 100px; left: 30px; }
+    .m4 .w3 { width: 4px; height: 80px; bottom: 100px; left: 146px; }
+    .m4 .w4 { width: 60px; height: 4px; bottom: 176px; left: 30px; }
+    .m4 .w5 { width: 60px; height: 4px; bottom: 176px; left: 90px; }
+    .m4 .w6 { width: 4px; height: 40px; bottom: 140px; left: 86px; }
+    .m4 .door {
+      position: absolute;
+      bottom: 100px;
+      left: 55px;
+      width: 25px;
+      height: 4px;
+      background: white;
+      border-bottom: 2px dashed #f59e0b;
+    }
+    .m4 .door-arc {
+      position: absolute;
+      bottom: 104px;
+      left: 55px;
+      width: 25px;
+      height: 25px;
+      border: 2px dashed #f59e0b;
+      border-radius: 0 25px 0 0;
+      border-left: none;
+      border-bottom: none;
+    }
+    .m4 .dimension {
+      position: absolute;
+      font-size: 8px;
+      color: #f59e0b;
+    }
+    .m4 .dim1 { bottom: 85px; left: 70px; }
+    .m4 .dim2 { bottom: 140px; left: 10px; transform: rotate(-90deg); }
+    .m4 .compass {
+      position: absolute;
+      top: 60px;
+      right: 30px;
+      width: 30px;
+      height: 30px;
+      border: 2px solid #f59e0b;
+      border-radius: 50%;
+    }
+    .m4 .compass::before {
+      content: 'N';
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: #f59e0b;
+      font-weight: bold;
+    }
+    .m4 .compass::after {
+      content: '';
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-bottom: 15px solid #f59e0b;
+    }
+
+    /* MODELO 5 - Torres de Energia */
+    .m5 .tower {
+      position: absolute;
+      bottom: 30px;
+    }
+    .m5 .tower-main {
+      width: 0;
+      height: 0;
+      border-left: 30px solid transparent;
+      border-right: 30px solid transparent;
+      border-bottom: 180px solid transparent;
+      border-bottom-color: transparent;
+      position: relative;
+    }
+    .m5 .tower-leg-left,
+    .m5 .tower-leg-right {
+      position: absolute;
+      width: 4px;
+      height: 180px;
+      background: #f59e0b;
+      bottom: 0;
+    }
+    .m5 .t1 .tower-leg-left { left: 50px; transform: rotate(-8deg); transform-origin: bottom; }
+    .m5 .t1 .tower-leg-right { left: 85px; transform: rotate(8deg); transform-origin: bottom; }
+    .m5 .t2 .tower-leg-left { left: 180px; transform: rotate(-8deg); transform-origin: bottom; }
+    .m5 .t2 .tower-leg-right { left: 215px; transform: rotate(8deg); transform-origin: bottom; }
+    .m5 .tower-cross {
+      position: absolute;
+      width: 50px;
+      height: 3px;
+      background: #f59e0b;
+      left: 45px;
+    }
+    .m5 .tc1 { bottom: 160px; width: 30px; left: 55px; }
+    .m5 .tc2 { bottom: 120px; width: 40px; left: 50px; }
+    .m5 .tc3 { bottom: 80px; }
+    .m5 .tower-arm {
+      position: absolute;
+      bottom: 175px;
+      width: 100px;
+      height: 3px;
+      background: #fbbf24;
+      left: 20px;
+    }
+    .m5 .power-line {
+      position: absolute;
+      bottom: 175px;
+      left: 120px;
+      width: 80px;
+      height: 40px;
+      border-bottom: 2px solid #f59e0b;
+      border-radius: 0 0 50% 50%;
+    }
+    .m5 .t2 .tower-cross {
+      left: 175px;
+    }
+    .m5 .t2 .tc1 { left: 185px; }
+    .m5 .t2 .tc2 { left: 180px; }
+
+    /* MODELO 6 - Ferramentas */
+    .m6 .tool {
+      position: absolute;
+    }
+    /* Martelo */
+    .m6 .hammer-handle {
+      width: 8px;
+      height: 70px;
+      background: #92400e;
+      border-radius: 3px;
+      top: 40px;
+      right: 60px;
+      transform: rotate(-45deg);
+    }
+    .m6 .hammer-head {
+      width: 40px;
+      height: 18px;
+      background: #f59e0b;
+      border-radius: 3px;
+      top: 25px;
+      right: 40px;
+      transform: rotate(-45deg);
+    }
+    /* Chave de Fenda */
+    .m6 .screwdriver-handle {
+      width: 12px;
+      height: 35px;
+      background: #fbbf24;
+      border-radius: 5px;
+      top: 120px;
+      right: 40px;
+      transform: rotate(20deg);
+    }
+    .m6 .screwdriver-shaft {
+      width: 5px;
+      height: 50px;
+      background: #6b7280;
+      top: 150px;
+      right: 47px;
+      transform: rotate(20deg);
+    }
+    /* Chave Inglesa */
+    .m6 .wrench {
+      width: 80px;
+      height: 15px;
+      background: #f59e0b;
+      border-radius: 3px;
+      bottom: 120px;
+      left: 20px;
+      transform: rotate(-20deg);
+    }
+    .m6 .wrench::before {
+      content: '';
+      position: absolute;
+      right: -5px;
+      top: -5px;
+      width: 25px;
+      height: 25px;
+      border: 5px solid #f59e0b;
+      border-radius: 50%;
+      background: white;
+    }
+    /* Capacete */
+    .m6 .helmet {
+      width: 60px;
+      height: 35px;
+      background: #fbbf24;
+      border-radius: 30px 30px 0 0;
+      bottom: 60px;
+      right: 30px;
+    }
+    .m6 .helmet::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: -5px;
+      width: 70px;
+      height: 10px;
+      background: #f59e0b;
+      border-radius: 3px;
+    }
+    /* Régua/Esquadro */
+    .m6 .ruler {
+      width: 100px;
+      height: 12px;
+      background: #f59e0b;
+      bottom: 170px;
+      left: 10px;
+      transform: rotate(-10deg);
+    }
+    .m6 .ruler::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 12px;
+      height: 60px;
+      background: #f59e0b;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid">
+    
+    <!-- MODELO 1 - Tijolos -->
+    <div class="model-container">
+      <p class="model-title">MODELO 1 - Tijolos / Alvenaria</p>
+      <div class="page m1">
+        <div class="trowel"></div>
+        <div class="brick-wall">
+          <div class="brick-row">
+            <div class="brick"></div><div class="brick"></div><div class="brick"></div>
+            <div class="brick"></div><div class="brick"></div><div class="brick"></div><div class="brick"></div>
+          </div>
+          <div class="brick-row">
+            <div class="brick"></div><div class="brick"></div><div class="brick"></div>
+            <div class="brick"></div><div class="brick"></div><div class="brick"></div>
+          </div>
+          <div class="brick-row">
+            <div class="brick"></div><div class="brick"></div><div class="brick"></div>
+            <div class="brick"></div><div class="brick"></div><div class="brick"></div><div class="brick"></div>
+          </div>
+          <div class="brick-row">
+            <div class="brick"></div><div class="brick"></div><div class="brick"></div>
+            <div class="brick"></div><div class="brick"></div><div class="brick"></div>
+          </div>
+          <div class="brick-row">
+            <div class="brick"></div><div class="brick"></div><div class="brick"></div>
+            <div class="brick"></div><div class="brick"></div><div class="brick"></div><div class="brick"></div>
+          </div>
+        </div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+    <!-- MODELO 2 - Elétrica -->
+    <div class="model-container">
+      <p class="model-title">MODELO 2 - Elétrica / Raios</p>
+      <div class="page m2">
+        <div class="lightning bolt1"></div>
+        <div class="lightning bolt2"></div>
+        <div class="circuit-line cl1"></div>
+        <div class="circuit-line cl2"></div>
+        <div class="circuit-line cl3"></div>
+        <div class="circuit-line cl4"></div>
+        <div class="node n1"></div>
+        <div class="node n2"></div>
+        <div class="node n3"></div>
+        <div class="outlet"></div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+    <!-- MODELO 3 - Guindaste -->
+    <div class="model-container">
+      <p class="model-title">MODELO 3 - Guindaste / Obra</p>
+      <div class="page m3">
+        <div class="building-frame">
+          <div class="floor floor1"></div>
+          <div class="floor floor2"></div>
+        </div>
+        <div class="crane-base"></div>
+        <div class="crane-tower"></div>
+        <div class="crane-arm"></div>
+        <div class="crane-counter"></div>
+        <div class="crane-cable"></div>
+        <div class="crane-hook"></div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+    <!-- MODELO 4 - Planta Baixa -->
+    <div class="model-container">
+      <p class="model-title">MODELO 4 - Planta Baixa</p>
+      <div class="page m4">
+        <div class="blueprint"></div>
+        <div class="wall w1"></div>
+        <div class="wall w2"></div>
+        <div class="wall w3"></div>
+        <div class="wall w4"></div>
+        <div class="wall w5"></div>
+        <div class="wall w6"></div>
+        <div class="door"></div>
+        <div class="door-arc"></div>
+        <span class="dimension dim1">3.50m</span>
+        <span class="dimension dim2">2.80m</span>
+        <div class="compass"></div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+    <!-- MODELO 5 - Torres de Energia -->
+    <div class="model-container">
+      <p class="model-title">MODELO 5 - Torres de Energia</p>
+      <div class="page m5">
+        <div class="tower t1">
+          <div class="tower-leg-left"></div>
+          <div class="tower-leg-right"></div>
+          <div class="tower-cross tc1"></div>
+          <div class="tower-cross tc2"></div>
+          <div class="tower-cross tc3"></div>
+          <div class="tower-arm"></div>
+        </div>
+        <div class="power-line"></div>
+        <div class="tower t2">
+          <div class="tower-leg-left"></div>
+          <div class="tower-leg-right"></div>
+          <div class="tower-cross tc1"></div>
+          <div class="tower-cross tc2"></div>
+          <div class="tower-cross tc3"></div>
+        </div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+    <!-- MODELO 6 - Ferramentas -->
+    <div class="model-container">
+      <p class="model-title">MODELO 6 - Ferramentas</p>
+      <div class="page m6">
+        <div class="tool hammer-handle"></div>
+        <div class="tool hammer-head"></div>
+        <div class="tool screwdriver-handle"></div>
+        <div class="tool screwdriver-shaft"></div>
+        <div class="tool wrench"></div>
+        <div class="tool helmet"></div>
+        <div class="tool ruler"></div>
+        <div class="content">
+          <div class="logo-box"><span class="logo-text">LL</span></div>
+          <h1 class="nome-fantasia">Lucro Líquido</h1>
+          <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+          <div class="divider"></div>
+          <h2 class="doc-title">Proposta</h2>
+        </div>
+        <div class="footer-bar"><p>contato@empresa.com.br</p></div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
