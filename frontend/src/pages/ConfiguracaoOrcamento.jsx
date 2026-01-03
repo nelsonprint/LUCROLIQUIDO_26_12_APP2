@@ -107,6 +107,48 @@ const ConfiguracaoOrcamento = ({ user, onLogout }) => {
     }
   };
 
+  const handleCapaUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validar tipo
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Apenas JPG e PNG são permitidos');
+      return;
+    }
+
+    // Validar tamanho (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Imagem muito grande. Máximo: 10MB');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setUploadingCapa(true);
+      const response = await axiosInstance.post('/upload-capa', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setConfig({ 
+        ...config, 
+        capa_personalizada_url: response.data.capa_url,
+        capa_tipo: 'personalizado'
+      });
+      toast.success('Capa enviada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao enviar capa:', error);
+      toast.error('Erro ao enviar capa');
+    } finally {
+      setUploadingCapa(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!company.id) {
       toast.error('Empresa não encontrada');
