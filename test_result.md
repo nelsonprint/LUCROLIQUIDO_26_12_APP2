@@ -325,7 +325,11 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Boleto Bancário - Form fields in NovoOrcamentoGrid"
+    - "Sem Comissão - Vendedor selection in both quote types"
+    - "CRO Gráfico - Dashboard lucro líquido chart"
+    - "Backend - No commission when vendedor_id is sem_comissao"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
