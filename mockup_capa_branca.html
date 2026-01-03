@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capa Orçamento - Fundo Branco</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #e5e5e5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .page-a4 {
+      width: 595px;
+      height: 842px;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.15);
+    }
+    
+    /* Formas Geométricas - Cores do cliente */
+    .shape {
+      position: absolute;
+    }
+    
+    /* Triângulo grande superior direito */
+    .triangle-1 {
+      width: 0;
+      height: 0;
+      border-left: 350px solid transparent;
+      border-right: 0px solid transparent;
+      border-bottom: 450px solid #7c3aed;
+      top: 0;
+      right: 0;
+    }
+    
+    /* Triângulo médio sobreposto */
+    .triangle-2 {
+      width: 0;
+      height: 0;
+      border-left: 250px solid transparent;
+      border-right: 0px solid transparent;
+      border-bottom: 320px solid #a855f7;
+      top: 60px;
+      right: 0;
+      opacity: 0.85;
+    }
+    
+    /* Triângulo inferior esquerdo */
+    .triangle-3 {
+      width: 0;
+      height: 0;
+      border-left: 0px solid transparent;
+      border-right: 300px solid transparent;
+      border-top: 250px solid #7c3aed;
+      bottom: 0;
+      left: 0;
+    }
+    
+    /* Triângulo pequeno decorativo inferior */
+    .triangle-4 {
+      width: 0;
+      height: 0;
+      border-left: 0px solid transparent;
+      border-right: 180px solid transparent;
+      border-top: 150px solid #a855f7;
+      bottom: 0;
+      left: 80px;
+      opacity: 0.7;
+    }
+    
+    /* Faixa diagonal decorativa */
+    .diagonal-stripe {
+      position: absolute;
+      width: 600px;
+      height: 8px;
+      background: linear-gradient(90deg, #7c3aed, #a855f7);
+      transform: rotate(-35deg);
+      top: 280px;
+      left: -100px;
+      opacity: 0.3;
+    }
+    
+    /* Círculos decorativos */
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+    }
+    
+    .circle-1 {
+      width: 80px;
+      height: 80px;
+      border: 3px solid #7c3aed;
+      opacity: 0.3;
+      top: 180px;
+      left: 40px;
+    }
+    
+    .circle-2 {
+      width: 40px;
+      height: 40px;
+      background: #a855f7;
+      opacity: 0.2;
+      top: 350px;
+      left: 80px;
+    }
+    
+    .circle-3 {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #7c3aed;
+      opacity: 0.2;
+      bottom: 300px;
+      right: 60px;
+    }
+    
+    /* Pontos decorativos */
+    .dots-pattern {
+      position: absolute;
+      display: grid;
+      grid-template-columns: repeat(5, 8px);
+      gap: 12px;
+      opacity: 0.3;
+    }
+    
+    .dots-pattern span {
+      width: 8px;
+      height: 8px;
+      background: #7c3aed;
+      border-radius: 50%;
+    }
+    
+    .dots-1 {
+      top: 400px;
+      left: 30px;
+    }
+    
+    .dots-2 {
+      bottom: 350px;
+      right: 250px;
+    }
+    
+    /* Conteúdo */
+    .content {
+      position: relative;
+      z-index: 10;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 60px 50px;
+    }
+    
+    /* Área superior - Logo e empresa */
+    .header-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding-left: 20px;
+    }
+    
+    /* Logo Container */
+    .logo-container {
+      width: 140px;
+      height: 140px;
+      background: #ffffff;
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 30px;
+      border: 3px solid #7c3aed;
+      box-shadow: 0 8px 30px rgba(124, 58, 237, 0.2);
+    }
+    
+    .logo-placeholder {
+      font-size: 48px;
+      color: #7c3aed;
+      font-weight: bold;
+    }
+    
+    /* Nome Fantasia */
+    .nome-fantasia {
+      font-size: 38px;
+      font-weight: 800;
+      color: #1f2937;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 10px;
+    }
+    
+    /* Razão Social */
+    .razao-social {
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: 400;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    
+    /* Área central - Título */
+    .title-area {
+      padding: 40px 0;
+      padding-left: 20px;
+    }
+    
+    /* Divisor colorido */
+    .divider {
+      width: 80px;
+      height: 5px;
+      background: linear-gradient(90deg, #7c3aed, #a855f7);
+      border-radius: 3px;
+      margin-bottom: 25px;
+    }
+    
+    /* Título do documento */
+    .document-title {
+      font-size: 32px;
+      color: #7c3aed;
+      font-weight: 700;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      margin-bottom: 15px;
+    }
+    
+    /* Subtítulo */
+    .document-subtitle {
+      font-size: 14px;
+      color: #9ca3af;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    
+    /* Info do cliente */
+    .client-area {
+      padding-left: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .client-label {
+      font-size: 11px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+    
+    .client-name {
+      font-size: 18px;
+      color: #374151;
+      font-weight: 600;
+    }
+    
+    /* Rodapé */
+    .footer {
+      background: linear-gradient(90deg, #7c3aed, #a855f7);
+      padding: 20px 30px;
+      margin: 0 -50px -60px -50px;
+    }
+    
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .footer-text {
+      font-size: 11px;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+    }
+    
+    .footer-orcamento {
+      font-size: 12px;
+      color: #ffffff;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    
+    /* Badge do número */
+    .badge {
+      position: absolute;
+      top: 30px;
+      left: 30px;
+      background: #ffffff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 2px solid #7c3aed;
+      z-index: 20;
+    }
+    
+    .badge-text {
+      font-size: 10px;
+      color: #7c3aed;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-a4">
+    <!-- Formas Geométricas -->
+    <div class="shape triangle-1"></div>
+    <div class="shape triangle-2"></div>
+    <div class="shape triangle-3"></div>
+    <div class="shape triangle-4"></div>
+    
+    <!-- Elementos decorativos -->
+    <div class="diagonal-stripe"></div>
+    <div class="circle circle-1"></div>
+    <div class="circle circle-2"></div>
+    <div class="circle circle-3"></div>
+    
+    <div class="dots-pattern dots-1">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    
+    <!-- Badge -->
+    <div class="badge">
+      <span class="badge-text">Orçamento #2025-0042</span>
+    </div>
+    
+    <!-- Conteúdo Principal -->
+    <div class="content">
+      <!-- Logo e Empresa -->
+      <div class="header-area">
+        <div class="logo-container">
+          <span class="logo-placeholder">LL</span>
+        </div>
+        <h1 class="nome-fantasia">Lucro Líquido</h1>
+        <p class="razao-social">Lucro Líquido Consultoria LTDA</p>
+      </div>
+      
+      <!-- Título -->
+      <div class="title-area">
+        <div class="divider"></div>
+        <h2 class="document-title">Proposta Comercial</h2>
+        <p class="document-subtitle">Documento válido por 30 dias</p>
+      </div>
+      
+      <!-- Cliente -->
+      <div class="client-area">
+        <p class="client-label">Preparado para</p>
+        <p class="client-name">João da Silva</p>
+      </div>
+      
+      <!-- Rodapé -->
+      <div class="footer">
+        <div class="footer-content">
+          <span class="footer-text">CNPJ: 12.345.678/0001-90 • contato@lucroliquido.com.br • (11) 99999-9999</span>
+          <span class="footer-orcamento">Janeiro 2025</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
