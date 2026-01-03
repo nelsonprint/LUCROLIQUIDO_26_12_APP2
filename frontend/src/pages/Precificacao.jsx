@@ -1817,6 +1817,123 @@ const Precificacao = ({ user, onLogout }) => {
                   />
                 </div>
 
+                {/* Forma de Pagamento Avançada */}
+                <div className="md:col-span-2 p-4 bg-gradient-to-r from-green-900/20 to-emerald-900/20 rounded-lg border border-green-500/30">
+                  <Label className="text-green-400 flex items-center gap-2 mb-3">
+                    <Banknote size={16} />
+                    Forma de Pagamento
+                  </Label>
+                  <RadioGroup 
+                    value={orcamentoData.forma_pagamento} 
+                    onValueChange={(value) => setOrcamentoData({
+                      ...orcamentoData, 
+                      forma_pagamento: value,
+                      entrada_percentual: value === 'avista' ? 100 : (value === 'boleto' ? 0 : 30),
+                      num_parcelas: value === 'avista' ? 0 : (value === 'boleto' ? 0 : 2),
+                      boleto_num_parcelas: value === 'boleto' ? 1 : orcamentoData.boleto_num_parcelas,
+                    })}
+                    className="grid grid-cols-3 gap-3"
+                  >
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-zinc-700 hover:border-green-500/50 transition-colors">
+                      <RadioGroupItem value="avista" id="prec_avista" />
+                      <Label htmlFor="prec_avista" className="cursor-pointer flex-1">
+                        <span className="font-medium text-sm">À Vista</span>
+                        <p className="text-xs text-zinc-400">Pagamento único</p>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-zinc-700 hover:border-green-500/50 transition-colors">
+                      <RadioGroupItem value="entrada_parcelas" id="prec_entrada_parcelas" />
+                      <Label htmlFor="prec_entrada_parcelas" className="cursor-pointer flex-1">
+                        <span className="font-medium text-sm">Entrada + Parcelas</span>
+                        <p className="text-xs text-zinc-400">Cartão de crédito</p>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-zinc-700 hover:border-yellow-500/50 transition-colors">
+                      <RadioGroupItem value="boleto" id="prec_boleto" />
+                      <Label htmlFor="prec_boleto" className="cursor-pointer flex-1">
+                        <span className="font-medium text-sm">Boleto Bancário</span>
+                        <p className="text-xs text-zinc-400">1 a 20 parcelas</p>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+
+                  {/* Configuração de Boleto */}
+                  {orcamentoData.forma_pagamento === 'boleto' && (
+                    <div className="mt-4 pt-4 border-t border-zinc-700 grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm">Número de Parcelas</Label>
+                        <Select
+                          value={String(orcamentoData.boleto_num_parcelas)}
+                          onValueChange={(value) => setOrcamentoData({
+                            ...orcamentoData, 
+                            boleto_num_parcelas: parseInt(value)
+                          })}
+                        >
+                          <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-zinc-800 border-zinc-700 max-h-[300px]">
+                            {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
+                              <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm">Taxa do Boleto (R$)</Label>
+                        <MoneyInput
+                          value={orcamentoData.boleto_taxa}
+                          onChange={(value) => setOrcamentoData({
+                            ...orcamentoData, 
+                            boleto_taxa: value
+                          })}
+                          className="bg-zinc-800 border-zinc-700"
+                        />
+                        <p className="text-xs text-zinc-500 mt-1">Valor cobrado por boleto</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Configuração de Entrada + Parcelas */}
+                  {orcamentoData.forma_pagamento === 'entrada_parcelas' && (
+                    <div className="mt-4 pt-4 border-t border-zinc-700 grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm">Entrada (%)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={orcamentoData.entrada_percentual}
+                          onChange={(e) => setOrcamentoData({
+                            ...orcamentoData, 
+                            entrada_percentual: parseInt(e.target.value) || 0
+                          })}
+                          className="bg-zinc-800 border-zinc-700"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Número de Parcelas</Label>
+                        <Select
+                          value={String(orcamentoData.num_parcelas)}
+                          onValueChange={(value) => setOrcamentoData({
+                            ...orcamentoData, 
+                            num_parcelas: parseInt(value)
+                          })}
+                        >
+                          <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-zinc-800 border-zinc-700">
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(n => (
+                              <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="md:col-span-2">
                   <Label>Observações</Label>
                   <Textarea
