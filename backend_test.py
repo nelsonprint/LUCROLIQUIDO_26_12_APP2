@@ -4750,6 +4750,59 @@ class VendedorFieldPrecificacaoTester:
             return False
 
 
+def main_orcamento_capa():
+    """Main function - Run Orçamento Cover Model Selection tests"""
+    print("🚀 Starting Orçamento Cover Model Selection API Tests")
+    print("=" * 70)
+    
+    # Initialize session and login
+    session = requests.Session()
+    
+    # Login with admin credentials
+    login_data = {
+        "email": "admin@lucroliquido.com",
+        "password": "admin123"
+    }
+    
+    try:
+        response = session.post(f"{API_BASE}/auth/login", json=login_data)
+        if response.status_code != 200:
+            print(f"❌ Login failed: {response.status_code} - {response.text}")
+            return False
+        
+        user_data = response.json()
+        company_id = "cf901b3e-0eca-429c-9b8e-d723b31ecbd4"  # From test_result.md
+        
+        print(f"✅ Login successful! User ID: {user_data['user_id']}")
+        print(f"🏢 Company ID: {company_id}")
+        
+        # Run Orçamento Capa tests
+        print("\n" + "=" * 70)
+        capa_tester = OrcamentoCapaTester(session, user_data, company_id)
+        capa_success = capa_tester.run_all_tests()
+        
+        # Final summary
+        print("\n" + "=" * 70)
+        print("🎯 FINAL TEST SUMMARY")
+        print("=" * 70)
+        
+        if capa_success:
+            print("🎉 ALL ORÇAMENTO COVER MODEL TESTS PASSED!")
+            print("✅ GET /api/orcamento-config/{company_id} returns capa fields correctly")
+            print("✅ POST /api/orcamento-config saves predefined model configuration")
+            print("✅ POST /api/upload-capa uploads cover images successfully")
+            print("✅ Model range validation (1-20) working correctly")
+            return True
+        else:
+            print("⚠️ SOME ORÇAMENTO COVER MODEL TESTS FAILED!")
+            print("❌ Cover model selection functionality may not be working correctly")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error in main execution: {str(e)}")
+        return False
+
+
 def main_sem_comissao():
     """Main function - Run 'sem_comissao' logic tests"""
     print("🚀 Starting 'sem_comissao' Logic API Tests")
@@ -4803,5 +4856,5 @@ def main_sem_comissao():
 
 
 if __name__ == "__main__":
-    # Run the 'sem_comissao' logic tests
-    main_sem_comissao()
+    # Run the Orçamento Cover Model Selection tests
+    main_orcamento_capa()
