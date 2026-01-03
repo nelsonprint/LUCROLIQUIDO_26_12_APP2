@@ -159,17 +159,21 @@ const Dashboard = ({ user, onLogout }) => {
       const currentMonth = new Date().toISOString().slice(0, 7);
       const response = await axiosInstance.get(`/contas/resumo-mensal?company_id=${selectedCompany.id}&mes=${currentMonth}`);
       setContasResumo(response.data);
-      
-      // Calcular lucro líquido do mês atual
-      // Usar total de receber e pagar do resumo mensal
-      const receitas = response.data?.receber?.total || 0;
-      const despesas = response.data?.pagar?.total || 0;
-      const lucro = receitas - despesas;
-      setLucroMesAtual({ receitas, despesas, lucro });
     } catch (error) {
       console.error('Erro ao buscar resumo de contas:', error);
     }
   };
+
+  // Atualizar CRO quando as métricas mudarem (usa mesma fonte dos KPIs)
+  useEffect(() => {
+    if (metrics) {
+      // CRO usa os mesmos dados das métricas (lançamentos)
+      const receitas = metrics.faturamento || 0;
+      const despesas = (metrics.custos || 0) + (metrics.despesas || 0);
+      const lucro = metrics.lucro_liquido || 0;
+      setLucroMesAtual({ receitas, despesas, lucro });
+    }
+  }, [metrics]);
 
   const fetchFluxoCaixa = async () => {
     if (!selectedCompany) return;
