@@ -467,6 +467,10 @@ class OrcamentoConfigCreate(BaseModel):
     cor_secundaria: str = "#3B82F6"
     texto_ciencia: str = "Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas."
     texto_garantia: str = "Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes."
+    # Modelo da capa do orçamento
+    capa_tipo: str = "modelo"  # "modelo" ou "personalizado"
+    capa_modelo: int = 1  # 1 a 20 (modelos pré-definidos)
+    capa_personalizada_url: Optional[str] = None  # URL da imagem personalizada
 
 class OrcamentoConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -477,6 +481,10 @@ class OrcamentoConfig(BaseModel):
     cor_secundaria: str = "#3B82F6"
     texto_ciencia: str = "Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas."
     texto_garantia: str = "Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes."
+    # Modelo da capa do orçamento
+    capa_tipo: str = "modelo"  # "modelo" ou "personalizado"
+    capa_modelo: int = 1  # 1 a 20 (modelos pré-definidos)
+    capa_personalizada_url: Optional[str] = None  # URL da imagem personalizada
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
