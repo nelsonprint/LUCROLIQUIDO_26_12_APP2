@@ -2564,16 +2564,57 @@ async def generate_orcamento_html(orcamento_id: str):
 
   .footer{{ padding:12px 20px 16px; border-top:1px solid var(--border); color:var(--muted); font-size:13px; }}
 
-  .actions{{ position:fixed; right:24px; bottom:24px; display:flex; gap:10px; z-index:9999; }}
-  .btn{{ background:#fff; color:var(--ink); border:2px solid var(--green); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,.08); }}
-  .btn.orange{{ border-color:var(--orange); }}
-  .btn:active{{ transform:translateY(1px); }}
+  /* Barra de ações fixa na parte inferior */
+  .actions-bar{{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:linear-gradient(to top, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-top:1px solid var(--border);
+    padding:16px 24px;
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    z-index:9999;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.1);
+  }}
+  .btn{{ 
+    background:#fff; 
+    color:var(--ink); 
+    border:2px solid var(--green); 
+    padding:12px 24px; 
+    border-radius:12px; 
+    cursor:pointer; 
+    font-weight:700; 
+    font-size:14px;
+    box-shadow:0 4px 12px rgba(0,0,0,.1);
+    transition:all 0.2s ease;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+  }}
+  .btn:hover{{ transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.15); }}
+  .btn.orange{{ border-color:var(--orange); color:var(--orange); }}
+  .btn.green-solid{{ background:var(--green); color:#fff; border-color:var(--green); }}
+  .btn.green-solid:hover{{ background:#16a34a; }}
+  .btn:active{{ transform:translateY(0px); }}
+  
+  /* Espaço extra no final do conteúdo para não ficar atrás da barra */
+  body{{ padding-bottom:90px; }}
 
   @media print{{
     @page{{ size:A4; margin:0; }}
-    body{{ background:#fff; }}
+    body{{ background:#fff; padding-bottom:0; }}
     .page{{ box-shadow:none; margin:0; }}
-    .actions{{ display:none !important; }}
+    .actions-bar{{ display:none !important; }}
+  }}
+  
+  @media (max-width: 600px){{
+    .actions-bar{{ padding:12px 16px; flex-wrap:wrap; }}
+    .btn{{ padding:10px 16px; font-size:13px; flex:1; min-width:140px; justify-content:center; }}
   }}
 </style>
 </head>
