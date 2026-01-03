@@ -197,6 +197,18 @@ backend:
         agent: "testing"
         comment: "✅ Both GET /api/funcionario/{funcionario_id}/link-vendedor and GET /api/funcionario/{funcionario_id}/link-supervisor working correctly with custom app_url. When company has custom app_url set, both vendedor and supervisor links correctly use the custom URL instead of default. Generated URLs: vendedor (https://meuapp1767158961.com.br/api/vendedor/app) and supervisor (https://meuapp1767158961.com.br/api/supervisor/app) with proper WhatsApp integration."
 
+  - task: "Backend - No commission when vendedor_id is sem_comissao"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ 'SEM_COMISSAO' LOGIC TESTS PASSED! All 4 test scenarios verified: 1) Budget creation with vendedor_id='sem_comissao' working correctly ✅ 2) Budget acceptance generates accounts receivable (3 accounts) ✅ 3) Marking installment as RECEBIDO does NOT generate commission for 'sem_comissao' vendedor ✅ 4) Normal vendedor (5% commission) still generates commission correctly ✅. Commission logic properly checks vendedor_id != 'sem_comissao' before generating commission. Tested with budget LL-2026-0003 - no commission created when installment marked as received. Proportional commission system working correctly for normal vendedores."
+
 frontend:
   - task: "Boleto Bancário - Form fields in NovoOrcamentoGrid"
     implemented: true
