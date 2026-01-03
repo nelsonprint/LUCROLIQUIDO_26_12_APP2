@@ -28,6 +28,8 @@ const Dashboard = ({ user, onLogout }) => {
   const [contasPagarPorCategoria, setContasPagarPorCategoria] = useState([]);
   const [contasReceberPorCliente, setContasReceberPorCliente] = useState([]);
   const [markupRefreshKey, setMarkupRefreshKey] = useState(0);
+  // Estado para Lucro Líquido do Mês
+  const [lucroMesAtual, setLucroMesAtual] = useState({ receitas: 0, despesas: 0, lucro: 0 });
 
   useEffect(() => {
     fetchCompanies();
