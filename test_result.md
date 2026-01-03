@@ -270,6 +270,30 @@ frontend:
         agent: "testing"
         comment: "⚠️ PARTIAL TEST: Successfully logged in and accessed dashboard with trial expired banner visible as expected. Session management issues prevented scrolling to locate CRO chart. Code review of Dashboard.jsx shows implementation of 'CRO do Mês Atual' card with donut chart, Lucro Líquido center value, Receitas/Despesas legend, and neon gradient colors (cyan/purple for receitas, red/orange for despesas). Implementation appears complete but needs manual verification."
 
+  - task: "Modelos de Capa - ConfiguracaoOrcamento grid selection"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/ConfiguracaoOrcamento.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "⚠️ FRONTEND NOT TESTED: Backend functionality for cover model selection fully tested and working. Frontend testing not performed due to system limitations. Backend tests confirm: 1) GET /api/orcamento-config/{company_id} returns capa fields correctly ✅ 2) POST /api/orcamento-config saves model configurations ✅ 3) POST /api/upload-capa handles image uploads ✅. Frontend should display 20 geometric models grid when 'Modelos Pré-definidos' selected, and upload field when 'Template Personalizado' selected. Manual verification recommended for UI interactions."
+
+  - task: "Modelos de Capa - Template Personalizado upload option"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/ConfiguracaoOrcamento.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "⚠️ FRONTEND NOT TESTED: Backend upload functionality fully tested and working. POST /api/upload-capa successfully accepts JPG/PNG files, validates type/size (max 10MB), and returns proper URLs. Frontend should show upload field when 'Template Personalizado' option selected, allow JPG/PNG file selection, and save capa_tipo='personalizado' with capa_personalizada_url. Manual verification recommended for complete upload flow testing."
+
   - task: "App do Vendedor - PWA Login System"
     implemented: true
     working: true
