@@ -4455,6 +4455,58 @@ class VendedorFieldPrecificacaoTester:
             return False
 
 
+def main_sem_comissao():
+    """Main function - Run 'sem_comissao' logic tests"""
+    print("🚀 Starting 'sem_comissao' Logic API Tests")
+    print("=" * 70)
+    
+    # Initialize session and login
+    session = requests.Session()
+    
+    # Login with admin credentials
+    login_data = {
+        "email": "admin@lucroliquido.com",
+        "password": "admin123"
+    }
+    
+    try:
+        response = session.post(f"{API_BASE}/auth/login", json=login_data)
+        if response.status_code != 200:
+            print(f"❌ Login failed: {response.status_code} - {response.text}")
+            return False
+        
+        user_data = response.json()
+        company_id = "cf901b3e-0eca-429c-9b8e-d723b31ecbd4"  # From test_result.md
+        
+        print(f"✅ Login successful! User ID: {user_data['user_id']}")
+        print(f"🏢 Company ID: {company_id}")
+        
+        # Run 'sem_comissao' logic tests
+        print("\n" + "=" * 70)
+        sem_comissao_tester = SemComissaoTester(session, user_data, company_id)
+        sem_comissao_success = sem_comissao_tester.run_all_tests()
+        
+        # Final summary
+        print("\n" + "=" * 70)
+        print("🎯 FINAL TEST SUMMARY")
+        print("=" * 70)
+        
+        if sem_comissao_success:
+            print("🎉 ALL 'SEM_COMISSAO' LOGIC TESTS PASSED!")
+            print("✅ Budget creation with 'sem_comissao' working correctly")
+            print("✅ No commission generated when vendedor_id is 'sem_comissao'")
+            print("✅ Normal vendedor commission logic still working correctly")
+            return True
+        else:
+            print("⚠️ SOME 'SEM_COMISSAO' LOGIC TESTS FAILED!")
+            print("❌ 'sem_comissao' functionality may not be working correctly")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error in main execution: {str(e)}")
+        return False
+
+
 if __name__ == "__main__":
-    # Run the commission bug fix tests
-    main()
+    # Run the 'sem_comissao' logic tests
+    main_sem_comissao()
