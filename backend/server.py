@@ -3498,6 +3498,14 @@ async def get_orcamento_config(company_id: str):
             "capa_personalizada_url": None
         }
     
+    # Garantir que os campos de capa existem (para configs criadas antes da adição destes campos)
+    if 'capa_tipo' not in config:
+        config['capa_tipo'] = 'modelo'
+    if 'capa_modelo' not in config:
+        config['capa_modelo'] = 1
+    if 'capa_personalizada_url' not in config:
+        config['capa_personalizada_url'] = None
+    
     # Converter logo para base64 para preview
     if config.get('logo_url'):
         try:
