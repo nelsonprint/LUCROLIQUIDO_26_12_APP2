@@ -1675,7 +1675,7 @@ const Precificacao = ({ user, onLogout }) => {
                     Vendedor Responsável
                   </Label>
                   <p className="text-xs text-zinc-400 mb-2">
-                    Selecione o vendedor responsável por este orçamento (comissão será gerada automaticamente).
+                    Selecione o vendedor responsável ou "Sem comissão" se for venda do proprietário.
                   </p>
                   <Select 
                     value={orcamentoData.vendedor_id || 'none'} 
@@ -1684,14 +1684,23 @@ const Precificacao = ({ user, onLogout }) => {
                         setOrcamentoData(prev => ({
                           ...prev,
                           vendedor_id: '',
-                          vendedor_nome: ''
+                          vendedor_nome: '',
+                          vendedor_comissao: true
+                        }));
+                      } else if (vendedorId === 'sem_comissao') {
+                        setOrcamentoData(prev => ({
+                          ...prev,
+                          vendedor_id: 'sem_comissao',
+                          vendedor_nome: 'Sem comissão (Proprietário)',
+                          vendedor_comissao: false
                         }));
                       } else {
                         const vendedor = vendedores.find(v => v.id === vendedorId);
                         setOrcamentoData(prev => ({
                           ...prev,
                           vendedor_id: vendedorId,
-                          vendedor_nome: vendedor?.nome_completo || ''
+                          vendedor_nome: vendedor?.nome_completo || '',
+                          vendedor_comissao: true
                         }));
                       }
                     }}
@@ -1703,6 +1712,9 @@ const Precificacao = ({ user, onLogout }) => {
                       <SelectItem value="none">
                         <span className="text-zinc-500">Nenhum vendedor</span>
                       </SelectItem>
+                      <SelectItem value="sem_comissao">
+                        <span className="text-green-400 font-medium">💼 Sem comissão (Proprietário)</span>
+                      </SelectItem>
                       {vendedores.map((vendedor) => (
                         <SelectItem key={vendedor.id} value={vendedor.id}>
                           {vendedor.nome_completo}
@@ -1713,9 +1725,14 @@ const Precificacao = ({ user, onLogout }) => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {vendedores.length === 0 && (
+                  {orcamentoData.vendedor_id === 'sem_comissao' && (
+                    <p className="text-xs text-green-400 mt-1">
+                      ✓ Venda do proprietário - nenhuma comissão será gerada.
+                    </p>
+                  )}
+                  {vendedores.length === 0 && orcamentoData.vendedor_id !== 'sem_comissao' && (
                     <p className="text-xs text-yellow-500 mt-1">
-                      ⚠️ Nenhum vendedor cadastrado. Cadastre funcionários com categoria Vendedor.
+                      ⚠️ Nenhum vendedor cadastrado. Use "Sem comissão" ou cadastre funcionários.
                     </p>
                   )}
                 </div>
