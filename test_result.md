@@ -198,6 +198,42 @@ backend:
         comment: "✅ Both GET /api/funcionario/{funcionario_id}/link-vendedor and GET /api/funcionario/{funcionario_id}/link-supervisor working correctly with custom app_url. When company has custom app_url set, both vendedor and supervisor links correctly use the custom URL instead of default. Generated URLs: vendedor (https://meuapp1767158961.com.br/api/vendedor/app) and supervisor (https://meuapp1767158961.com.br/api/supervisor/app) with proper WhatsApp integration."
 
 frontend:
+  - task: "Boleto Bancário - Form fields in NovoOrcamentoGrid"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/NovoOrcamentoGrid.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "⚠️ PARTIAL TEST: Successfully accessed /orcamentos/novo page and observed the interface structure. Found Vendedor Responsável section in Cliente tab. However, session management issues prevented complete testing of Boleto Bancário payment method in Condições tab. Code review shows implementation exists with RadioGroup for 'À Vista', 'Entrada + Parcelas', and 'Boleto Bancário' options, including boleto-specific fields (parcelas 1-20, taxa do boleto, resumo). Feature appears implemented but needs manual verification."
+
+  - task: "Sem Comissão - Vendedor selection in both quote types"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/NovoOrcamentoGrid.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "⚠️ PARTIAL TEST: Successfully accessed /orcamentos/novo page and observed Vendedor Responsável section with dropdown. Code review confirms implementation of 'sem_comissao' option with '💼 Sem comissão (Proprietário)' text and confirmation message '✓ Venda do proprietário - nenhuma comissão será gerada.' Session issues prevented complete dropdown testing, but implementation appears correct in both NovoOrcamentoGrid.jsx and Precificacao.jsx."
+
+  - task: "CRO Gráfico - Dashboard lucro líquido chart"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Dashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "⚠️ PARTIAL TEST: Successfully logged in and accessed dashboard with trial expired banner visible as expected. Session management issues prevented scrolling to locate CRO chart. Code review of Dashboard.jsx shows implementation of 'CRO do Mês Atual' card with donut chart, Lucro Líquido center value, Receitas/Despesas legend, and neon gradient colors (cyan/purple for receitas, red/orange for despesas). Implementation appears complete but needs manual verification."
+
   - task: "App do Vendedor - PWA Login System"
     implemented: true
     working: true
