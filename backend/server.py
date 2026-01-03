@@ -3454,7 +3454,10 @@ async def get_orcamento_config(company_id: str):
             "cor_primaria": "#7C3AED",
             "cor_secundaria": "#3B82F6",
             "texto_ciencia": "Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas.",
-            "texto_garantia": "Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes."
+            "texto_garantia": "Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes.",
+            "capa_tipo": "modelo",
+            "capa_modelo": 1,
+            "capa_personalizada_url": None
         }
     
     # Converter logo para base64 para preview
@@ -3472,6 +3475,21 @@ async def get_orcamento_config(company_id: str):
                     config['logo_preview'] = f"data:{mime_type};base64,{logo_base64}"
         except Exception as e:
             logger.warning(f"Erro ao gerar preview da logo: {e}")
+    
+    # Converter capa personalizada para base64 para preview
+    if config.get('capa_personalizada_url'):
+        try:
+            capa_path = Path(ROOT_DIR) / config['capa_personalizada_url'].lstrip('/')
+            if capa_path.exists():
+                with open(capa_path, 'rb') as f:
+                    capa_data = f.read()
+                    capa_base64 = base64.b64encode(capa_data).decode('utf-8')
+                    ext = capa_path.suffix.lower()
+                    mime_types = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png'}
+                    mime_type = mime_types.get(ext, 'image/jpeg')
+                    config['capa_preview'] = f"data:{mime_type};base64,{capa_base64}"
+        except Exception as e:
+            logger.warning(f"Erro ao gerar preview da capa: {e}")
     
     return config
 
