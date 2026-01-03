@@ -680,132 +680,13 @@ const Dashboard = ({ user, onLogout }) => {
 
         {/* Score de Saúde Financeira removido para simplificar */}
 
-        {/* Gráfico de Markup/BDI e Lucro Líquido do Mês */}
+        {/* Gráfico de Markup/BDI */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           <MarkupDonutChart 
             key={markupRefreshKey}
             companyId={selectedCompany?.id} 
             onConfigClick={() => setShowMarkupModal(true)} 
           />
-          
-          {/* Gráfico de Lucro Líquido do Mês Atual */}
-          <Card className="glass border-white/10 border-l-4 border-l-cyan-500 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5" />
-            <CardHeader className="relative z-10">
-              <CardTitle className="text-white text-lg flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-cyan-400" />
-                CRO do Mês Atual
-              </CardTitle>
-              <p className="text-xs text-gray-400 mt-1">
-                {new Date().toLocaleString('pt-BR', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
-              </p>
-            </CardHeader>
-            <CardContent className="relative z-10">
-              {lucroMesAtual && (
-                <>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <defs>
-                        <linearGradient id="lucroGradient" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#00FFFF" />
-                          <stop offset="100%" stopColor="#7C3AED" />
-                        </linearGradient>
-                        <linearGradient id="despesaGradient" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#FF6B6B" />
-                          <stop offset="100%" stopColor="#FF8E53" />
-                        </linearGradient>
-                        <filter id="glow">
-                          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                          <feMerge>
-                            <feMergeNode in="coloredBlur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                          </feMerge>
-                        </filter>
-                      </defs>
-                      <Pie
-                        data={[
-                          { name: 'Receitas', value: lucroMesAtual.receitas, color: 'url(#lucroGradient)' },
-                          { name: 'Despesas', value: lucroMesAtual.despesas, color: 'url(#despesaGradient)' }
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={85}
-                        paddingAngle={3}
-                        dataKey="value"
-                        stroke="none"
-                        filter="url(#glow)"
-                      >
-                        <Cell fill="url(#lucroGradient)" />
-                        <Cell fill="url(#despesaGradient)" />
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{ 
-                          backgroundColor: '#1F2937', 
-                          border: '1px solid #00FFFF',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          boxShadow: '0 0 20px rgba(0,255,255,0.3)'
-                        }}
-                        formatter={(value) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  
-                  {/* Centro do Donut - Lucro Líquido */}
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center mt-3">
-                    <p className="text-xs text-gray-400 uppercase tracking-wider">Lucro Líquido</p>
-                    <p className={`text-2xl font-bold ${lucroMesAtual.lucro >= 0 ? 'text-cyan-400' : 'text-red-400'}`}
-                       style={{ textShadow: lucroMesAtual.lucro >= 0 ? '0 0 10px rgba(0,255,255,0.5)' : '0 0 10px rgba(255,107,107,0.5)' }}>
-                      R$ {Math.abs(lucroMesAtual.lucro).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                    </p>
-                    {lucroMesAtual.lucro < 0 && <p className="text-xs text-red-400">Prejuízo</p>}
-                  </div>
-
-                  {/* Legenda */}
-                  <div className="mt-4 space-y-3">
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500" 
-                             style={{ boxShadow: '0 0 8px rgba(0,255,255,0.6)' }} />
-                        <span className="text-gray-300 text-sm">Receitas</span>
-                      </div>
-                      <span className="text-cyan-400 font-semibold text-sm" style={{ textShadow: '0 0 5px rgba(0,255,255,0.4)' }}>
-                        R$ {lucroMesAtual.receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-red-500/10 border border-red-500/30">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-400 to-orange-400" 
-                             style={{ boxShadow: '0 0 8px rgba(255,107,107,0.6)' }} />
-                        <span className="text-gray-300 text-sm">Despesas</span>
-                      </div>
-                      <span className="text-red-400 font-semibold text-sm" style={{ textShadow: '0 0 5px rgba(255,107,107,0.4)' }}>
-                        R$ {lucroMesAtual.despesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                    {/* Margem de Lucro */}
-                    {lucroMesAtual.receitas > 0 && (
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-purple-500/10 border border-purple-500/30">
-                        <span className="text-gray-300 text-sm">Margem de Lucro</span>
-                        <span className={`font-bold text-sm ${lucroMesAtual.lucro >= 0 ? 'text-purple-400' : 'text-red-400'}`}
-                              style={{ textShadow: '0 0 5px rgba(124,58,237,0.4)' }}>
-                          {((lucroMesAtual.lucro / lucroMesAtual.receitas) * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-              {(!lucroMesAtual || (lucroMesAtual.receitas === 0 && lucroMesAtual.despesas === 0)) && (
-                <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
-                  <DollarSign className="w-12 h-12 mb-2 opacity-50" />
-                  <p className="text-sm">Sem dados para o mês atual</p>
-                  <p className="text-xs mt-1">Cadastre receitas e despesas</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
         {/* Análise Detalhada e Alertas removidos para simplificar */}
