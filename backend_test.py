@@ -3370,7 +3370,7 @@ class SemComissaoTester:
                     self.log("✅ CORRECT: No commission field in response")
                 
                 # Verify no commission was created in contas_a_pagar
-                commission_response_after = self.session.get(f"{API_BASE}/contas?company_id={self.company_id}&tipo=PAGAR")
+                commission_response_after = self.session.get(f"{API_BASE}/contas/pagar?company_id={self.company_id}")
                 if commission_response_after.status_code == 200:
                     all_payables = commission_response_after.json()
                     commissions_after = len([c for c in all_payables if c.get('tipo_comissao') == 'vendedor' and c.get('orcamento_id') == self.orcamento_id])
