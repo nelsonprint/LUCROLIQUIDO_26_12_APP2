@@ -316,6 +316,150 @@ const ConfiguracaoOrcamento = ({ user, onLogout }) => {
               </CardContent>
             </Card>
 
+            {/* Card - Modelo da Capa */}
+            <Card className="glass border-white/10 border-l-4 border-l-orange-500">
+              <CardHeader>
+                <div className="flex items-center space-x-2">
+                  <FileText className="text-orange-400" size={20} />
+                  <CardTitle className="text-white">Modelo da Capa do Orçamento</CardTitle>
+                </div>
+                <CardDescription className="text-gray-400">
+                  Escolha um modelo pré-definido ou envie sua própria capa personalizada
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Seleção de tipo */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setConfig({ ...config, capa_tipo: 'modelo' })}
+                    className={`flex-1 p-4 rounded-lg border-2 transition-all ${
+                      config.capa_tipo === 'modelo' 
+                        ? 'border-orange-500 bg-orange-500/20' 
+                        : 'border-white/20 bg-white/5 hover:border-white/40'
+                    }`}
+                  >
+                    <p className="text-white font-medium">📐 Modelos Pré-definidos</p>
+                    <p className="text-xs text-gray-400 mt-1">20 modelos geométricos</p>
+                  </button>
+                  <button
+                    onClick={() => setConfig({ ...config, capa_tipo: 'personalizado' })}
+                    className={`flex-1 p-4 rounded-lg border-2 transition-all ${
+                      config.capa_tipo === 'personalizado' 
+                        ? 'border-orange-500 bg-orange-500/20' 
+                        : 'border-white/20 bg-white/5 hover:border-white/40'
+                    }`}
+                  >
+                    <p className="text-white font-medium">🖼️ Template Personalizado</p>
+                    <p className="text-xs text-gray-400 mt-1">Envie sua imagem JPG/PNG</p>
+                  </button>
+                </div>
+
+                {/* Grid de modelos pré-definidos */}
+                {config.capa_tipo === 'modelo' && (
+                  <div>
+                    <Label className="text-gray-300 mb-3 block">Selecione um modelo:</Label>
+                    <div className="grid grid-cols-4 md:grid-cols-5 gap-3">
+                      {MODELOS_CAPA.map((modelo) => (
+                        <button
+                          key={modelo.id}
+                          onClick={() => setConfig({ ...config, capa_modelo: modelo.id })}
+                          className={`relative p-3 rounded-lg border-2 transition-all aspect-[3/4] flex flex-col items-center justify-center ${
+                            config.capa_modelo === modelo.id 
+                              ? 'border-orange-500 bg-orange-500/20' 
+                              : 'border-white/20 bg-white/5 hover:border-white/40'
+                          }`}
+                          title={modelo.desc}
+                        >
+                          {/* Miniatura visual do modelo */}
+                          <div 
+                            className="w-full h-full absolute inset-0 rounded-md overflow-hidden"
+                            style={{
+                              background: `linear-gradient(135deg, ${config.cor_primaria}30, ${config.cor_secundaria}30)`
+                            }}
+                          >
+                            {/* Formas geométricas simplificadas para preview */}
+                            {modelo.id === 1 && (
+                              <>
+                                <div className="absolute top-0 right-0 w-0 h-0 border-l-[40px] border-l-transparent border-b-[60px]" style={{ borderBottomColor: config.cor_primaria }} />
+                                <div className="absolute bottom-0 left-0 w-0 h-0 border-r-[30px] border-r-transparent border-t-[40px]" style={{ borderTopColor: config.cor_secundaria }} />
+                              </>
+                            )}
+                            {modelo.id === 2 && (
+                              <>
+                                <div className="absolute top-2 right-2 w-10 h-10 rounded-full" style={{ background: config.cor_primaria }} />
+                                <div className="absolute bottom-4 left-2 w-6 h-6 rounded-full" style={{ background: config.cor_secundaria }} />
+                              </>
+                            )}
+                            {modelo.id === 3 && (
+                              <div className="absolute inset-0 flex items-center justify-center opacity-50">
+                                <div className="grid grid-cols-3 gap-1">
+                                  {[1,2,3,4,5,6].map(i => (
+                                    <div key={i} className="w-3 h-3" style={{ background: i%2 ? config.cor_primaria : config.cor_secundaria, clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }} />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {modelo.id >= 4 && (
+                              <div className="absolute inset-2 rounded opacity-30" style={{ background: `linear-gradient(${modelo.id * 18}deg, ${config.cor_primaria}, ${config.cor_secundaria})` }} />
+                            )}
+                          </div>
+                          <span className="relative z-10 text-[10px] text-white font-medium text-center">{modelo.nome}</span>
+                          {config.capa_modelo === modelo.id && (
+                            <div className="absolute top-1 right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+                              <span className="text-white text-[10px]">✓</span>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload de capa personalizada */}
+                {config.capa_tipo === 'personalizado' && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Upload de Template Personalizado</Label>
+                      <Input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png"
+                        onChange={handleCapaUpload}
+                        disabled={uploadingCapa}
+                        className="bg-white/5 border-white/10 text-white file:bg-orange-600 file:text-white file:border-0 file:px-4 file:py-2 file:rounded-md file:mr-4 cursor-pointer"
+                      />
+                      <p className="text-xs text-gray-500">
+                        Envie uma imagem JPG ou PNG (máximo 10MB). Tamanho recomendado: 595x842 pixels (A4).
+                      </p>
+                    </div>
+
+                    {/* Preview da capa personalizada */}
+                    {config.capa_personalizada_url && (
+                      <div className="p-4 bg-gray-800 rounded-lg">
+                        <p className="text-sm text-gray-400 mb-3">Preview da capa:</p>
+                        <div className="flex items-center justify-center bg-white/10 rounded-lg p-4">
+                          <img 
+                            src={config.capa_preview || `${process.env.REACT_APP_BACKEND_URL}${config.capa_personalizada_url}`}
+                            alt="Capa preview" 
+                            className="max-h-48 object-contain rounded shadow-lg"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {!config.capa_personalizada_url && (
+                      <div className="border-2 border-dashed border-white/20 rounded-lg p-8 text-center">
+                        <p className="text-gray-400">Nenhuma capa personalizada enviada</p>
+                        <p className="text-xs text-gray-500 mt-1">Envie uma imagem para usar como capa</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Card - Textos */}
             <Card className="glass border-white/10 border-l-4 border-l-green-500">
               <CardHeader>
