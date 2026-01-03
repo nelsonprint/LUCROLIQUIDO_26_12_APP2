@@ -235,9 +235,18 @@ const Precificacao = ({ user, onLogout }) => {
     condicoes_pagamento: '',
     prazo_execucao: '',
     observacoes: '',
+    // Forma de pagamento
+    forma_pagamento: 'avista', // 'avista', 'entrada_parcelas' ou 'boleto'
+    entrada_percentual: 30,
+    num_parcelas: 2,
+    parcelas: [],
+    // Boleto bancário
+    boleto_num_parcelas: 1,
+    boleto_taxa: 0,
     // Vendedor responsável
     vendedor_id: '',
     vendedor_nome: '',
+    vendedor_comissao: true,
   });
 
   // ========== ESTADOS PARA PRODUTO (LÓGICA ANTIGA) ==========
