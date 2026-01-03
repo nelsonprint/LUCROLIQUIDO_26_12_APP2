@@ -13,15 +13,43 @@ import FinancialGlossary from '@/components/FinancialGlossary';
 const ConfiguracaoOrcamento = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
+  const [uploadingCapa, setUploadingCapa] = useState(false);
   const [config, setConfig] = useState({
     logo_url: '',
     cor_primaria: '#7C3AED',
     cor_secundaria: '#3B82F6',
     texto_ciencia: '',
-    texto_garantia: ''
+    texto_garantia: '',
+    capa_tipo: 'modelo',
+    capa_modelo: 1,
+    capa_personalizada_url: ''
   });
 
   const company = JSON.parse(localStorage.getItem('company') || '{}');
+
+  // Definição dos 20 modelos de capa
+  const MODELOS_CAPA = [
+    { id: 1, nome: 'Triângulos', desc: 'Formas triangulares modernas' },
+    { id: 2, nome: 'Círculos', desc: 'Círculos e elipses fluidos' },
+    { id: 3, nome: 'Hexágonos', desc: 'Padrão colmeia tecnológico' },
+    { id: 4, nome: 'Ondas', desc: 'Curvas suaves e elegantes' },
+    { id: 5, nome: 'Losangos', desc: 'Diamantes geométricos' },
+    { id: 6, nome: 'Diagonais', desc: 'Linhas em diagonal' },
+    { id: 7, nome: 'Grade', desc: 'Quadrados organizados' },
+    { id: 8, nome: 'Semicírculos', desc: 'Arcos modernos' },
+    { id: 9, nome: 'Retângulos', desc: 'Formas sobrepostas' },
+    { id: 10, nome: 'Pontos', desc: 'Padrão de dots' },
+    { id: 11, nome: 'Arcos', desc: 'Curvas arquitetônicas' },
+    { id: 12, nome: 'Faixas H', desc: 'Faixas horizontais' },
+    { id: 13, nome: 'Faixas V', desc: 'Faixas verticais' },
+    { id: 14, nome: 'Cantos', desc: 'Decoração nos cantos' },
+    { id: 15, nome: 'Moldura', desc: 'Borda elegante' },
+    { id: 16, nome: 'Angular', desc: 'Gradiente angular' },
+    { id: 17, nome: 'Concêntrico', desc: 'Círculos concêntricos' },
+    { id: 18, nome: 'Mosaico', desc: 'Mix geométrico' },
+    { id: 19, nome: 'Cruzado', desc: 'Linhas cruzadas' },
+    { id: 20, nome: 'Fluido', desc: 'Formas orgânicas' },
+  ];
 
   useEffect(() => {
     if (company.id) {
