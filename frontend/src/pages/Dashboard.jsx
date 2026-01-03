@@ -254,6 +254,95 @@ const Dashboard = ({ user, onLogout }) => {
           </Card>
         )}
 
+        {/* CRO do Mês Atual - Barra Horizontal Compacta */}
+        {lucroMesAtual && (lucroMesAtual.receitas > 0 || lucroMesAtual.despesas > 0) && (
+          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-slate-900/90 via-slate-800/90 to-slate-900/90 border border-slate-700/50 backdrop-blur-sm relative overflow-hidden">
+            {/* Background Glow Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 via-cyan-500/10 to-purple-500/5 pointer-events-none" />
+            
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* Título e Mês */}
+              <div className="flex items-center gap-3 min-w-[200px]">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500" style={{ boxShadow: '0 0 20px rgba(16,185,129,0.4)' }}>
+                  <TrendingUp className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-base">CRO do Mês</h3>
+                  <p className="text-xs text-slate-400">
+                    {new Date().toLocaleString('pt-BR', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())} / {new Date().getFullYear()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Barra de Progresso Visual */}
+              <div className="flex-1 max-w-xl">
+                <div className="h-8 rounded-full bg-slate-700/50 overflow-hidden flex relative" style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)' }}>
+                  {/* Barra de Receitas */}
+                  <div 
+                    className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-700 flex items-center justify-center relative"
+                    style={{ 
+                      width: `${Math.min((lucroMesAtual.receitas / (lucroMesAtual.receitas + lucroMesAtual.despesas)) * 100, 100)}%`,
+                      boxShadow: '0 0 15px rgba(16,185,129,0.5)'
+                    }}
+                  >
+                    <span className="text-xs font-bold text-white drop-shadow-lg px-2 whitespace-nowrap">
+                      Receitas
+                    </span>
+                  </div>
+                  {/* Barra de Despesas */}
+                  <div 
+                    className="h-full bg-gradient-to-r from-orange-500 to-rose-500 transition-all duration-700 flex items-center justify-center"
+                    style={{ 
+                      width: `${Math.min((lucroMesAtual.despesas / (lucroMesAtual.receitas + lucroMesAtual.despesas)) * 100, 100)}%`,
+                      boxShadow: '0 0 15px rgba(249,115,22,0.5)'
+                    }}
+                  >
+                    <span className="text-xs font-bold text-white drop-shadow-lg px-2 whitespace-nowrap">
+                      Despesas
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Valores */}
+              <div className="flex items-center gap-4 lg:gap-6">
+                {/* Receitas */}
+                <div className="text-center">
+                  <p className="text-xs text-emerald-400 font-medium uppercase tracking-wider">Receitas</p>
+                  <p className="text-lg font-bold text-emerald-400" style={{ textShadow: '0 0 10px rgba(16,185,129,0.5)' }}>
+                    R$ {(lucroMesAtual.receitas / 1000).toFixed(1)}k
+                  </p>
+                </div>
+
+                {/* Despesas */}
+                <div className="text-center">
+                  <p className="text-xs text-orange-400 font-medium uppercase tracking-wider">Despesas</p>
+                  <p className="text-lg font-bold text-orange-400" style={{ textShadow: '0 0 10px rgba(249,115,22,0.5)' }}>
+                    R$ {(lucroMesAtual.despesas / 1000).toFixed(1)}k
+                  </p>
+                </div>
+
+                {/* Separador */}
+                <div className="hidden lg:block w-px h-10 bg-slate-600" />
+
+                {/* Lucro Líquido */}
+                <div className="text-center px-4 py-2 rounded-lg bg-gradient-to-r from-purple-900/50 to-cyan-900/50 border border-purple-500/30" style={{ boxShadow: '0 0 20px rgba(124,58,237,0.2)' }}>
+                  <p className="text-xs text-purple-300 font-medium uppercase tracking-wider">Lucro Líquido</p>
+                  <p className={`text-xl font-black ${lucroMesAtual.lucro >= 0 ? 'text-cyan-400' : 'text-rose-400'}`} 
+                     style={{ textShadow: lucroMesAtual.lucro >= 0 ? '0 0 15px rgba(0,255,255,0.6)' : '0 0 15px rgba(244,63,94,0.6)' }}>
+                    {lucroMesAtual.lucro >= 0 ? '+' : '-'}R$ {(Math.abs(lucroMesAtual.lucro) / 1000).toFixed(1)}k
+                  </p>
+                  {lucroMesAtual.receitas > 0 && (
+                    <p className={`text-xs font-semibold ${lucroMesAtual.lucro >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {((lucroMesAtual.lucro / lucroMesAtual.receitas) * 100).toFixed(1)}% margem
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* KPIs */}
         {metrics && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
