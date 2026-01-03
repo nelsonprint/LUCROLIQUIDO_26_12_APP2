@@ -374,9 +374,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Boleto Bancário - Form fields in NovoOrcamentoGrid"
-    - "Sem Comissão - Vendedor selection in both quote types"
-    - "CRO Gráfico - Dashboard lucro líquido chart"
+    - "Modelos de Capa - ConfiguracaoOrcamento grid selection"
+    - "Modelos de Capa - Template Personalizado upload option"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
