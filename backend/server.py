@@ -2514,8 +2514,8 @@ async def generate_orcamento_html(orcamento_id: str):
             materiais_html += f"""
                   <tr><td>{nome}</td><td>{qtd:.2f} {unidade}</td><td>{preco_unit}</td><td>{preco_total}</td></tr>"""
     
-    # Buscar telefone da empresa
-    telefone_empresa = empresa.get('telefone') or empresa.get('whatsapp') or ''
+    # Buscar telefone da empresa (verificar múltiplos campos)
+    telefone_empresa = empresa.get('telefone_fixo') or empresa.get('celular_whatsapp') or empresa.get('telefone') or ''
     cnpj_empresa = empresa.get('cnpj') or ''
     
     # Verificar se tem capa personalizada (imagem enviada pelo usuário)
