@@ -2880,105 +2880,32 @@ async def generate_orcamento_html(orcamento_id: str):
             materiais_html += f"""
                   <tr><td>{nome}</td><td>{qtd:.2f} {unidade}</td><td>{preco_unit}</td><td>{preco_total}</td></tr>"""
     
-    # Cores para a capa
-    cor_primaria = config.get('cor_primaria', '#7C3AED')
-    cor_secundaria = config.get('cor_secundaria', '#3B82F6')
-    cliente_nome = orcamento.get('cliente_nome', 'Cliente')
+    # Verificar se tem capa personalizada (imagem enviada pelo usuário)
+    capa_personalizada_url = config.get('capa_personalizada_url')
+    capa_html = ""
     
-    # Gerar HTML da capa baseado no modelo selecionado
-    def gerar_capa_html(modelo, cor1, cor2, logo_base64_data, nome_emp, cliente, data, numero):
-        # Base da capa
-        logo_html = ""
-        if logo_base64_data:
-            logo_html = f'<img src="data:image/jpeg;base64,{logo_base64_data}" alt="Logo" style="max-width:120px;max-height:80px;object-fit:contain;margin-bottom:20px;" />'
-        
-        # Formas geométricas baseadas no modelo
-        formas_svg = ""
-        if modelo == 1:  # Triângulos
-            formas_svg = f'''
-            <svg style="position:absolute;top:0;right:0;width:200px;height:150px;" viewBox="0 0 200 150">
-                <polygon points="200,0 50,0 200,100" fill="{cor1}" />
-            </svg>
-            <svg style="position:absolute;bottom:0;left:0;width:150px;height:120px;" viewBox="0 0 150 120">
-                <polygon points="0,120 100,120 0,40" fill="{cor2}" />
-            </svg>'''
-        elif modelo == 2:  # Círculos
-            formas_svg = f'''
-            <svg style="position:absolute;top:-30px;right:-30px;width:180px;height:180px;">
-                <circle cx="90" cy="90" r="80" fill="{cor1}" />
-            </svg>
-            <svg style="position:absolute;bottom:-20px;left:-20px;width:120px;height:120px;">
-                <circle cx="60" cy="60" r="50" fill="{cor2}" />
-            </svg>'''
-        elif modelo == 3:  # Hexágonos
-            formas_svg = f'''
-            <svg style="position:absolute;top:20px;right:20px;width:100px;height:100px;" viewBox="0 0 100 100">
-                <polygon points="50,5 95,27 95,72 50,95 5,72 5,27" fill="{cor1}" />
-            </svg>
-            <svg style="position:absolute;bottom:30px;left:30px;width:80px;height:80px;" viewBox="0 0 100 100">
-                <polygon points="50,5 95,27 95,72 50,95 5,72 5,27" fill="{cor2}" />
-            </svg>'''
-        elif modelo == 4:  # Ondas
-            formas_svg = f'''
-            <svg style="position:absolute;top:0;left:0;width:100%;height:80px;" viewBox="0 0 400 80" preserveAspectRatio="none">
-                <path d="M0,40 Q100,0 200,40 T400,40 L400,0 L0,0 Z" fill="{cor1}" />
-            </svg>
-            <svg style="position:absolute;bottom:0;left:0;width:100%;height:60px;" viewBox="0 0 400 60" preserveAspectRatio="none">
-                <path d="M0,20 Q100,60 200,20 T400,20 L400,60 L0,60 Z" fill="{cor2}" />
-            </svg>'''
-        elif modelo == 5:  # Losangos
-            formas_svg = f'''
-            <svg style="position:absolute;top:20px;right:20px;width:120px;height:150px;" viewBox="0 0 120 150">
-                <polygon points="60,0 120,75 60,150 0,75" fill="{cor1}" />
-            </svg>
-            <svg style="position:absolute;bottom:30px;left:30px;width:100px;height:120px;" viewBox="0 0 100 120">
-                <polygon points="50,0 100,60 50,120 0,60" fill="{cor2}" />
-            </svg>'''
-        elif modelo == 6:  # Diagonais
-            formas_svg = f'''
-            <svg style="position:absolute;top:0;right:0;width:200px;height:100%;" viewBox="0 0 200 300" preserveAspectRatio="none">
-                <polygon points="200,0 200,300 100,300 200,0" fill="{cor1}" opacity="0.8" />
-            </svg>
-            <svg style="position:absolute;bottom:0;left:0;width:150px;height:100%;" viewBox="0 0 150 300" preserveAspectRatio="none">
-                <polygon points="0,300 0,100 150,300" fill="{cor2}" opacity="0.8" />
-            </svg>'''
-        else:  # Default - modelo 1
-            formas_svg = f'''
-            <svg style="position:absolute;top:0;right:0;width:200px;height:150px;" viewBox="0 0 200 150">
-                <polygon points="200,0 50,0 200,100" fill="{cor1}" />
-            </svg>
-            <svg style="position:absolute;bottom:0;left:0;width:150px;height:120px;" viewBox="0 0 150 120">
-                <polygon points="0,120 100,120 0,40" fill="{cor2}" />
-            </svg>'''
-        
-        return f'''
-        <section class="flow-item cover-page">
-            <div class="card" style="position:relative;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden;min-height:260mm;">
-                {formas_svg}
-                <div style="position:relative;z-index:10;text-align:center;padding:40px;">
-                    {logo_html}
-                    <h1 style="font-size:48px;font-weight:800;color:#333;margin:20px 0;">ORÇAMENTO</h1>
-                    <div style="font-size:24px;font-weight:700;color:{cor1};margin:10px 0;">#{numero}</div>
-                    <div style="font-size:18px;color:#555;margin:30px 0;">Cliente: {cliente}</div>
-                    <div style="font-size:16px;color:#666;">Data: {data}</div>
-                </div>
-                <div style="position:absolute;bottom:40px;text-align:center;width:100%;z-index:10;">
-                    <div style="font-size:18px;font-weight:700;color:#333;">{nome_emp}</div>
-                </div>
-            </div>
-        </section>'''
-    
-    # Gerar a capa HTML
-    capa_html = gerar_capa_html(
-        capa_modelo, 
-        cor_primaria, 
-        cor_secundaria, 
-        logo_base64 if tem_logo else None,
-        nome_empresa,
-        cliente_nome,
-        data_emissao,
-        orcamento.get('numero_orcamento', 'N/A')
-    )
+    if capa_personalizada_url:
+        # Carregar imagem de capa personalizada
+        try:
+            capa_path = Path(ROOT_DIR) / capa_personalizada_url.lstrip('/')
+            if capa_path.exists():
+                import base64
+                with open(capa_path, 'rb') as f:
+                    capa_data = f.read()
+                    capa_base64 = base64.b64encode(capa_data).decode('utf-8')
+                    ext = capa_path.suffix.lower()
+                    mime_types = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png'}
+                    mime_type = mime_types.get(ext, 'image/jpeg')
+                    
+                    # Gerar HTML da capa personalizada (imagem em tela cheia)
+                    capa_html = f'''
+                    <section class="flow-item cover-page">
+                        <div class="card" style="position:relative;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden;min-height:260mm;padding:0;">
+                            <img src="data:{mime_type};base64,{capa_base64}" alt="Capa do Orçamento" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;" />
+                        </div>
+                    </section>'''
+        except Exception as e:
+            logger.warning(f"Erro ao carregar capa personalizada: {e}")
     
     # HTML Template
     html_content = f"""<!doctype html>
