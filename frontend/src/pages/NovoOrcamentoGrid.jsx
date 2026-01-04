@@ -883,8 +883,9 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
                 </CardHeader>
                 <CardContent>
                   <OrcamentoMateriais 
-                    orcamentoId={null}
+                    orcamentoId={modoEdicao ? orcamentoId : null}
                     onTotalChange={(total) => setTotalMateriais(total)}
+                    onMateriaisChange={(mats) => setMateriaisLocais(mats)}
                   />
                 </CardContent>
               </Card>
