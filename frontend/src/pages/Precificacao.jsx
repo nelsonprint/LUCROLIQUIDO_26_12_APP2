@@ -1863,38 +1863,173 @@ const Precificacao = ({ user, onLogout }) => {
 
                   {/* Configuração de Boleto */}
                   {orcamentoData.forma_pagamento === 'boleto' && (
-                    <div className="mt-4 pt-4 border-t border-zinc-700 grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm">Número de Parcelas</Label>
-                        <Select
-                          value={String(orcamentoData.boleto_num_parcelas)}
+                    <div className="mt-4 pt-4 border-t border-zinc-700 space-y-4">
+                      {/* Tipo de Boleto */}
+                      <div className="space-y-2">
+                        <Label className="text-sm">Tipo de Parcelamento</Label>
+                        <RadioGroup
+                          value={orcamentoData.boleto_tipo}
                           onValueChange={(value) => setOrcamentoData({
-                            ...orcamentoData, 
-                            boleto_num_parcelas: parseInt(value)
+                            ...orcamentoData,
+                            boleto_tipo: value,
+                            boleto_entrada_percentual: value === 'com_entrada' ? 30 : 0,
+                            boleto_primeiro_dias: value === 'primeiro_dias' ? 30 : 0
                           })}
+                          className="grid grid-cols-1 gap-2"
                         >
-                          <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-zinc-800 border-zinc-700 max-h-[300px]">
-                            {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
-                              <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          <div className="flex items-center space-x-2 p-2 rounded-lg border border-zinc-700 hover:border-zinc-500 cursor-pointer">
+                            <RadioGroupItem value="com_entrada" id="prec_boleto_entrada" />
+                            <Label htmlFor="prec_boleto_entrada" className="cursor-pointer flex-1">
+                              <span className="font-medium text-sm">Entrada + Boletos</span>
+                              <p className="text-xs text-zinc-500">Entrada à vista + boletos a partir de 30 dias</p>
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2 p-2 rounded-lg border border-zinc-700 hover:border-zinc-500 cursor-pointer">
+                            <RadioGroupItem value="primeiro_dias" id="prec_boleto_dias" />
+                            <Label htmlFor="prec_boleto_dias" className="cursor-pointer flex-1">
+                              <span className="font-medium text-sm">Boleto para X dias</span>
+                              <p className="text-xs text-zinc-500">Primeiro boleto para X dias + demais mensais</p>
+                            </Label>
+                          </div>
+                        </RadioGroup>
                       </div>
-                      <div>
-                        <Label className="text-sm">Taxa do Boleto (R$)</Label>
-                        <MoneyInput
-                          value={orcamentoData.boleto_taxa}
-                          onChange={(value) => setOrcamentoData({
-                            ...orcamentoData, 
-                            boleto_taxa: value
-                          })}
-                          className="bg-zinc-800 border-zinc-700"
-                        />
-                        <p className="text-xs text-zinc-500 mt-1">Valor cobrado por boleto</p>
-                      </div>
+
+                      {/* Configuração: Entrada + Boletos */}
+                      {orcamentoData.boleto_tipo === 'com_entrada' && (
+                        <div className="space-y-3 p-3 bg-zinc-800/50 rounded-lg">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-sm">Entrada (%)</Label>
+                              <Select
+                                value={String(orcamentoData.boleto_entrada_percentual)}
+                                onValueChange={(value) => setOrcamentoData({
+                                  ...orcamentoData,
+                                  boleto_entrada_percentual: parseInt(value),
+                                  boleto_entrada_valor: (precoFinal * parseInt(value)) / 100
+                                })}
+                              >
+                                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-zinc-800 border-zinc-700 max-h-[300px]">
+                                  {[10, 20, 30, 40, 50, 60, 70].map(n => (
+                                    <SelectItem key={n} value={String(n)}>{n}%</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-sm">Número de Boletos</Label>
+                              <Select
+                                value={String(orcamentoData.boleto_num_parcelas)}
+                                onValueChange={(value) => setOrcamentoData({
+                                  ...orcamentoData,
+                                  boleto_num_parcelas: parseInt(value)
+                                })}
+                              >
+                                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-zinc-800 border-zinc-700 max-h-[300px]">
+                                  {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
+                                    <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-sm">Taxa por Boleto (R$)</Label>
+                            <MoneyInput
+                              value={orcamentoData.boleto_taxa}
+                              onChange={(value) => setOrcamentoData({
+                                ...orcamentoData,
+                                boleto_taxa: value
+                              })}
+                              className="bg-zinc-800 border-zinc-700"
+                            />
+                          </div>
+                          {/* Resumo */}
+                          <div className="p-2 bg-yellow-900/20 border border-yellow-700 rounded-lg text-xs">
+                            <p className="text-yellow-400 font-medium">Resumo:</p>
+                            <p className="text-zinc-300 mt-1">
+                              <span className="text-green-400">Entrada:</span> R$ {((precoFinal * orcamentoData.boleto_entrada_percentual) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({orcamentoData.boleto_entrada_percentual}%)
+                            </p>
+                            <p className="text-zinc-300">
+                              <span className="text-blue-400">{orcamentoData.boleto_num_parcelas}x Boletos:</span> R$ {(((precoFinal * (100 - orcamentoData.boleto_entrada_percentual) / 100) + (orcamentoData.boleto_taxa * orcamentoData.boleto_num_parcelas)) / orcamentoData.boleto_num_parcelas).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Configuração: Primeiro boleto para X dias */}
+                      {orcamentoData.boleto_tipo === 'primeiro_dias' && (
+                        <div className="space-y-3 p-3 bg-zinc-800/50 rounded-lg">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-sm">Primeiro Boleto para (dias)</Label>
+                              <Select
+                                value={String(orcamentoData.boleto_primeiro_dias)}
+                                onValueChange={(value) => setOrcamentoData({
+                                  ...orcamentoData,
+                                  boleto_primeiro_dias: parseInt(value)
+                                })}
+                              >
+                                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-zinc-800 border-zinc-700 max-h-[300px]">
+                                  {[7, 14, 15, 21, 28, 30, 45, 60, 90].map(n => (
+                                    <SelectItem key={n} value={String(n)}>{n} dias</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-sm">Total de Boletos</Label>
+                              <Select
+                                value={String(orcamentoData.boleto_num_parcelas)}
+                                onValueChange={(value) => setOrcamentoData({
+                                  ...orcamentoData,
+                                  boleto_num_parcelas: parseInt(value)
+                                })}
+                              >
+                                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-zinc-800 border-zinc-700 max-h-[300px]">
+                                  {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
+                                    <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-sm">Taxa por Boleto (R$)</Label>
+                            <MoneyInput
+                              value={orcamentoData.boleto_taxa}
+                              onChange={(value) => setOrcamentoData({
+                                ...orcamentoData,
+                                boleto_taxa: value
+                              })}
+                              className="bg-zinc-800 border-zinc-700"
+                            />
+                          </div>
+                          {/* Resumo */}
+                          <div className="p-2 bg-yellow-900/20 border border-yellow-700 rounded-lg text-xs">
+                            <p className="text-yellow-400 font-medium">Resumo:</p>
+                            <p className="text-zinc-300 mt-1">
+                              <span className="text-blue-400">1º Boleto ({orcamentoData.boleto_primeiro_dias} dias):</span> R$ {((precoFinal + (orcamentoData.boleto_taxa * orcamentoData.boleto_num_parcelas)) / orcamentoData.boleto_num_parcelas).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                            {orcamentoData.boleto_num_parcelas > 1 && (
+                              <p className="text-zinc-300">
+                                <span className="text-blue-400">{orcamentoData.boleto_num_parcelas - 1}x Boletos (mensais):</span> R$ {((precoFinal + (orcamentoData.boleto_taxa * orcamentoData.boleto_num_parcelas)) / orcamentoData.boleto_num_parcelas).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} cada
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
