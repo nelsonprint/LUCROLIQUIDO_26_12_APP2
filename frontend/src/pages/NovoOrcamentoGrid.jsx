@@ -439,6 +439,29 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
       } else {
         // Novo orçamento - POST
         response = await axiosInstance.post('/orcamentos', data);
+        
+        // Salvar materiais se houver
+        if (materiaisLocais.length > 0 && response.data.id) {
+          const novoOrcamentoId = response.data.id;
+          // Salvar cada material associado ao novo orçamento
+          for (const material of materiaisLocais) {
+            try {
+              await axiosInstance.post(`/orcamentos/${novoOrcamentoId}/materiais`, {
+                nome_item: material.nome_item,
+                descricao_customizada: material.descricao_customizada || '',
+                unidade: material.unidade || 'un',
+                preco_compra_fornecedor: material.preco_compra_fornecedor || 0,
+                percentual_acrescimo: material.percentual_acrescimo || 30,
+                preco_unitario_final: material.preco_unitario_final || 0,
+                quantidade: material.quantidade || 1,
+                preco_total_item: material.preco_total_item || 0,
+              });
+            } catch (err) {
+              console.error('Erro ao salvar material:', err);
+            }
+          }
+        }
+        
         toast.success(`Orçamento ${response.data.numero_orcamento} criado com sucesso!`);
       }
       navigate('/orcamentos');
