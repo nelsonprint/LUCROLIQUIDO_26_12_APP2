@@ -209,6 +209,18 @@ backend:
         agent: "testing"
         comment: "✅ 'SEM_COMISSAO' LOGIC TESTS PASSED! All 4 test scenarios verified: 1) Budget creation with vendedor_id='sem_comissao' working correctly ✅ 2) Budget acceptance generates accounts receivable (3 accounts) ✅ 3) Marking installment as RECEBIDO does NOT generate commission for 'sem_comissao' vendedor ✅ 4) Normal vendedor (5% commission) still generates commission correctly ✅. Commission logic properly checks vendedor_id != 'sem_comissao' before generating commission. Tested with budget LL-2026-0003 - no commission created when installment marked as received. Proportional commission system working correctly for normal vendedores."
 
+  - task: "Capa do Orçamento - PDF cover page generation with geometric shapes"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PDF COVER GENERATION TESTS PASSED! All 5 test criteria verified: 1) GET /api/orcamento-config/{company_id} returns capa_tipo, capa_modelo, capa_personalizada_url fields correctly ✅ 2) POST /api/orcamento-config saves model 5 configuration successfully ✅ 3) GET /api/orcamentos/{company_id} lists budgets for PDF generation ✅ 4) GET /api/orcamento/{orcamento_id}/pdf generates valid PDF with 3 pages (includes cover page) ✅ 5) Config fields always returned even for old company configs with default values ✅. PDF generation working correctly with cover page functionality. Cover model selection (1-20) and configuration saving fully operational."
+
   - task: "Modelos de Capa - Backend Configuration Endpoints"
     implemented: true
     working: true
