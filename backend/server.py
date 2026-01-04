@@ -3020,8 +3020,8 @@ async def generate_orcamento_html(orcamento_id: str):
   }}
   
   @media (max-width: 600px){{
-    .actions-bar{{ padding:12px 16px; flex-wrap:wrap; }}
-    .btn{{ padding:10px 16px; font-size:13px; flex:1; min-width:140px; justify-content:center; }}
+    .actions-bar{{ padding:6px 12px; flex-wrap:wrap; }}
+    .btn{{ padding:5px 10px; font-size:11px; }}
   }}
 </style>
 </head>
