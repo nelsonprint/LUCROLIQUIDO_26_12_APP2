@@ -2544,13 +2544,18 @@ async def generate_orcamento_html(orcamento_id: str):
                             <!-- Imagem de fundo -->
                             <img src="data:{mime_type};base64,{capa_base64}" alt="Capa do Orçamento" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;z-index:1;" />
                             
-                            <!-- Overlay com informações da empresa -->
-                            <div style="position:relative;z-index:10;text-align:center;padding:40px 20px;margin-top:30px;background:rgba(255,255,255,0.95);border-radius:12px;max-width:80%;box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+                            <!-- Overlay com informações da empresa (topo) -->
+                            <div style="position:relative;z-index:10;text-align:center;padding:30px 25px;margin-top:25px;background:rgba(255,255,255,0.95);border-radius:12px;max-width:80%;box-shadow:0 4px 20px rgba(0,0,0,0.15);">
                                 {logo_capa_html}
                                 {f'<div style="font-size:24px;font-weight:700;color:#333;margin-bottom:8px;">{nome_fantasia}</div>' if nome_fantasia else ''}
                                 <div style="font-size:18px;font-weight:600;color:#555;margin-bottom:8px;">{razao_social}</div>
                                 {f'<div style="font-size:14px;color:#666;margin-bottom:5px;">CNPJ: {cnpj_empresa}</div>' if cnpj_empresa else ''}
                                 {f'<div style="font-size:14px;color:#666;">Tel: {telefone_empresa}</div>' if telefone_empresa else ''}
+                            </div>
+                            
+                            <!-- Título "Proposta Comercial" centralizado -->
+                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;text-align:center;padding:25px 50px;background:rgba(255,255,255,0.95);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+                                <div style="font-size:32px;font-weight:700;color:#333;letter-spacing:1px;">PROPOSTA COMERCIAL</div>
                             </div>
                         </div>
                     </section>'''
