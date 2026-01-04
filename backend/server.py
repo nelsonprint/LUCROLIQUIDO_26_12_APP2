@@ -2691,7 +2691,8 @@ async def generate_orcamento_html(orcamento_id: str):
             {f'<img src="{logo_url}" alt="Logo da empresa" />' if tem_logo else iniciais}
           </div>
           <div class="hgroup">
-            <h1>{nome_empresa}</h1>
+            <h1>{razao_social}</h1>
+            {f'<p style="font-size:14px;color:#666;margin-top:2px;font-weight:500;">{nome_fantasia}</p>' if nome_fantasia else ''}
             <p>{linhas_contato_html}</p>
           </div>
           <div class="meta">
