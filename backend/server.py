@@ -3119,6 +3119,10 @@ async def generate_orcamento_html(orcamento_id: str):
 
   <!-- Fonte do conteúdo em itens "flow" (paginados via JS) -->
   <div id="flow" style="display:none">
+    <!-- PÁGINA DE CAPA -->
+    {capa_html}
+    
+    <!-- CONTEÚDO DO ORÇAMENTO -->
     <section class="flow-item">
       <div class="card">
         <header class="header">
