@@ -42,6 +42,9 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('cliente');
   
+  // Materiais locais (para novos orçamentos)
+  const [materiaisLocais, setMateriaisLocais] = useState([]);
+  
   // Markup atual
   const [currentMarkup, setCurrentMarkup] = useState(1.0);
   const [markupRef, setMarkupRef] = useState('');
