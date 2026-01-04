@@ -2020,11 +2020,11 @@ const Precificacao = ({ user, onLogout }) => {
                           <div className="p-2 bg-yellow-900/20 border border-yellow-700 rounded-lg text-xs">
                             <p className="text-yellow-400 font-medium">Resumo:</p>
                             <p className="text-zinc-300 mt-1">
-                              <span className="text-blue-400">1º Boleto ({orcamentoData.boleto_primeiro_dias} dias):</span> R$ {((precoFinal + (orcamentoData.boleto_taxa * orcamentoData.boleto_num_parcelas)) / orcamentoData.boleto_num_parcelas).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              <span className="text-blue-400">1º Boleto ({orcamentoData.boleto_primeiro_dias} dias):</span> R$ {((parseFloat(orcamentoData.preco_sugerido || 0) + (orcamentoData.boleto_taxa * orcamentoData.boleto_num_parcelas)) / orcamentoData.boleto_num_parcelas).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
                             {orcamentoData.boleto_num_parcelas > 1 && (
                               <p className="text-zinc-300">
-                                <span className="text-blue-400">{orcamentoData.boleto_num_parcelas - 1}x Boletos (mensais):</span> R$ {((precoFinal + (orcamentoData.boleto_taxa * orcamentoData.boleto_num_parcelas)) / orcamentoData.boleto_num_parcelas).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} cada
+                                <span className="text-blue-400">{orcamentoData.boleto_num_parcelas - 1}x Boletos (mensais):</span> R$ {((parseFloat(orcamentoData.preco_sugerido || 0) + (orcamentoData.boleto_taxa * orcamentoData.boleto_num_parcelas)) / orcamentoData.boleto_num_parcelas).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} cada
                               </p>
                             )}
                           </div>
