@@ -87,8 +87,12 @@ const NovoOrcamentoGrid = ({ user, onLogout }) => {
     num_parcelas: 2, // Número de parcelas após entrada
     parcelas: [], // Array com detalhes de cada parcela [{numero, valor, editado}]
     // Boleto bancário
-    boleto_num_parcelas: 1, // 1 a 20 parcelas
-    boleto_taxa: 0, // Taxa em R$
+    boleto_tipo: 'com_entrada', // 'com_entrada' ou 'primeiro_dias'
+    boleto_num_parcelas: 1, // 1 a 20 parcelas (boletos após entrada)
+    boleto_entrada_valor: 0, // Valor da entrada (quando boleto_tipo = 'com_entrada')
+    boleto_entrada_percentual: 30, // Percentual da entrada
+    boleto_primeiro_dias: 30, // Dias para o primeiro boleto (quando boleto_tipo = 'primeiro_dias')
+    boleto_taxa: 0, // Taxa em R$ por boleto
     // Vendedor responsável
     vendedor_id: '',
     vendedor_nome: '',
