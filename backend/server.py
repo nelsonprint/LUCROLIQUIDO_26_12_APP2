@@ -2514,6 +2514,10 @@ async def generate_orcamento_html(orcamento_id: str):
             materiais_html += f"""
                   <tr><td>{nome}</td><td>{qtd:.2f} {unidade}</td><td>{preco_unit}</td><td>{preco_total}</td></tr>"""
     
+    # Buscar telefone da empresa
+    telefone_empresa = empresa.get('telefone') or empresa.get('whatsapp') or ''
+    cnpj_empresa = empresa.get('cnpj') or ''
+    
     # Verificar se tem capa personalizada (imagem enviada pelo usuário)
     capa_personalizada_url = config.get('capa_personalizada_url')
     capa_html = ""
@@ -2531,11 +2535,23 @@ async def generate_orcamento_html(orcamento_id: str):
                     mime_types = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png'}
                     mime_type = mime_types.get(ext, 'image/jpeg')
                     
-                    # Gerar HTML da capa personalizada (imagem em tela cheia)
+                    # Gerar HTML da capa personalizada com informações da empresa sobrepostas
+                    logo_capa_html = f'<img src="{logo_url}" alt="Logo" style="max-width:150px;max-height:100px;object-fit:contain;margin-bottom:15px;" />' if tem_logo else ''
+                    
                     capa_html = f'''
                     <section class="flow-item cover-page">
-                        <div class="card" style="position:relative;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden;min-height:260mm;padding:0;">
-                            <img src="data:{mime_type};base64,{capa_base64}" alt="Capa do Orçamento" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;" />
+                        <div class="card" style="position:relative;height:100%;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;overflow:hidden;min-height:260mm;padding:0;">
+                            <!-- Imagem de fundo -->
+                            <img src="data:{mime_type};base64,{capa_base64}" alt="Capa do Orçamento" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;z-index:1;" />
+                            
+                            <!-- Overlay com informações da empresa -->
+                            <div style="position:relative;z-index:10;text-align:center;padding:40px 20px;margin-top:30px;background:rgba(255,255,255,0.95);border-radius:12px;max-width:80%;box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+                                {logo_capa_html}
+                                {f'<div style="font-size:24px;font-weight:700;color:#333;margin-bottom:8px;">{nome_fantasia}</div>' if nome_fantasia else ''}
+                                <div style="font-size:18px;font-weight:600;color:#555;margin-bottom:8px;">{razao_social}</div>
+                                {f'<div style="font-size:14px;color:#666;margin-bottom:5px;">CNPJ: {cnpj_empresa}</div>' if cnpj_empresa else ''}
+                                {f'<div style="font-size:14px;color:#666;">Tel: {telefone_empresa}</div>' if telefone_empresa else ''}
+                            </div>
                         </div>
                     </section>'''
         except Exception as e:
