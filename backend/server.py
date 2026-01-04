@@ -2755,16 +2755,13 @@ async def generate_orcamento_html(orcamento_id: str):
         {"_id": 0}
     ).to_list(1000)
     
-    # Buscar configuração de orçamento (cores, textos, logo)
-    config = await db.orcamento_config.find_one({"company_id": empresa.get('id')}, {"_id": 0})
+    # Buscar configuração de orçamento (cores, textos, logo) usando função que garante valores padrão
+    config = await get_orcamento_config(empresa.get('id'))
     
-    if not config:
-        config = {
-            'cor_primaria': '#22c55e',
-            'cor_secundaria': '#f97316',
-            'texto_ciencia': 'Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas.',
-            'texto_garantia': 'Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes.'
-        }
+    # Obter campos de capa
+    capa_tipo = config.get('capa_tipo', 'modelo')
+    capa_modelo = config.get('capa_modelo', 1)
+    capa_personalizada_url = config.get('capa_personalizada_url')
     
     # Formatar data
     data_emissao = orcamento.get('created_at', '')
