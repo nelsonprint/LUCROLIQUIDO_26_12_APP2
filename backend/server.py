@@ -3198,16 +3198,8 @@ async def generate_orcamento_html(orcamento_id: str):
     source.style.display = 'none'; pagesRoot.style.display = 'block';
   }}
   function baixarPDF(){{
-    const el = document.getElementById('pages');
-    const opt = {{
-      margin: 0,
-      filename: 'orcamento-{orcamento.get('numero_orcamento', orcamento_id)}.pdf',
-      image: {{ type: 'jpeg', quality: 0.98 }},
-      html2canvas: {{ scale: 2, useCORS: true }},
-      jsPDF: {{ unit: 'mm', format: 'a4', orientation: 'portrait' }},
-      pagebreak: {{ mode: ['css','legacy'] }}
-    }};
-    html2pdf().set(opt).from(el).save();
+    // Usar o endpoint do backend que gera PDF com capa
+    window.location.href = '/api/orcamento/{orcamento_id}/pdf';
   }}
   window.addEventListener('load', paginate);
   window.addEventListener('resize', () => {{ clearTimeout(window.__r); window.__r = setTimeout(paginate, 150); }});
