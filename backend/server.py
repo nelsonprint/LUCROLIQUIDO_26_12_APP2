@@ -2124,8 +2124,14 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     
     # ============ PÁGINA DE CAPA ============
     # Desenhar a capa do orçamento como primeira página
-    draw_cover_page(c, width, height, orcamento, empresa, config)
-    c.showPage()  # Finaliza a página de capa e inicia uma nova
+    try:
+        draw_cover_page(c, width, height, orcamento, empresa, config)
+        c.showPage()  # Finaliza a página de capa e inicia uma nova
+        logger.info("✅ Capa do orçamento gerada com sucesso")
+    except Exception as e:
+        logger.error(f"❌ Erro ao gerar capa do orçamento: {e}")
+        # Se falhar, apenas criar uma página em branco e continuar
+        c.showPage()
     
     # ============ CONTEÚDO DO ORÇAMENTO ============
     # Cores personalizadas do CONFIG
