@@ -2600,8 +2600,8 @@ async def generate_orcamento_pdf(orcamento_id: str):
         {"_id": 0}
     ).to_list(1000)
     
-    # Buscar configuração de orçamento (cores, textos, logo)
-    config = await db.orcamento_config.find_one({"company_id": empresa.get('id')}, {"_id": 0})
+    # Buscar configuração de orçamento (cores, textos, logo, capa) usando a função que garante valores padrão
+    config = await get_orcamento_config(empresa.get('id'))
     
     # Gerar PDF usando o modelo clássico em ReportLab
     pdf_bytes = generate_pdf_with_reportlab(orcamento, empresa, materiais, config)
