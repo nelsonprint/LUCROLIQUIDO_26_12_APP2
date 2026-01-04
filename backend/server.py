@@ -2554,8 +2554,8 @@ async def generate_orcamento_html(orcamento_id: str):
                             </div>
                             
                             <!-- Título "Proposta Comercial" centralizado -->
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;text-align:center;padding:25px 50px;background:rgba(255,255,255,0.95);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);">
-                                <div style="font-size:32px;font-weight:700;color:#333;letter-spacing:1px;">PROPOSTA COMERCIAL</div>
+                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;text-align:center;padding:30px 60px;background:rgba(255,255,255,0.85);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+                                <div style="font-size:48px;font-weight:700;color:#333;letter-spacing:2px;">PROPOSTA COMERCIAL</div>
                             </div>
                         </div>
                     </section>'''
