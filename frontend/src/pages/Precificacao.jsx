@@ -1953,10 +1953,10 @@ const Precificacao = ({ user, onLogout }) => {
                           <div className="p-2 bg-yellow-900/20 border border-yellow-700 rounded-lg text-xs">
                             <p className="text-yellow-400 font-medium">Resumo:</p>
                             <p className="text-zinc-300 mt-1">
-                              <span className="text-green-400">Entrada:</span> R$ {((precoFinal * orcamentoData.boleto_entrada_percentual) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({orcamentoData.boleto_entrada_percentual}%)
+                              <span className="text-green-400">Entrada:</span> R$ {((parseFloat(orcamentoData.preco_sugerido || 0) * orcamentoData.boleto_entrada_percentual) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({orcamentoData.boleto_entrada_percentual}%)
                             </p>
                             <p className="text-zinc-300">
-                              <span className="text-blue-400">{orcamentoData.boleto_num_parcelas}x Boletos:</span> R$ {(((precoFinal * (100 - orcamentoData.boleto_entrada_percentual) / 100) + (orcamentoData.boleto_taxa * orcamentoData.boleto_num_parcelas)) / orcamentoData.boleto_num_parcelas).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              <span className="text-blue-400">{orcamentoData.boleto_num_parcelas}x Boletos:</span> R$ {(((parseFloat(orcamentoData.preco_sugerido || 0) * (100 - orcamentoData.boleto_entrada_percentual) / 100) + (orcamentoData.boleto_taxa * orcamentoData.boleto_num_parcelas)) / orcamentoData.boleto_num_parcelas).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
                           </div>
                         </div>
