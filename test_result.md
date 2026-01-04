@@ -421,7 +421,10 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Capa do Orçamento - PDF cover page generation with geometric shapes"
+    - "Capa do Orçamento - Cover model selection (1-20)"
+    - "Capa do Orçamento - Custom cover image upload"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
