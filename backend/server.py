@@ -2113,8 +2113,6 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
             'texto_ciencia': 'Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas.',
             'texto_garantia': 'Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes.',
             'logo_url': None,
-            'capa_tipo': 'modelo',
-            'capa_modelo': 1,
             'capa_personalizada_url': None
         }
     
@@ -2122,16 +2120,18 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
     c = pdf_canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
     
-    # ============ PÁGINA DE CAPA ============
-    # Desenhar a capa do orçamento como primeira página
-    try:
-        draw_cover_page(c, width, height, orcamento, empresa, config)
-        c.showPage()  # Finaliza a página de capa e inicia uma nova
-        logger.info("✅ Capa do orçamento gerada com sucesso")
-    except Exception as e:
-        logger.error(f"❌ Erro ao gerar capa do orçamento: {e}")
-        # Se falhar, apenas criar uma página em branco e continuar
-        c.showPage()
+    # ============ PÁGINA DE CAPA (apenas se tiver imagem personalizada) ============
+    capa_personalizada_url = config.get('capa_personalizada_url')
+    if capa_personalizada_url:
+        try:
+            capa_path = Path(ROOT_DIR) / capa_personalizada_url.lstrip('/')
+            if capa_path.exists():
+                # Desenha a imagem personalizada em tela cheia como capa
+                c.drawImage(str(capa_path), 0, 0, width=width, height=height, preserveAspectRatio=False)
+                c.showPage()  # Finaliza a página de capa e inicia uma nova
+                logger.info("✅ Capa personalizada do orçamento gerada com sucesso")
+        except Exception as e:
+            logger.warning(f"Erro ao carregar capa personalizada: {e}")
     
     # ============ CONTEÚDO DO ORÇAMENTO ============
     # Cores personalizadas do CONFIG
