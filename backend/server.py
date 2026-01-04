@@ -1725,6 +1725,375 @@ async def update_orcamento_status(orcamento_id: str, status_data: OrcamentoStatu
     
     return {"message": f"Status atualizado para {status_data.status}!"}
 
+
+def draw_cover_page(c, width, height, orcamento: dict, empresa: dict, config: dict):
+    """Desenha a página de capa do orçamento"""
+    from reportlab.lib.units import mm
+    from reportlab.lib.colors import HexColor
+    
+    primary_color = HexColor(config.get('cor_primaria', '#7C3AED'))
+    secondary_color = HexColor(config.get('cor_secundaria', '#3B82F6'))
+    
+    capa_tipo = config.get('capa_tipo', 'modelo')
+    capa_modelo = config.get('capa_modelo', 1)
+    capa_personalizada_url = config.get('capa_personalizada_url')
+    
+    # Se tem capa personalizada, usar ela
+    if capa_tipo == 'personalizado' and capa_personalizada_url:
+        try:
+            capa_path = Path(ROOT_DIR) / capa_personalizada_url.lstrip('/')
+            if capa_path.exists():
+                # Desenha a imagem personalizada como fundo
+                c.drawImage(str(capa_path), 0, 0, width=width, height=height, preserveAspectRatio=False)
+            else:
+                # Fallback para modelo padrão se arquivo não existe
+                draw_geometric_cover(c, width, height, capa_modelo, primary_color, secondary_color)
+        except Exception as e:
+            logger.warning(f"Erro ao carregar capa personalizada: {e}")
+            draw_geometric_cover(c, width, height, capa_modelo, primary_color, secondary_color)
+    else:
+        # Usar modelo geométrico pré-definido
+        draw_geometric_cover(c, width, height, capa_modelo, primary_color, secondary_color)
+    
+    # Adicionar informações do orçamento na capa
+    # Logo da empresa (se existir)
+    logo_path = None
+    if config.get('logo_url'):
+        try:
+            logo_file = Path(ROOT_DIR) / config['logo_url'].lstrip('/')
+            if logo_file.exists():
+                logo_path = str(logo_file)
+        except:
+            pass
+    
+    if logo_path:
+        try:
+            # Logo centralizada no topo
+            c.drawImage(logo_path, width/2 - 40*mm, height - 80*mm, width=80*mm, height=40*mm, 
+                       preserveAspectRatio=True, mask='auto')
+        except Exception as e:
+            logger.warning(f"Erro ao carregar logo na capa: {e}")
+    
+    # Título "ORÇAMENTO"
+    c.setFillColor(HexColor('#333333'))
+    c.setFont("Helvetica-Bold", 36)
+    c.drawCentredString(width/2, height/2 + 20*mm, "ORÇAMENTO")
+    
+    # Número do orçamento
+    c.setFont("Helvetica-Bold", 24)
+    c.setFillColor(primary_color)
+    c.drawCentredString(width/2, height/2 - 10*mm, f"#{orcamento.get('numero', '')}")
+    
+    # Nome do cliente
+    cliente = orcamento.get('cliente', {})
+    nome_cliente = cliente.get('nome_completo') or cliente.get('razao_social') or cliente.get('nome', 'Cliente')
+    c.setFont("Helvetica", 16)
+    c.setFillColor(HexColor('#555555'))
+    c.drawCentredString(width/2, height/2 - 35*mm, f"Cliente: {nome_cliente}")
+    
+    # Data
+    data_criacao = orcamento.get('data_criacao', orcamento.get('created_at', ''))
+    if data_criacao:
+        try:
+            if isinstance(data_criacao, str):
+                dt_obj = datetime.fromisoformat(data_criacao.replace('Z', '+00:00'))
+                data_formatada = dt_obj.strftime('%d/%m/%Y')
+            else:
+                data_formatada = data_criacao.strftime('%d/%m/%Y')
+        except:
+            data_formatada = str(data_criacao)[:10]
+        c.setFont("Helvetica", 14)
+        c.drawCentredString(width/2, height/2 - 55*mm, f"Data: {data_formatada}")
+    
+    # Nome da empresa no rodapé
+    c.setFont("Helvetica-Bold", 14)
+    c.setFillColor(HexColor('#333333'))
+    empresa_nome = empresa.get('razao_social') or empresa.get('name', '')
+    c.drawCentredString(width/2, 40*mm, empresa_nome)
+    
+    # Contato da empresa
+    if empresa.get('telefone') or empresa.get('email'):
+        c.setFont("Helvetica", 10)
+        c.setFillColor(HexColor('#666666'))
+        contatos = []
+        if empresa.get('telefone'):
+            contatos.append(empresa.get('telefone'))
+        if empresa.get('email'):
+            contatos.append(empresa.get('email'))
+        c.drawCentredString(width/2, 30*mm, " | ".join(contatos))
+
+
+def draw_geometric_cover(c, width, height, modelo: int, primary_color, secondary_color):
+    """Desenha formas geométricas na capa baseado no modelo selecionado"""
+    from reportlab.lib.units import mm
+    from reportlab.lib.colors import HexColor, white
+    import math
+    
+    # Fundo branco
+    c.setFillColor(white)
+    c.rect(0, 0, width, height, fill=True, stroke=False)
+    
+    # Desenhar formas geométricas baseado no modelo
+    if modelo == 1:  # Triângulos
+        c.setFillColor(primary_color)
+        c.setStrokeColor(primary_color)
+        # Triângulo superior direito
+        path = c.beginPath()
+        path.moveTo(width, height)
+        path.lineTo(width - 150*mm, height)
+        path.lineTo(width, height - 100*mm)
+        path.close()
+        c.drawPath(path, fill=True, stroke=False)
+        # Triângulo inferior esquerdo
+        c.setFillColor(secondary_color)
+        path = c.beginPath()
+        path.moveTo(0, 0)
+        path.lineTo(100*mm, 0)
+        path.lineTo(0, 80*mm)
+        path.close()
+        c.drawPath(path, fill=True, stroke=False)
+        
+    elif modelo == 2:  # Círculos
+        # Círculo grande superior direito
+        c.setFillColor(primary_color)
+        c.circle(width - 30*mm, height - 50*mm, 60*mm, fill=True, stroke=False)
+        # Círculo médio inferior esquerdo
+        c.setFillColor(secondary_color)
+        c.circle(40*mm, 60*mm, 40*mm, fill=True, stroke=False)
+        # Círculo pequeno
+        c.setFillAlpha(0.5)
+        c.setFillColor(primary_color)
+        c.circle(width - 80*mm, 100*mm, 25*mm, fill=True, stroke=False)
+        c.setFillAlpha(1)
+        
+    elif modelo == 3:  # Hexágonos
+        def draw_hexagon(cx, cy, size):
+            path = c.beginPath()
+            for i in range(6):
+                angle = math.pi / 3 * i - math.pi / 6
+                x = cx + size * math.cos(angle)
+                y = cy + size * math.sin(angle)
+                if i == 0:
+                    path.moveTo(x, y)
+                else:
+                    path.lineTo(x, y)
+            path.close()
+            c.drawPath(path, fill=True, stroke=False)
+        
+        c.setFillColor(primary_color)
+        draw_hexagon(width - 50*mm, height - 60*mm, 40*mm)
+        c.setFillColor(secondary_color)
+        draw_hexagon(60*mm, 80*mm, 35*mm)
+        c.setFillAlpha(0.3)
+        c.setFillColor(primary_color)
+        draw_hexagon(width - 100*mm, height - 150*mm, 25*mm)
+        c.setFillAlpha(1)
+        
+    elif modelo == 4:  # Ondas
+        c.setFillColor(primary_color)
+        path = c.beginPath()
+        path.moveTo(0, height)
+        # Onda superior
+        for x in range(0, int(width) + 10, 10):
+            y = height - 40*mm + 15*mm * math.sin(x / 30)
+            path.lineTo(x, y)
+        path.lineTo(width, height)
+        path.close()
+        c.drawPath(path, fill=True, stroke=False)
+        
+        c.setFillColor(secondary_color)
+        path = c.beginPath()
+        path.moveTo(0, 0)
+        for x in range(0, int(width) + 10, 10):
+            y = 50*mm + 10*mm * math.sin(x / 25)
+            path.lineTo(x, y)
+        path.lineTo(width, 0)
+        path.close()
+        c.drawPath(path, fill=True, stroke=False)
+        
+    elif modelo == 5:  # Losangos
+        c.setFillColor(primary_color)
+        path = c.beginPath()
+        path.moveTo(width - 40*mm, height - 20*mm)
+        path.lineTo(width - 80*mm, height - 70*mm)
+        path.lineTo(width - 40*mm, height - 120*mm)
+        path.lineTo(width, height - 70*mm)
+        path.close()
+        c.drawPath(path, fill=True, stroke=False)
+        
+        c.setFillColor(secondary_color)
+        path = c.beginPath()
+        path.moveTo(50*mm, 80*mm)
+        path.lineTo(10*mm, 40*mm)
+        path.lineTo(50*mm, 0)
+        path.lineTo(90*mm, 40*mm)
+        path.close()
+        c.drawPath(path, fill=True, stroke=False)
+        
+    elif modelo == 6:  # Diagonais
+        c.setStrokeColor(primary_color)
+        c.setLineWidth(8)
+        for i in range(-5, 10):
+            c.line(i * 40*mm, height, i * 40*mm + width, 0)
+        c.setStrokeColor(secondary_color)
+        c.setLineWidth(3)
+        for i in range(-5, 10):
+            c.line(i * 40*mm + 15*mm, height, i * 40*mm + 15*mm + width, 0)
+            
+    elif modelo == 7:  # Grade
+        c.setFillColor(primary_color)
+        for row in range(3):
+            for col in range(4):
+                if (row + col) % 2 == 0:
+                    x = width - 100*mm + col * 25*mm
+                    y = height - 40*mm - row * 25*mm
+                    c.rect(x, y, 20*mm, 20*mm, fill=True, stroke=False)
+        c.setFillColor(secondary_color)
+        for row in range(3):
+            for col in range(3):
+                if (row + col) % 2 == 0:
+                    x = 15*mm + col * 25*mm
+                    y = 20*mm + row * 25*mm
+                    c.rect(x, y, 20*mm, 20*mm, fill=True, stroke=False)
+                    
+    elif modelo == 8:  # Semicírculos
+        c.setFillColor(primary_color)
+        c.arc(width - 80*mm, height - 80*mm, width, height, 180, 90)
+        c.setFillColor(secondary_color)
+        c.arc(0, 0, 80*mm, 80*mm, 0, 90)
+        
+    elif modelo == 9:  # Retângulos sobrepostos
+        c.setFillAlpha(0.7)
+        c.setFillColor(primary_color)
+        c.rect(width - 120*mm, height - 100*mm, 100*mm, 80*mm, fill=True, stroke=False)
+        c.setFillColor(secondary_color)
+        c.rect(width - 100*mm, height - 80*mm, 80*mm, 60*mm, fill=True, stroke=False)
+        c.setFillAlpha(0.7)
+        c.setFillColor(primary_color)
+        c.rect(10*mm, 20*mm, 80*mm, 60*mm, fill=True, stroke=False)
+        c.setFillColor(secondary_color)
+        c.rect(30*mm, 40*mm, 60*mm, 40*mm, fill=True, stroke=False)
+        c.setFillAlpha(1)
+        
+    elif modelo == 10:  # Pontos
+        for i in range(8):
+            for j in range(12):
+                if (i + j) % 3 == 0:
+                    c.setFillColor(primary_color if (i + j) % 2 == 0 else secondary_color)
+                    c.circle(15*mm + j * 15*mm, 15*mm + i * 15*mm, 3*mm, fill=True, stroke=False)
+                    
+    elif modelo == 11:  # Arcos
+        c.setStrokeColor(primary_color)
+        c.setLineWidth(10)
+        c.arc(width - 150*mm, height - 150*mm, width + 50*mm, height + 50*mm, 180, 90)
+        c.setStrokeColor(secondary_color)
+        c.arc(-50*mm, -50*mm, 150*mm, 150*mm, 0, 90)
+        
+    elif modelo == 12:  # Faixas horizontais
+        c.setFillColor(primary_color)
+        c.rect(0, height - 60*mm, width, 40*mm, fill=True, stroke=False)
+        c.setFillColor(secondary_color)
+        c.rect(0, 20*mm, width, 40*mm, fill=True, stroke=False)
+        
+    elif modelo == 13:  # Faixas verticais
+        c.setFillColor(primary_color)
+        c.rect(0, 0, 40*mm, height, fill=True, stroke=False)
+        c.setFillColor(secondary_color)
+        c.rect(width - 40*mm, 0, 40*mm, height, fill=True, stroke=False)
+        
+    elif modelo == 14:  # Cantos decorados
+        c.setFillColor(primary_color)
+        # Canto superior direito
+        path = c.beginPath()
+        path.moveTo(width, height)
+        path.lineTo(width - 80*mm, height)
+        path.lineTo(width, height - 80*mm)
+        path.close()
+        c.drawPath(path, fill=True, stroke=False)
+        # Canto inferior esquerdo
+        c.setFillColor(secondary_color)
+        path = c.beginPath()
+        path.moveTo(0, 0)
+        path.lineTo(80*mm, 0)
+        path.lineTo(0, 80*mm)
+        path.close()
+        c.drawPath(path, fill=True, stroke=False)
+        
+    elif modelo == 15:  # Moldura
+        c.setStrokeColor(primary_color)
+        c.setLineWidth(15)
+        c.rect(20*mm, 20*mm, width - 40*mm, height - 40*mm, fill=False, stroke=True)
+        c.setStrokeColor(secondary_color)
+        c.setLineWidth(5)
+        c.rect(25*mm, 25*mm, width - 50*mm, height - 50*mm, fill=False, stroke=True)
+        
+    elif modelo == 16:  # Angular/Gradiente
+        steps = 20
+        for i in range(steps):
+            alpha = 1 - (i / steps)
+            c.setFillAlpha(alpha * 0.5)
+            c.setFillColor(primary_color)
+            c.rect(width - (i + 1) * 8*mm, height - (i + 1) * 15*mm, 8*mm, 15*mm, fill=True, stroke=False)
+            c.setFillColor(secondary_color)
+            c.rect(i * 8*mm, i * 15*mm, 8*mm, 15*mm, fill=True, stroke=False)
+        c.setFillAlpha(1)
+        
+    elif modelo == 17:  # Círculos concêntricos
+        for i in range(5, 0, -1):
+            c.setFillColor(primary_color if i % 2 == 0 else secondary_color)
+            c.setFillAlpha(0.3 + i * 0.1)
+            c.circle(width - 60*mm, height - 80*mm, i * 15*mm, fill=True, stroke=False)
+        c.setFillAlpha(1)
+        
+    elif modelo == 18:  # Mosaico
+        size = 20*mm
+        for row in range(15):
+            for col in range(11):
+                if (row + col) % 4 < 2:
+                    c.setFillColor(primary_color if (row * col) % 3 == 0 else secondary_color)
+                    c.setFillAlpha(0.3 + ((row + col) % 5) * 0.1)
+                    c.rect(col * size, row * size, size, size, fill=True, stroke=False)
+        c.setFillAlpha(1)
+        
+    elif modelo == 19:  # Cruzado
+        c.setStrokeColor(primary_color)
+        c.setLineWidth(5)
+        for i in range(-10, 20):
+            c.line(i * 30*mm, 0, i * 30*mm + height, height)
+            c.line(i * 30*mm + height, 0, i * 30*mm, height)
+        c.setStrokeColor(secondary_color)
+        c.setLineWidth(2)
+        for i in range(-10, 20):
+            c.line(i * 30*mm + 15*mm, 0, i * 30*mm + 15*mm + height, height)
+            
+    elif modelo == 20:  # Fluido/Orgânico
+        c.setFillColor(primary_color)
+        path = c.beginPath()
+        path.moveTo(width, height)
+        path.curveTo(width - 100*mm, height - 50*mm, width - 50*mm, height - 150*mm, width, height - 200*mm)
+        path.lineTo(width, height)
+        path.close()
+        c.drawPath(path, fill=True, stroke=False)
+        
+        c.setFillColor(secondary_color)
+        path = c.beginPath()
+        path.moveTo(0, 0)
+        path.curveTo(100*mm, 50*mm, 50*mm, 150*mm, 0, 200*mm)
+        path.lineTo(0, 0)
+        path.close()
+        c.drawPath(path, fill=True, stroke=False)
+    
+    else:
+        # Modelo padrão (igual ao 1)
+        c.setFillColor(primary_color)
+        path = c.beginPath()
+        path.moveTo(width, height)
+        path.lineTo(width - 150*mm, height)
+        path.lineTo(width, height - 100*mm)
+        path.close()
+        c.drawPath(path, fill=True, stroke=False)
+
+
 def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list = None, config: dict = None) -> bytes:
     """Gerar PDF usando ReportLab com configurações personalizadas"""
     from reportlab.lib.pagesizes import A4
