@@ -3515,91 +3515,20 @@ async def share_orcamento_pdf(token: str):
         {"_id": 0}
     ).to_list(1000)
     
-    # Gerar PDF
-    try:
-        from weasyprint import HTML
-        from jinja2 import Environment, FileSystemLoader
-        import os
-        from datetime import datetime as dt
-        
-        # Preparar dados para o template
-        data_emissao = orcamento.get('created_at', '')
-        if isinstance(data_emissao, str) and len(data_emissao) >= 10:
-            try:
-                data_emissao = dt.fromisoformat(data_emissao.replace('Z', '+00:00'))
-                data_emissao = data_emissao.strftime("%d/%m/%Y")
-            except:
-                data_emissao = data_emissao[:10]
-        
-        data_geracao = dt.now().strftime("%d/%m/%Y %H:%M")
-        
-        status = orcamento.get('status', 'RASCUNHO')
-        status_label_map = {
-            'RASCUNHO': 'Rascunho',
-            'ENVIADO': 'Enviado',
-            'APROVADO': 'Aprovado',
-            'NAO_APROVADO': 'Não Aprovado'
+    # Buscar configuração de orçamento com valores padrão garantidos
+    config = await get_orcamento_config(empresa.get('id'))
+    
+    # Gerar PDF usando ReportLab (que inclui a capa)
+    pdf_bytes = generate_pdf_with_reportlab(orcamento, empresa, materiais, config)
+    
+    return StreamingResponse(
+        BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"inline; filename=orcamento_{orcamento.get('numero_orcamento', token)}.pdf",
+            "Cache-Control": "no-cache"
         }
-        status_label = status_label_map.get(status, status)
-        
-        context = {
-            'numero_orcamento': orcamento.get('numero_orcamento', 'N/A'),
-            'data_emissao': data_emissao,
-            'data_geracao': data_geracao,
-            'status': status_label,
-            'empresa': empresa,
-            'cliente_nome': orcamento.get('cliente_nome', ''),
-            'cliente_documento': orcamento.get('cliente_documento'),
-            'cliente_whatsapp': orcamento.get('cliente_whatsapp'),
-            'cliente_telefone': orcamento.get('cliente_telefone'),
-            'cliente_email': orcamento.get('cliente_email'),
-            'cliente_endereco': orcamento.get('cliente_endereco'),
-            'tipo': orcamento.get('tipo', ''),
-            'descricao_servico_ou_produto': orcamento.get('descricao_servico_ou_produto', ''),
-            'area_m2': orcamento.get('area_m2'),
-            'quantidade': orcamento.get('quantidade'),
-            'custo_total': orcamento.get('custo_total', 0),
-            'preco_minimo': orcamento.get('preco_minimo', 0),
-            'preco_sugerido': orcamento.get('preco_sugerido', 0),
-            'preco_praticado': orcamento.get('preco_praticado', 0),
-            'validade_proposta': orcamento.get('validade_proposta', ''),
-            'condicoes_pagamento': orcamento.get('condicoes_pagamento', ''),
-            'prazo_execucao': orcamento.get('prazo_execucao', ''),
-            'observacoes': orcamento.get('observacoes'),
-        }
-        
-        template_dir = os.path.join(os.path.dirname(__file__), 'templates')
-        env = Environment(loader=FileSystemLoader(template_dir))
-        template = env.get_template('orcamento.html')
-        html_content = template.render(**context)
-        pdf_file = HTML(string=html_content).write_pdf()
-        
-        return StreamingResponse(
-            BytesIO(pdf_file),
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": f"inline; filename=orcamento_{orcamento.get('numero_orcamento', token)}.pdf",
-                "Cache-Control": "no-cache"
-            }
-        )
-        
-    except (OSError, ImportError) as e:
-        # Fallback: usar ReportLab
-        logger.warning(f"WeasyPrint não disponível, usando ReportLab: {str(e)}")
-        
-        # Buscar configuração de orçamento usando a função que garante valores padrão
-        config = await get_orcamento_config(empresa.get('id'))
-        
-        pdf_bytes = generate_pdf_with_reportlab(orcamento, empresa, materiais, config)
-        
-        return StreamingResponse(
-            BytesIO(pdf_bytes),
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": f"inline; filename=orcamento_{orcamento.get('numero_orcamento', token)}.pdf",
-                "Cache-Control": "no-cache"
-            }
-        )
+    )
 
 # ========== ENDPOINTS: MATERIAIS ==========
 
