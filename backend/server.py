@@ -2112,13 +2112,22 @@ def generate_pdf_with_reportlab(orcamento: dict, empresa: dict, materiais: list 
             'cor_secundaria': '#3B82F6',
             'texto_ciencia': 'Declaro, para os devidos fins, que aceito esta proposta comercial de prestação de serviços nas condições acima citadas.',
             'texto_garantia': 'Os serviços executados possuem garantia conforme especificações técnicas e normas vigentes.',
-            'logo_url': None
+            'logo_url': None,
+            'capa_tipo': 'modelo',
+            'capa_modelo': 1,
+            'capa_personalizada_url': None
         }
     
     buffer = BytesIO()
     c = pdf_canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
     
+    # ============ PÁGINA DE CAPA ============
+    # Desenhar a capa do orçamento como primeira página
+    draw_cover_page(c, width, height, orcamento, empresa, config)
+    c.showPage()  # Finaliza a página de capa e inicia uma nova
+    
+    # ============ CONTEÚDO DO ORÇAMENTO ============
     # Cores personalizadas do CONFIG
     primary_color = HexColor(config.get('cor_primaria', '#7C3AED'))
     secondary_color = HexColor(config.get('cor_secundaria', '#3B82F6'))
