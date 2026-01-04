@@ -2990,14 +2990,27 @@ async def generate_orcamento_html(orcamento_id: str):
     gap:4px;
     white-space:nowrap;
   }}
-  .btn:hover{{ transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.15); }}
+  .btn:hover{{ transform:translateY(-1px); box-shadow:0 3px 8px rgba(0,0,0,.1); }}
   .btn.orange{{ border-color:var(--orange); color:var(--orange); }}
   .btn.green-solid{{ background:var(--green); color:#fff; border-color:var(--green); }}
   .btn.green-solid:hover{{ background:#16a34a; }}
   .btn:active{{ transform:translateY(0px); }}
+  .btn.disabled{{ background:#e5e7eb; color:#9ca3af; border-color:#d1d5db; cursor:not-allowed; }}
+  .btn.disabled:hover{{ transform:none; box-shadow:0 2px 4px rgba(0,0,0,.06); }}
+  
+  /* Texto de status ao lado dos botões */
+  .status-text{{
+    font-size:11px;
+    color:var(--muted);
+    padding:4px 8px;
+    background:#f3f4f6;
+    border-radius:4px;
+    white-space:nowrap;
+  }}
+  .status-text.success{{ background:#dcfce7; color:#16a34a; }}
   
   /* Espaço extra no final do conteúdo para não ficar atrás da barra */
-  body{{ padding-bottom:90px; }}
+  body{{ padding-bottom:50px; }}
 
   @media print{{
     @page{{ size:A4; margin:0; }}
