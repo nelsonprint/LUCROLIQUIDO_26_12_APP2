@@ -8,7 +8,7 @@ import { axiosInstance } from '../App';
 import { toast } from 'sonner';
 import { formatBRL } from '@/lib/formatters';
 
-const OrcamentoMateriais = ({ orcamentoId, onTotalChange }) => {
+const OrcamentoMateriais = ({ orcamentoId, onTotalChange, onMateriaisChange }) => {
   const [materiais, setMateriais] = useState([]);
   const [materiaisCatalogo, setMateriaisCatalogo] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +25,13 @@ const OrcamentoMateriais = ({ orcamentoId, onTotalChange }) => {
     percentual_acrescimo: '30',
     quantidade: '1',
   });
+
+  // Notificar o componente pai quando os materiais mudarem
+  useEffect(() => {
+    if (onMateriaisChange) {
+      onMateriaisChange(materiais);
+    }
+  }, [materiais, onMateriaisChange]);
 
   // Carregar materiais do orçamento (se já existir)
   const fetchMateriaisOrcamento = useCallback(async () => {
