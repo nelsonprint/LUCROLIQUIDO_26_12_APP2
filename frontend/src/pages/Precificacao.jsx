@@ -1905,7 +1905,7 @@ const Precificacao = ({ user, onLogout }) => {
                                 onValueChange={(value) => setOrcamentoData({
                                   ...orcamentoData,
                                   boleto_entrada_percentual: parseInt(value),
-                                  boleto_entrada_valor: (precoFinal * parseInt(value)) / 100
+                                  boleto_entrada_valor: (parseFloat(orcamentoData.preco_sugerido || 0) * parseInt(value)) / 100
                                 })}
                               >
                                 <SelectTrigger className="bg-zinc-800 border-zinc-700">
