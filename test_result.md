@@ -434,7 +434,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Capa do Orçamento - PDF cover page generation with geometric shapes"
     - "Capa do Orçamento - Cover model selection (1-20)"
     - "Capa do Orçamento - Custom cover image upload"
   stuck_tasks: []
