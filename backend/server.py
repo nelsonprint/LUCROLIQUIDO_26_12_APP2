@@ -3581,8 +3581,8 @@ async def share_orcamento_pdf(token: str):
         # Fallback: usar ReportLab
         logger.warning(f"WeasyPrint não disponível, usando ReportLab: {str(e)}")
         
-        # Buscar configuração de orçamento
-        config = await db.orcamento_config.find_one({"company_id": empresa.get('id')}, {"_id": 0})
+        # Buscar configuração de orçamento usando a função que garante valores padrão
+        config = await get_orcamento_config(empresa.get('id'))
         
         pdf_bytes = generate_pdf_with_reportlab(orcamento, empresa, materiais, config)
         
