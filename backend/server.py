@@ -2676,18 +2676,11 @@ def gerar_botao_fechar_negocio(orcamento: dict) -> str:
     orcamento_id = orcamento.get('id', '')
     
     if status == 'APROVADO':
-        return '''
-        <div style="background:#22c55e20; border:2px solid #22c55e; border-radius:12px; padding:20px; text-align:center; margin-top:20px;">
-            <span style="font-size:2em;">✅</span>
-            <p style="margin:10px 0 0; font-weight:700; color:#22c55e;">Orçamento já foi aceito!</p>
-        </div>
-        '''
+        return '''<span class="status-text success">✅ Aceito</span>'''
     
     return f'''
-    <button class="btn" onclick="fecharNegocio()" style="background:linear-gradient(135deg, #22c55e, #16a34a); font-size:1.1em; padding:15px 30px;">
-        ✅ Fechar Negócio
-    </button>
-    <div id="modal-aceite" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+    <button class="btn green-solid" onclick="fecharNegocio()">✅ Fechar Negócio</button>
+    <div id="modal-aceite" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:99999; justify-content:center; align-items:center;">
         <div style="background:#1e1e1e; border-radius:16px; padding:30px; max-width:500px; text-align:center; border:2px solid #22c55e;">
             <span style="font-size:3em;">📋</span>
             <h2 style="color:white; margin:15px 0;">Confirmar Aceite</h2>
