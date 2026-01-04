@@ -2418,8 +2418,10 @@ async def generate_orcamento_html(orcamento_id: str):
         return f"R$ {value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
     
     # Gerar iniciais da empresa para o logo
-    nome_empresa = empresa.get('razao_social') or empresa.get('name', 'Empresa')
-    iniciais = ''.join([word[0].upper() for word in nome_empresa.split()[:2]])
+    razao_social = empresa.get('razao_social') or empresa.get('name', 'Empresa')
+    nome_fantasia = empresa.get('nome_fantasia') or empresa.get('name_fantasy', '')
+    nome_empresa = razao_social  # Usar razão social como nome principal
+    iniciais = ''.join([word[0].upper() for word in razao_social.split()[:2]])
     
     # Verificar se tem logo configurada e converter para Base64
     logo_url = config.get('logo_url', '')
