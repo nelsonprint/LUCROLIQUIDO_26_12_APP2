@@ -2956,7 +2956,7 @@ async def generate_orcamento_html(orcamento_id: str):
 
   .footer{{ padding:12px 20px 16px; border-top:1px solid var(--border); color:var(--muted); font-size:13px; }}
 
-  /* Barra de ações fixa na parte inferior */
+  /* Barra de ações fixa na parte inferior - COMPACTA */
   .actions-bar{{
     position:fixed;
     bottom:0;
@@ -2966,27 +2966,29 @@ async def generate_orcamento_html(orcamento_id: str):
     backdrop-filter:blur(10px);
     -webkit-backdrop-filter:blur(10px);
     border-top:1px solid var(--border);
-    padding:16px 24px;
+    padding:8px 16px;
     display:flex;
     justify-content:center;
-    gap:12px;
+    align-items:center;
+    gap:8px;
     z-index:9999;
-    box-shadow:0 -4px 20px rgba(0,0,0,0.1);
+    box-shadow:0 -2px 10px rgba(0,0,0,0.08);
   }}
   .btn{{ 
     background:#fff; 
     color:var(--ink); 
-    border:2px solid var(--green); 
-    padding:12px 24px; 
-    border-radius:12px; 
+    border:1px solid var(--green); 
+    padding:6px 12px; 
+    border-radius:6px; 
     cursor:pointer; 
-    font-weight:700; 
-    font-size:14px;
-    box-shadow:0 4px 12px rgba(0,0,0,.1);
+    font-weight:600; 
+    font-size:12px;
+    box-shadow:0 2px 4px rgba(0,0,0,.06);
     transition:all 0.2s ease;
     display:inline-flex;
     align-items:center;
-    gap:8px;
+    gap:4px;
+    white-space:nowrap;
   }}
   .btn:hover{{ transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.15); }}
   .btn.orange{{ border-color:var(--orange); color:var(--orange); }}
