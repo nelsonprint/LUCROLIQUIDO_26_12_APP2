@@ -1,3 +1,61 @@
+# DRE (Demonstração do Resultado do Exercício) Feature Implementation
+# Testing Status: NEEDS TESTING
+# Date: 2026-01-06
+
+dre_feature:
+  - task: "DRE Dashboard Card - Backend Endpoint"
+    implemented: true
+    working: needs_testing
+    file: "server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    endpoints:
+      - "GET /api/dashboard/dre/{company_id}?meses=12"
+      - "GET /api/dashboard/dre/{company_id}/detalhada?mes=YYYY-MM"
+    status_history:
+      - working: needs_testing
+        agent: "main"
+        comment: "Backend endpoint implemented. Returns DRE data for current month, previous month, 12-month series, and alerts. Needs comprehensive testing."
+
+  - task: "DRE Dashboard Card - Frontend Component"
+    implemented: true
+    working: needs_testing
+    file: "frontend/src/components/DREChart.jsx"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    features:
+      - "Card with month metrics (Receita Líquida, Lucro Líquido, Margem Bruta, Margem Líquida)"
+      - "Alerts for uncategorized transactions and estimated taxes"
+      - "Bar chart showing 12-month trend"
+      - "Modal with detailed DRE table"
+      - "Month selector in modal"
+      - "Responsive layout (side-by-side on desktop, stacked on mobile)"
+    status_history:
+      - working: needs_testing
+        agent: "main"
+        comment: "Frontend component implemented and visually verified. Displays correctly on dashboard alongside Markup/BDI chart. Modal opens with detailed DRE. Needs comprehensive testing."
+
+test_criteria_dre:
+  backend:
+    - "GET /api/dashboard/dre/{company_id} returns mes_atual, mes_anterior, serie_historica, alertas"
+    - "mes_atual includes receita_bruta, receita_liquida, csp, lucro_bruto, despesas_operacionais, lucro_liquido, margens"
+    - "Variações calculadas corretamente (variacao_receita, variacao_lucro)"
+    - "Alertas gerados quando há lançamentos sem categoria"
+    - "Alerta de impostos estimados quando há receita"
+    - "GET /api/dashboard/dre/{company_id}/detalhada returns detailed DRE breakdown by category"
+  frontend:
+    - "DRE card displays next to Markup/BDI chart"
+    - "Metrics show correct values from API"
+    - "Alerts display with correct styling (warning, info, danger)"
+    - "Bar chart renders 12-month trend"
+    - "Ver DRE detalhada button opens modal"
+    - "Modal displays complete DRE table with AV%"
+    - "Month selector in modal works"
+    - "Responsive: stacked on mobile, side-by-side on desktop"
+
+
 backend:
   - task: "App do Vendedor - PWA Endpoint"
     implemented: true
