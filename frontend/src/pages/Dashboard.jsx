@@ -774,13 +774,14 @@ const Dashboard = ({ user, onLogout }) => {
 
         {/* Score de Saúde Financeira removido para simplificar */}
 
-        {/* Gráfico de Markup/BDI */}
+        {/* Gráfico de Markup/BDI e DRE lado a lado */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           <MarkupDonutChart 
             key={markupRefreshKey}
             companyId={selectedCompany?.id} 
             onConfigClick={() => setShowMarkupModal(true)} 
           />
+          <DREChart companyId={selectedCompany?.id} />
         </div>
 
         {/* Análise Detalhada e Alertas removidos para simplificar */}
