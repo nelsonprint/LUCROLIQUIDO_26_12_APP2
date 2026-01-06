@@ -1347,7 +1347,19 @@ async def get_metrics(company_id: str, month: str):
     
     results = await db.transactions.aggregate(pipeline).to_list(None)
     
-    metrics = {"faturamento": 0, "custos": 0, "despesas": 0, "lucro_liquido": 0}
+    # Buscar alíquota de ISS da configuração de markup
+    year, month_num = month.split("-")
+    markup_config = await db.markup_profiles.find_one(
+        {"company_id": company_id, "year": int(year), "month": int(month_num)},
+        {"_id": 0, "taxes": 1}
+    )
+    
+    # Alíquota padrão de ISS se não houver configuração
+    aliquota_iss = 0.03  # 3%
+    if markup_config and markup_config.get("taxes"):
+        aliquota_iss = markup_config["taxes"].get("iss_rate", 0.03)
+    
+    metrics = {"faturamento": 0, "custos": 0, "despesas": 0, "lucro_liquido": 0, "impostos": 0, "receita_liquida": 0}
     
     for result in results:
         if result['_id'] == 'receita':
@@ -1357,7 +1369,12 @@ async def get_metrics(company_id: str, month: str):
         elif result['_id'] == 'despesa':
             metrics['despesas'] = result['total']
     
-    metrics['lucro_liquido'] = metrics['faturamento'] - metrics['custos'] - metrics['despesas']
+    # Calcular impostos sobre vendas (ISS)
+    metrics['impostos'] = round(metrics['faturamento'] * aliquota_iss, 2)
+    metrics['receita_liquida'] = round(metrics['faturamento'] - metrics['impostos'], 2)
+    
+    # Lucro Líquido = Receita Líquida - Custos - Despesas (agora descontando impostos)
+    metrics['lucro_liquido'] = round(metrics['receita_liquida'] - metrics['custos'] - metrics['despesas'], 2)
     
     return metrics
 
