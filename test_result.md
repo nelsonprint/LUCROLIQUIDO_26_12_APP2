@@ -23,11 +23,11 @@ dre_feature:
 
   - task: "DRE Dashboard Card - Frontend Component"
     implemented: true
-    working: needs_testing
+    working: false
     file: "frontend/src/components/DREChart.jsx"
-    stuck_count: 0
+    stuck_count: 1
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     features:
       - "Card with month metrics (Receita Líquida, Lucro Líquido, Margem Bruta, Margem Líquida)"
       - "Alerts for uncategorized transactions and estimated taxes"
@@ -39,6 +39,9 @@ dre_feature:
       - working: needs_testing
         agent: "main"
         comment: "Frontend component implemented and visually verified. Displays correctly on dashboard alongside Markup/BDI chart. Modal opens with detailed DRE. Needs comprehensive testing."
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE: DRE component not rendering on dashboard. Backend API working correctly (GET /api/dashboard/dre/{company_id} returns proper data with receita_liquida: R$ 271,600, lucro_liquido: R$ 196,600, margem_bruta: 72.39%, etc.). Frontend authentication issues prevent accessing actual dashboard - browser automation shows landing page instead of dashboard. DRE component exists in code (/app/frontend/src/components/DREChart.jsx) and is imported in Dashboard.jsx, but not visible on frontend. Possible issues: 1) Component not rendering due to missing data/company context, 2) Authentication/session management preventing dashboard access, 3) Component conditional rendering logic, 4) CSS/styling hiding component. Backend endpoints fully functional and tested."
 
 test_criteria_dre:
   backend:
