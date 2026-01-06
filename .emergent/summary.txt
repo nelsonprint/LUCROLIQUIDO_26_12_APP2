@@ -1,185 +1,171 @@
 <analysis>**original_problem_statement:**
-O usuário solicitou uma série de novas funcionalidades e correções:
-1.  **Auditoria e Correção do Período de Teste (Trial):** Implementar um bloqueio no sistema quando o período de teste de um usuário expirar. O usuário deve poder apenas visualizar os dados, sem permissão para criar, editar ou excluir. Um banner de aviso deve ser exibido.
-2.  **Correção de Links e Emojis:** Corrigir os links para os apps de vendedor/supervisor que estavam sendo enviados sem o domínio principal (ex: ). Além disso, corrigir emojis que apareciam como caracteres inválidos () nas mensagens.
-3.  **URL do App Configurável:** Adicionar um campo nas configurações da empresa para que o usuário possa definir a URL base (domínio) a ser usada nos links gerados.
-4.  **Forma de Pagamento Boleto Bancário:** Adicionar Boleto Bancário como opção de pagamento nos dois fluxos de criação de orçamento. A funcionalidade deve incluir número de parcelas (1 a 20) e um campo para uma taxa de serviço configurável em Reais (R$).
-5.  **Opção Sem Comissão:** No campo de seleção de vendedor, nos formulários de orçamento, adicionar uma opção Sem comissão para vendas realizadas pelo proprietário da empresa, que não devem gerar comissão.
-6.  **Gráfico de CRO no Dashboard:** Adicionar um gráfico de CRO do Mês Atual (Custo de Retorno sobre o Investimento) no dashboard, que seja visualmente atraente e intuitivo.
-7.  **Auditoria e Correção do Gráfico CRO:** O usuário relatou que o gráfico CRO não estava atualizando os valores. Foi solicitado uma auditoria, correção e um redesenho para posicioná-lo no topo do dashboard, em formato horizontal e compacto, e com cores mais atraentes. A fonte de dados também precisou ser corrigida para sincronizar com os outros KPIs.
-8.  **Capa para Orçamento em PDF:** Implementar uma capa para o documento de orçamento gerado em PDF.
-9.  **Modelos de Capa + Upload Personalizado:** O sistema deve oferecer 20 modelos de capa pré-definidos para o usuário escolher, e também permitir que o usuário faça o upload de sua própria imagem (JPG/PNG) como um template de capa personalizado.
-10. **Botões Fixos na Visualização do Orçamento:** Na página de visualização do orçamento (acessada pelo cliente final), os botões de ação (ex: Aprovar, Recusar, Baixar PDF) devem permanecer fixos na parte inferior da tela, mesmo com o scroll da página.
+O usuário forneceu uma especificação detalhada (PRD) para uma nova funcionalidade no dashboard.
+
+**Objetivo:** Criar e adicionar no dashboard um Card “DRE (Serviços)”.
+
+**Funcionalidades Principais:**
+1.  **Card DRE (Serviços):**
+    *   Exibir um demonstrativo resumido da DRE (Demonstração do Resultado do Exercício) do mês atual, incluindo valores e margens principais.
+    *   Posicionar o novo card ao lado do gráfico existente Markup/BDI - Últimos 12 Meses, mantendo o alinhamento e a responsividade.
+
+2.  **Estrutura e Cálculo da DRE:**
+    *   A DRE deve seguir a estrutura padrão para prestadoras de serviços: Receita Bruta -> Receita Líquida -> Lucro Bruto -> Resultado Operacional (EBIT) -> Lucro Líquido.
+    *   Os custos e despesas devem ser mapeados a partir das categorias existentes no sistema (CSP, Despesas Comerciais, Despesas Administrativas, etc.).
+
+3.  **Métricas no Card (Mês Atual):**
+    *   Receita Líquida (R$)
+    *   Lucro Líquido (R$)
+    *   Margem Bruta (%)
+    *   Margem Líquida (%)
+    *   CSP (%)
+    *   Variação da Receita e Lucro Líquido em relação ao mês anterior (Δ R$ e Δ %).
+
+4.  **Gráfico (Últimos 12 Meses):**
+    *   Criar um gráfico de barras empilhadas mostrando a tendência de Receita Líquida, Custos do Serviço (CSP), Despesas Operacionais e Lucro Líquido.
+    *   Deve incluir tooltips interativos com os valores detalhados de cada mês.
+
+5.  **Layout e Responsividade:**
+    *   Em desktop, exibir os gráficos Markup/BDI e DRE lado a lado.
+    *   Em mobile, empilhá-los verticalmente.
+
+6.  **Interação (Drill-down):**
+    *   Incluir um botão Ver DRE detalhada que, ao ser clicado, abrirá um modal ou uma nova página com a tabela DRE completa do mês selecionado.
+
+7.  **Fluxo de Dados:**
+    *   Implementar um endpoint no backend que retorne os dados agregados para o resumo do mês atual e a série histórica dos últimos 12 meses.
+    *   Lidar com lançamentos não categorizados, exibindo um aviso ao usuário.
 
 **User's preferred language**: Português
 
 **what currently exists?**
-- A lógica de **Trial Expirado** foi totalmente implementada. O backend verifica o status da assinatura e um novo endpoint () controla as permissões de escrita. O frontend usa um Contexto () para gerenciar o estado globalmente, exibindo um banner de aviso e desabilitando botões de criação/edição em páginas como Orçamentos e Clientes.
-- A funcionalidade de **URL do App configurável** foi implementada. Um campo URL do App foi adicionado à página de Empresa, e o backend agora utiliza essa URL para gerar os links para vendedores/supervisores. O problema de encoding de emojis também foi corrigido.
-- As funcionalidades **Boleto Bancário** e **Sem comissão** foram adicionadas às páginas  e . O backend foi ajustado para não gerar comissão quando a opção sem_comissao é selecionada.
-- O **Gráfico de CRO do Mês** foi implementado, auditado, corrigido e redesenhado no Dashboard. Ele agora está posicionado no topo, possui um design horizontal compacto com cores neon e usa a mesma fonte de dados dos outros KPIs, garantindo a sincronia dos valores.
-- A funcionalidade de **Botões Fixos** foi implementada na visualização web do orçamento, criando uma barra de ações fixa na parte inferior da página.
-- A **base para a seleção de modelos de capa** foi implementada. O backend foi atualizado para armazenar a preferência do modelo ( ou ) e um endpoint para upload de imagem personalizada foi criado. O frontend, na página , já exibe a nova seção para o usuário escolher entre os modelos pré-definidos ou fazer o upload de um template.
+O sistema possui um dashboard com vários KPIs e um gráfico de Markup/BDI. A funcionalidade de capa de orçamento foi totalmente refatorada: os 20 modelos geométricos pré-definidos foram removidos, e agora o sistema suporta apenas o upload de uma imagem personalizada como capa. Sobre essa imagem, são sobrepostas as informações da empresa (logo, nome fantasia, razão social, CNPJ, telefone) e o título PROPOSTA COMERCIAL, com design e posicionamento ajustados conforme solicitação do usuário. O botão Baixar PDF foi removido da visualização web, incentivando o uso da função Imprimir / Salvar como PDF do navegador. O fluxo de pagamento com Boleto Bancário foi dividido em duas modalidades (Entrada + Boletos e Boleto para X dias). Foi corrigido um bug crítico que impedia que os materiais adicionados a um novo orçamento fossem salvos no banco de dados.
 
 **Last working item**:
--   **Last item agent was working:** O agente estava finalizando a implementação da interface do usuário (UI) para a seleção do modelo de capa na página . Após adicionar a seção e os botões de seleção (Modelos Pré-definidos e Template Personalizado), o agente estava tentando verificar se o grid com os 20 modelos pré-definidos aparecia corretamente ao clicar no respectivo botão. A verificação via screenshot mostrou que o grid não estava sendo exibido, indicando um provável problema na lógica de renderização condicional do React.
--   **Status:** IN PROGRESS
--   **Agent Testing Done:** Y (Parcialmente, via screenshot, que revelou o bug)
--   **Which testing method agent to use?** screenshot tool. O agente deve usar a ferramenta de screenshot para verificar a página  após corrigir o código. É necessário fazer login, navegar para a página e clicar no botão Modelos Pré-definidos para confirmar que o grid de modelos é exibido.
+-   **Last item agent was working:** O agente recebeu uma nova e detalhada requisição para implementar um card de **DRE (Demonstração do Resultado do Exercício)** no dashboard. O agente iniciou o trabalho analisando o código do arquivo  para entender a estrutura atual e planejar a inserção do novo componente.
+-   **Status:** NOT STARTED
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** both. Será necessário um backend testing agent para validar o novo endpoint da DRE e seus cálculos, e um frontend testing agent para verificar a renderização do novo card, o gráfico, as interações (tooltip, modal) e a responsividade no dashboard.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Grid de modelos de capa não é exibido (P0)**
--   **Issue 2: Deploy no servidor Jelastic do usuário continua quebrado (P1)**
-
-**Issues Detail:**
--   **Issue 1: Grid de modelos de capa não é exibido**
-    -   **Attempted fixes:** O agente adicionou o state no React e a estrutura JSX para a seção de seleção de capas. No entanto, a lógica que deveria exibir o grid de 20 modelos quando a opção Modelos Pré-definidos é selecionada parece estar falhando.
-    -   **Next debug checklist:**
-        1.  Revisar o arquivo .
-        2.  Verificar a lógica de renderização condicional que exibe o grid de modelos. Ela deve ser algo como: .
-        3.  Confirmar que o  do botão Modelos Pré-definidos está atualizando corretamente o estado  para .
-        4.  Usar  dentro do componente para depurar o valor do estado no navegador.
-    -   **Why fix this issue and what will be achieved with this?** Para finalizar a funcionalidade de seleção de capa, permitindo que o usuário visualize e escolha um dos modelos pré-definidos.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Frontend
-    -   **Blocked on other issue:** None
-
--   **Issue 2: Deploy no servidor Jelastic do usuário continua quebrado**
-    -   **Attempted fixes:** (Na sessão anterior) Várias tentativas de corrigir o arquivo de configuração do NGINX no Load Balancer.
-    -   **Next debug checklist:** Esta é uma tarefa crítica herdada do fork anterior. O agente deve:
-        1.  Acessar o container do Load Balancer via SSH.
-        2.  Editar o arquivo .
-        3.  Garantir que a diretiva  faz  para o IP e porta do container backend ().
-        4.  Garantir que a diretiva  faz  para o IP e porta do container frontend ().
-        5.  Validar a configuração com  e reiniciar com .
-    -   **Why fix this issue and what will be achieved with this?** A aplicação do usuário em seu ambiente de produção está completamente inutilizável. A correção é essencial para o funcionamento do sistema.
-    -   **Status:** NOT STARTED (Nesta sessão)
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Both
-    -   **Blocked on other issue:** None
+Nenhum. As tarefas anteriores foram concluídas ou removidas pelo usuário. O trabalho atual é uma nova feature.
 
 **In progress Task List**:
--   **Task 1: Finalizar funcionalidade da Capa do Orçamento (P0)**
-    -   **Where to resume:** Corrigindo a lógica de renderização condicional do grid de modelos em .
-    -   **What will be achieved with this?** Uma interface funcional para que o usuário possa escolher um modelo de capa pré-definido ou fazer o upload de um personalizado.
-    -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Frontend
+-   **Task 1: Implementar Card DRE (Serviços) no Dashboard (P0)**
+    -   **Where to resume:** O agente deve começar o planejamento da implementação a partir da análise já iniciada do . O próximo passo é projetar o endpoint do backend e, em seguida, criar os componentes do frontend.
+    -   **What will be achieved with this?** O dashboard terá uma nova e poderosa ferramenta de análise financeira, permitindo ao usuário visualizar a saúde financeira do seu negócio de forma rápida e intuitiva.
+    -   **Status:** NOT STARTED
+    -   **Should Test frontend/backend/both after fix?** Both
     -   **Blocked on something:** Não.
 
 **Upcoming and Future Tasks**
-
 -   **Upcoming Tasks:**
-    -   (P0) **Implementar a Geração da Capa no PDF:** Após o usuário selecionar um modelo ou fazer o upload, a lógica de geração de PDF no backend () precisa ser modificada para desenhar a capa escolhida como a primeira página do documento. Isso exigirá um trabalho significativo com a biblioteca .
--   **Future Tasks:** (Herdados da sessão anterior)
-    -   (P1) Importação de serviços via CSV na página .
-    -   (P2) Refinar a UI/UX da página do supervisor.
-    -   (P3) Refatorar  para uma estrutura modular.
-    -   (P4) Remover o arquivo obsoleto .
+    -   **(P0) Fase 1: Backend da DRE**
+        -   Criar um novo endpoint (ex: ) em .
+        -   Implementar a lógica de agregação de dados para calcular as linhas da DRE (Receita, Custos, Despesas, Lucro) para o mês atual e para os últimos 12 meses, buscando dados das coleções de orçamentos e despesas.
+        -   O endpoint deve retornar um JSON com o resumo do mês atual e a série histórica para o gráfico.
+    -   **(P0) Fase 2: Frontend - Card e Gráfico da DRE**
+        -   Criar um novo componente React (ex: ) para o card da DRE.
+        -   Em , adicionar o novo componente ao grid, ao lado do gráfico de Markup.
+        -   Implementar a chamada ao novo endpoint da DRE.
+        -   Renderizar as métricas do mês atual (Receita, Lucro, Margens).
+        -   Usar  (ou a biblioteca de gráficos existente) para criar o gráfico de barras empilhadas dos últimos 12 meses com tooltips interativos.
+    -   **(P1) Fase 3: Frontend - Modal de DRE Detalhada**
+        -   Criar um modal que é acionado pelo botão Ver DRE detalhada.
+        -   O modal deve exibir uma tabela com a DRE completa do mês selecionado.
+        -   Adicionar um seletor para permitir que o usuário visualize a DRE de outros meses (dos últimos 12).
+-   **Future Tasks:**
+    -   O usuário removeu explicitamente as tarefas futuras da sessão anterior (Importação CSV, Refinar UI do supervisor, etc). A única tarefa futura/pendente de baixo nível é a correção do deploy no servidor Jelastic, que foi novamente despriorizada pelo usuário.
 
 **Completed work in this session**
--   **Funcionalidade: Lógica de Trial Expirado:** Implementado bloqueio de escrita e banner de aviso no frontend e backend.
--   **Funcionalidade: URL do App Configurável:** Adicionado campo na página da empresa para definir o domínio dos links, que agora são gerados corretamente.
--   **Correção:** Resolvido problema de encoding que quebrava emojis em mensagens do WhatsApp.
--   **Funcionalidade: Pagamento com Boleto Bancário:** Adicionada opção de boleto com parcelas e taxa nos formulários de orçamento.
--   **Funcionalidade: Opção Sem Comissão:** Adicionada opção no seletor de vendedor que impede a geração de comissão.
--   **Funcionalidade: Gráfico de CRO no Dashboard:** Criado, auditado, corrigido e redesenhado o gráfico para ser mais compacto, visualmente atraente e sincronizado com os KPIs.
--   **Funcionalidade: Botões Fixos:** A barra de ações na visualização do orçamento para o cliente agora é fixa na parte inferior da tela.
--   **Funcionalidade (Parcial): Modelos de Capa:** Implementado o backend (novos campos no DB, endpoint de upload) e a UI inicial no frontend para a seleção de modelos de capa.
+-   **Refatoração da Capa do Orçamento:**
+    -   Removida toda a funcionalidade de 20 modelos de capa geométricos pré-definidos (frontend e backend).
+    -   Simplificada a página de configuração para ter apenas a opção de upload de imagem personalizada ().
+    -   Implementado um overlay na capa personalizada que exibe de forma centralizada a logo da empresa (se houver), Nome Fantasia, Razão Social, CNPJ e Telefone.
+    -   Adicionado o título PROPOSTA COMERCIAL no centro da capa, com fundo semitransparente e fonte aumentada para melhor estética.
+-   **Refatoração do PDF e Visualização Web:**
+    -   Unificada a geração de PDF para usar a visualização HTML (), garantindo que o PDF baixado seja idêntico ao que o cliente vê na tela, incluindo a capa personalizada.
+    -   Removido o botão Baixar PDF da visualização web, conforme solicitado.
+    -   Corrigido o layout dos botões na visualização web para serem menores e mais compactos.
+-   **Refatoração do Pagamento com Boleto:**
+    -   A forma de pagamento Boleto Bancário foi dividida em duas novas modalidades nos formulários (, ):
+        1.  Entrada + Boletos
+        2.  Boleto para X dias
+-   **Correção de Bug Crítico:**
+    -   Corrigido o bug que impedia que os materiais adicionados durante a criação de um **novo orçamento** fossem salvos no banco de dados. A correção envolveu levantar o estado do componente  para o componente pai .
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Deploy em Jelastic Quebrado**
-    -   **Debug checklist:** A configuração do NGINX no Load Balancer do ambiente de produção do usuário está incorreta, impedindo a comunicação entre frontend e backend. A tarefa foi mencionada no handover anterior como P0, mas foi ignorada nesta sessão.
-    -   **Why to solve this issue and what will be achieved with this?** A aplicação do usuário está fora do ar em seu próprio servidor. Corrigir isso é de prioridade máxima para o negócio.
-    -   **Should Test frontend/backend/both after fix:** Both
+-   **Issue 1: Deploy no servidor Jelastic do usuário continua quebrado**
+    -   **Debug checklist:** A configuração do NGINX no Load Balancer do ambiente de produção do usuário está incorreta.
+    -   **Why to solve this issue and what will be achieved with this?** A aplicação do usuário em seu ambiente de produção está completamente inutilizável. A correção é essencial.
+    -   **Status:** NOT STARTED. O usuário explicitamente despriorizou esta tarefa em favor de novas funcionalidades. O agente deve estar ciente de que o ambiente de produção do cliente não reflete as últimas alterações.
     -   **Is recurring issue?** Y
 
 **Known issue recurrence from previous fork**
 -   **Issue recurrence in previous fork:** Sim, o problema do deploy no Jelastic.
--   **Recurrence count:** 2
+-   **Recurrence count:** 3
 -   **Status:** NOT STARTED
 
 **Code Architecture**
-A arquitetura principal permanece um monorepo com Frontend (React) e Backend (FastAPI). Pontos notáveis:
--   O backend gera HTML dinamicamente para a visualização web dos orçamentos (inline em ).
--   Um novo  foi adicionado ao frontend para gerenciamento de estado global relacionado à assinatura do usuário.
--   A geração de PDF é feita no backend com a biblioteca .
+A aplicação segue uma arquitetura monorepo com frontend React e backend FastAPI. Mudanças significativas nesta sessão:
+-   A geração de PDF foi migrada de uma abordagem mista (ReportLab no backend, html2pdf.js no frontend) para uma abordagem unificada e client-side, usando  para converter a visualização web em PDF. Isso garante consistência visual.
+-   A lógica de capa geométrica foi completamente removida do . A capa agora é uma imagem de fundo em um  na visualização HTML.
+-   No frontend, foi implementado o padrão de state lifting entre os componentes  e  para corrigir o bug de salvamento de materiais.
 
 **Key Technical Concepts**
--   React Context API para gerenciamento de estado global.
--   Renderização condicional em React.
--   FastAPI para upload de arquivos.
--   Geração de HTML/CSS inline em uma string Python no backend.
--   Manipulação de estado complexo em formulários React com múltiplos .
+-   **Client-Side PDF Generation:** Utilização de  para gerar PDFs a partir do DOM, garantindo consistência visual entre a tela e o arquivo final.
+-   **State Lifting in React:** Passar callbacks de um componente pai para um filho para permitir que o filho comunique mudanças de estado para cima (ex: ).
+-   **CSS Overlay:** Uso de CSS (positioning, z-index, rgba para transparência) para sobrepor texto e informações sobre uma imagem de fundo (a capa personalizada).
+-   **Feature Simplification:** Remoção drástica de código (frontend e backend) relacionado a uma funcionalidade (capas geométricas) que se tornou complexa e foi despriorizada pelo usuário.
 
 **key DB schema**
--   **orcamento_configs**: Adicionados os campos  (string),  (string),  (string).
+-   **orcamentos:** Novos campos foram adicionados para suportar as novas modalidades de boleto:  (string: 'com_entrada' ou 'prazo_fixo'),  (number).
 
 **All files of reference**
 -   **Backend (modificados):**
-    -   : Adicionados novos campos aos modelos Pydantic, novos endpoints, lógica de verificação de trial, verificação sem comissão, e estilos CSS para botões fixos.
--   **Frontend (modificados/criados):**
-    -   : Adicionada nova seção de UI para seleção de modelo de capa.
-    -   : Implementado e corrigido o novo gráfico de CRO.
-    -   : Adicionadas opções de Boleto e Sem comissão.
-    -   : Adicionadas opções de Boleto e Sem comissão.
-    -   : Adicionada verificação  para desabilitar botões.
-    -   : Adicionada verificação  para desabilitar botões.
-    -   : Adicionado campo para .
-    -   : Refatorado para incluir o  e o .
-    -   : (Novo) Contexto para gerenciar o status da assinatura.
-    -   : (Novo) Banner de aviso de trial expirado.
-    -   : (Novo) Hook customizado para verificar permissões de escrita.
--   **Testes:**
-    -   : Atualizado para testar as novas funcionalidades do backend.
+    -   : Sofreu grandes alterações. Remoção das funções  e . Modificação da geração de HTML () para incluir a nova capa personalizada com overlay de informações, remoção do botão Baixar PDF e ajuste nos dados da empresa.
+-   **Frontend (modificados):**
+    -   : Simplificado para remover toda a UI relacionada aos modelos de capa pré-definidos.
+    -   : Adicionados novos estados para os tipos de boleto e para os materiais; UI de boleto refatorada; lógica de salvamento de orçamento atualizada para incluir materiais.
+    -   : Adicionados novos estados e UI para as novas modalidades de boleto. Corrigido um bug de variável indefinida ().
+    -   : Modificado para aceitar a prop  e levantar o estado da lista de materiais para o componente pai.
+    -   : Arquivo analisado em preparação para a nova tarefa da DRE.
 
 **Critical Info for New Agent**
--   **PRIORIDADE MÁXIMA IGNORADA:** A tarefa mais crítica do fork anterior, corrigir o deploy no servidor Jelastic do usuário, foi completamente ignorada. A aplicação de produção do cliente está **quebrada**. Embora o usuário tenha solicitado novas funcionalidades, o próximo agente deve fortemente recomendar a resolução deste problema primeiro.
--   **Lógica da Capa Incompleta:** A UI para selecionar a capa está em andamento. A etapa seguinte e mais complexa, que é efetivamente desenhar a capa selecionada no PDF gerado pelo backend, ainda não foi iniciada.
--   **Dificuldades com Screenshots (Playwright):** O agente anterior teve problemas recorrentes com a persistência da sessão de login ao usar a ferramenta de screenshot, sendo redirecionado para a landing page. A solução é executar todas as ações (login, navegação, scroll) em uma única chamada da ferramenta para manter o contexto do navegador.
+-   **Nova Feature (P0):** A prioridade máxima agora é a implementação do card de DRE no dashboard, conforme o PRD detalhado fornecido pelo usuário.
+-   **Deploy em Produção (Jelastic):** Este problema crítico persiste, mas o usuário pediu para ignorá-lo por enquanto. É crucial que o próximo agente não tente resolver isso sem a aprovação do usuário, mas deve estar ciente de que qualquer coisa desenvolvida não estará disponível para o cliente final até que o deploy seja corrigido.
+-   **PDFs são Gerados no Cliente:** Lembre-se que a geração de PDF agora é 100% client-side usando  a partir da visualização web. Não há mais geração de PDF com ReportLab no backend para os orçamentos.
 
 **documents and test reports created in this job**
--   /app/mockup_capa_orcamento.html
--   /app/mockup_capa_branca.html
--   /app/mockup_modelos_capas.html
--   /app/mockup_modelos_construcao.html
--   /app/test_result.md (atualizado)
+-   
+-   
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Usuário:** Pede para implementar a escolha entre 20 modelos pré-definidos e a opção de upload de imagem própria para a capa. E também pede botões fixos no rodapé da visualização do orçamento. (IN PROGRESS)
-2.  **Agente:** Confirma o entendimento das duas tarefas.
-3.  **Usuário:** Solicita que a capa tenha um fundo branco, com formas geométricas usando as cores configuradas pelo cliente. (DONE)
-4.  **Agente:** Cria um mockup da capa com fundo branco e pede feedback.
-5.  **Usuário:** Aprova a capa de fundo branco, mas pede que existam 20 modelos para escolha, com formas geométricas variadas (círculos, elipses, prédios, obras). (DONE)
-6.  **Agente:** Confirma o plano de criar os 20 modelos.
-7.  **Usuário:** Pede para ver alguns modelos. (DONE)
-8.  **Agente:** Cria 6 modelos com temas abstratos (círculos, hexágonos, ondas, etc.).
-9.  **Usuário:** Pede que os modelos sejam mais relacionados a obras, serviços elétricos e construção. (DONE)
-10. **Agente:** Cria 6 modelos focados em construção/elétrica.
-11. **Usuário:** Rejeita os modelos de construção e pede para voltar aos modelos abstratos/aleatórios. (DONE)
-12. **Agente:** Confirma que manterá os designs de formas geométricas abstratas.
-13. **Usuário:** Pergunta se é possível ter os modelos pré-definidos e também uma opção para o usuário fazer upload de sua própria imagem JPG. (DONE)
-14. **Agente:** Confirma que é possível.
+1.  **Usuário (557):** tudo certo - Aprova a correção do bug de salvamento de materiais.
+2.  **Agente (559):** Finaliza a tarefa com um resumo.
+3.  **Usuário (560):** Envia um PRD detalhado para uma nova feature: um card de **DRE (Demonstração do Resultado do Exercício)** para o dashboard.
+4.  **Agente (561):** Confirma o início da nova tarefa e começa a analisar o código do dashboard.
+5.  **Agente (562-564):** Visualiza o código de .
 
 **Project Health Check:**
--   **Broken:** O ambiente de produção do usuário no servidor Jelastic está **totalmente quebrado** devido a um problema de roteamento do NGINX que não foi abordado nesta sessão.
--   **Working:** O ambiente de desenvolvimento local está funcional e contém um grande número de novas funcionalidades implementadas e testadas.
+-   **Broken:** O ambiente de produção do usuário no Jelastic permanece quebrado devido a um problema de configuração do NGINX. As últimas funcionalidades não estão em produção.
+-   **Working:** O ambiente de desenvolvimento local está estável e funcional, com todas as últimas correções e refatorações aplicadas.
 
 **3rd Party Integrations**
+-   : Agora é a única ferramenta usada para gerar os PDFs dos orçamentos, sendo executada no lado do cliente.
 -   Mercado Pago — requer User API Key
 -   OpenAI GPT-4o-mini — usa Emergent LLM Key
--    — Integrado no frontend.
 -    — APIs do navegador.
 
 **Testing status**
--   Testing agent used after significant changes: YES (para backend)
+-   Testing agent used after significant changes: YES (para validar as correções de backend na funcionalidade de capa).
 -   Troubleshoot agent used after agent stuck in loop: NO
--   Test files created: []
--   Known regressions: Nenhum no ambiente de desenvolvimento. O ambiente de produção continua quebrado.
+-   Test files created: Nenhum arquivo de teste permanente.
+-   Known regressions: Nenhuma no ambiente de desenvolvimento.
 
 **Credentials to test flow:**
 -   **Admin User:**  / 
 
 **What agent forgot to execute**
--   A tarefa mais crítica: corrigir o problema de deploy no servidor Jelastic do usuário, que foi a P0 do handover anterior. O agente foi imediatamente redirecionado pelo usuário para novas funcionalidades e não voltou a abordar o problema do deploy.</analysis>
+-   O agente seguiu as instruções do usuário de forma diligente, incluindo a despriorização do problema crítico de deploy no Jelastic. Portanto, não esqueceu de executar nada, mas sim seguiu a prioridade definida pelo usuário.</analysis>
