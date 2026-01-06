@@ -168,11 +168,12 @@ const Dashboard = ({ user, onLogout }) => {
   // Atualizar CRO quando as métricas mudarem (usa mesma fonte dos KPIs)
   useEffect(() => {
     if (metrics) {
-      // CRO usa os mesmos dados das métricas (lançamentos)
-      const receitas = metrics.faturamento || 0;
+      // CRO usa receita líquida (já descontando impostos) para ficar igual à DRE
+      const receitas = metrics.receita_liquida || metrics.faturamento || 0;
       const despesas = (metrics.custos || 0) + (metrics.despesas || 0);
       const lucro = metrics.lucro_liquido || 0;
-      setLucroMesAtual({ receitas, despesas, lucro });
+      const impostos = metrics.impostos || 0;
+      setLucroMesAtual({ receitas, despesas, lucro, impostos });
     }
   }, [metrics]);
 
