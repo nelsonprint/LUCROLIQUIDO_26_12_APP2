@@ -312,17 +312,17 @@ const Dashboard = ({ user, onLogout }) => {
 
               {/* Valores */}
               <div className="flex items-center gap-4 lg:gap-6">
-                {/* Receitas */}
+                {/* Receita Líquida */}
                 <div className="text-center">
-                  <p className="text-xs text-emerald-400 font-medium uppercase tracking-wider">Receitas</p>
+                  <p className="text-xs text-emerald-400 font-medium uppercase tracking-wider">Receita Líq.</p>
                   <p className="text-lg font-bold text-emerald-400" style={{ textShadow: '0 0 10px rgba(16,185,129,0.5)' }}>
                     R$ {(lucroMesAtual.receitas / 1000).toFixed(1)}k
                   </p>
                 </div>
 
-                {/* Despesas */}
+                {/* Custos + Despesas */}
                 <div className="text-center">
-                  <p className="text-xs text-orange-400 font-medium uppercase tracking-wider">Despesas</p>
+                  <p className="text-xs text-orange-400 font-medium uppercase tracking-wider">Custos+Desp.</p>
                   <p className="text-lg font-bold text-orange-400" style={{ textShadow: '0 0 10px rgba(249,115,22,0.5)' }}>
                     R$ {(lucroMesAtual.despesas / 1000).toFixed(1)}k
                   </p>
