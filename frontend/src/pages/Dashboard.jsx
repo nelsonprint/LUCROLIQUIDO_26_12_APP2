@@ -12,6 +12,7 @@ import { TrendingUp, DollarSign, AlertCircle, Target, BarChart, Settings } from 
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LabelList, LineChart, Line, AreaChart, Area, ReferenceLine } from 'recharts';
 import MarkupConfigModal from '@/components/MarkupConfigModal';
 import MarkupDonutChart from '@/components/MarkupDonutChart';
+import DREChart from '@/components/DREChart';
 
 const Dashboard = ({ user, onLogout }) => {
   const [showCompanyModal, setShowCompanyModal] = useState(false);
