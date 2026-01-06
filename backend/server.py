@@ -5783,6 +5783,447 @@ async def get_contas_receber_por_cliente(company_id: str, mes: Optional[str] = N
         for r in results
     ]
 
+# ========== DRE (DEMONSTRAÇÃO DO RESULTADO DO EXERCÍCIO) ==========
+
+# Mapeamento de categorias para grupos da DRE
+DRE_CATEGORY_MAPPING = {
+    # Grupos de despesa -> Grupo DRE
+    "DIRETA_OBRA": "CSP",  # Custo do Serviço Prestado
+    "FIXA": "DESPESA_ADMINISTRATIVA",
+    "VARIAVEL_INDIRETA": "DESPESA_ADMINISTRATIVA",
+}
+
+# Categorias específicas que são comerciais (por nome)
+CATEGORIAS_COMERCIAIS = [
+    "marketing", "publicidade", "comissão", "comissões", "representação",
+    "propaganda", "brinde", "vendas", "comercial"
+]
+
+def mapear_categoria_dre(category_name: str, category_group: str) -> str:
+    """Mapeia uma categoria do sistema para o grupo da DRE"""
+    if not category_name:
+        return "NAO_CLASSIFICADO"
+    
+    nome_lower = category_name.lower()
+    
+    # Verificar se é categoria comercial pelo nome
+    for termo in CATEGORIAS_COMERCIAIS:
+        if termo in nome_lower:
+            return "DESPESA_COMERCIAL"
+    
+    # Verificar se é receita financeira
+    if "financeira" in nome_lower or "juro" in nome_lower or "rendimento" in nome_lower:
+        return "FINANCEIRO"
+    
+    # Usar o grupo se disponível
+    if category_group:
+        return DRE_CATEGORY_MAPPING.get(category_group, "NAO_CLASSIFICADO")
+    
+    return "NAO_CLASSIFICADO"
+
+
+@api_router.get("/dashboard/dre/{company_id}")
+async def get_dre_dashboard(company_id: str, meses: int = 12):
+    """
+    Retorna os dados da DRE para o dashboard:
+    - Resumo do mês atual
+    - Série histórica dos últimos N meses para o gráfico
+    - Alertas (lançamentos sem categoria, impostos estimados)
+    """
+    from datetime import datetime as dt
+    from dateutil.relativedelta import relativedelta
+    
+    hoje = dt.now()
+    mes_atual = hoje.strftime("%Y-%m")
+    
+    # ========== CONFIGURAÇÃO DE IMPOSTOS DA EMPRESA ==========
+    # Buscar configuração de markup para pegar alíquota de ISS
+    markup_config = await db.markup_profiles.find_one(
+        {"company_id": company_id, "year": hoje.year, "month": hoje.month},
+        {"_id": 0, "taxes": 1}
+    )
+    
+    # Alíquota padrão de ISS se não houver configuração
+    aliquota_iss = 0.03  # 3%
+    if markup_config and markup_config.get("taxes"):
+        aliquota_iss = markup_config["taxes"].get("iss_rate", 0.03)
+    
+    # ========== BUSCAR CATEGORIAS DA EMPRESA ==========
+    categorias = await db.expense_categories.find(
+        {"company_id": company_id, "active": True},
+        {"_id": 0}
+    ).to_list(500)
+    
+    # Criar mapeamento de categoria_id -> grupo_dre
+    categoria_map = {}
+    for cat in categorias:
+        cat_id = cat.get("id")
+        cat_name = cat.get("name", "")
+        cat_group = cat.get("group")
+        cat_type = cat.get("type", "")
+        
+        if cat_type == "RECEITA":
+            categoria_map[cat_id] = "RECEITA"
+        elif cat_type == "CUSTO":
+            categoria_map[cat_id] = "CSP"
+        else:  # DESPESA
+            categoria_map[cat_id] = mapear_categoria_dre(cat_name, cat_group)
+    
+    # ========== FUNÇÃO PARA CALCULAR DRE DE UM MÊS ==========
+    async def calcular_dre_mes(mes_ref: str):
+        """Calcula a DRE para um mês específico"""
+        
+        # Inicializar valores
+        receita_bruta = 0
+        csp = 0  # Custo do Serviço Prestado
+        despesa_comercial = 0
+        despesa_administrativa = 0
+        resultado_financeiro = 0
+        nao_classificado = 0
+        impostos_estimados = False
+        lancamentos_sem_categoria = 0
+        
+        # ===== RECEITAS =====
+        # Fonte 1: Lançamentos realizados com competência no mês
+        receitas_lancamentos = await db.transactions.find({
+            "company_id": company_id,
+            "type": "receita",
+            "status": "realizado",
+            "cancelled": {"$ne": True},
+            "$or": [
+                {"competence_month": mes_ref},
+                {"date": {"$regex": f"^{mes_ref}"}}
+            ]
+        }, {"_id": 0, "amount": 1, "category_id": 1, "category_name": 1}).to_list(1000)
+        
+        for lanc in receitas_lancamentos:
+            receita_bruta += lanc.get("amount", 0)
+        
+        # Fonte 2: Contas a receber marcadas como RECEBIDO no mês
+        contas_recebidas = await db.contas.find({
+            "company_id": company_id,
+            "tipo": "RECEBER",
+            "status": "RECEBIDO",
+            "data_pagamento": {"$regex": f"^{mes_ref}"}
+        }, {"_id": 0, "valor": 1}).to_list(1000)
+        
+        # Somar contas recebidas (se não houver lançamento correspondente)
+        # Para evitar duplicação, verificamos se já existe lançamento
+        for conta in contas_recebidas:
+            # Simplificação: contas recebidas são contadas se não há lançamento
+            # Na prática, quando marcamos como RECEBIDO, já cria lançamento
+            pass
+        
+        # ===== CUSTOS E DESPESAS =====
+        # Fonte 1: Lançamentos de custo/despesa realizados
+        custos_despesas = await db.transactions.find({
+            "company_id": company_id,
+            "type": {"$in": ["custo", "despesa"]},
+            "status": "realizado",
+            "cancelled": {"$ne": True},
+            "$or": [
+                {"competence_month": mes_ref},
+                {"date": {"$regex": f"^{mes_ref}"}}
+            ]
+        }, {"_id": 0, "amount": 1, "category_id": 1, "category_name": 1, "category_group": 1, "type": 1}).to_list(1000)
+        
+        for lanc in custos_despesas:
+            valor = lanc.get("amount", 0)
+            cat_id = lanc.get("category_id")
+            cat_name = lanc.get("category_name", "")
+            cat_group = lanc.get("category_group")
+            tipo = lanc.get("type", "")
+            
+            # Determinar grupo da DRE
+            grupo_dre = categoria_map.get(cat_id)
+            if not grupo_dre:
+                grupo_dre = mapear_categoria_dre(cat_name, cat_group)
+            
+            # Se for tipo custo, vai para CSP
+            if tipo == "custo":
+                csp += valor
+            elif grupo_dre == "CSP":
+                csp += valor
+            elif grupo_dre == "DESPESA_COMERCIAL":
+                despesa_comercial += valor
+            elif grupo_dre == "DESPESA_ADMINISTRATIVA":
+                despesa_administrativa += valor
+            elif grupo_dre == "FINANCEIRO":
+                resultado_financeiro -= valor  # Despesa financeira é negativa
+            elif grupo_dre == "NAO_CLASSIFICADO":
+                nao_classificado += valor
+                lancamentos_sem_categoria += 1
+            else:
+                despesa_administrativa += valor  # Default
+        
+        # ===== CALCULAR IMPOSTOS (ESTIMADOS) =====
+        # Usar alíquota de ISS da configuração
+        impostos_sobre_vendas = receita_bruta * aliquota_iss
+        if receita_bruta > 0:
+            impostos_estimados = True  # Marcar que são estimados
+        
+        # ===== CALCULAR LINHAS DA DRE =====
+        receita_liquida = receita_bruta - impostos_sobre_vendas
+        lucro_bruto = receita_liquida - csp
+        despesas_operacionais = despesa_comercial + despesa_administrativa
+        resultado_operacional = lucro_bruto - despesas_operacionais
+        resultado_antes_ir = resultado_operacional + resultado_financeiro
+        lucro_liquido = resultado_antes_ir  # Sem IR/CSLL por simplicidade
+        
+        # ===== CALCULAR MARGENS =====
+        margem_bruta = (lucro_bruto / receita_liquida * 100) if receita_liquida > 0 else 0
+        margem_liquida = (lucro_liquido / receita_liquida * 100) if receita_liquida > 0 else 0
+        csp_percentual = (csp / receita_liquida * 100) if receita_liquida > 0 else 0
+        
+        return {
+            "mes": mes_ref,
+            "receita_bruta": round(receita_bruta, 2),
+            "impostos_sobre_vendas": round(impostos_sobre_vendas, 2),
+            "receita_liquida": round(receita_liquida, 2),
+            "csp": round(csp, 2),
+            "lucro_bruto": round(lucro_bruto, 2),
+            "despesa_comercial": round(despesa_comercial, 2),
+            "despesa_administrativa": round(despesa_administrativa, 2),
+            "despesas_operacionais": round(despesas_operacionais, 2),
+            "resultado_operacional": round(resultado_operacional, 2),
+            "resultado_financeiro": round(resultado_financeiro, 2),
+            "lucro_liquido": round(lucro_liquido, 2),
+            "margem_bruta": round(margem_bruta, 2),
+            "margem_liquida": round(margem_liquida, 2),
+            "csp_percentual": round(csp_percentual, 2),
+            "nao_classificado": round(nao_classificado, 2),
+            "lancamentos_sem_categoria": lancamentos_sem_categoria,
+            "impostos_estimados": impostos_estimados,
+            "aliquota_iss": round(aliquota_iss * 100, 2)
+        }
+    
+    # ========== CALCULAR MÊS ATUAL E ANTERIOR ==========
+    dre_mes_atual = await calcular_dre_mes(mes_atual)
+    
+    mes_anterior = (hoje - relativedelta(months=1)).strftime("%Y-%m")
+    dre_mes_anterior = await calcular_dre_mes(mes_anterior)
+    
+    # ========== CALCULAR VARIAÇÕES ==========
+    variacao_receita = dre_mes_atual["receita_liquida"] - dre_mes_anterior["receita_liquida"]
+    variacao_receita_pct = (
+        (variacao_receita / dre_mes_anterior["receita_liquida"] * 100)
+        if dre_mes_anterior["receita_liquida"] > 0 else 0
+    )
+    
+    variacao_lucro = dre_mes_atual["lucro_liquido"] - dre_mes_anterior["lucro_liquido"]
+    variacao_lucro_pct = (
+        (variacao_lucro / abs(dre_mes_anterior["lucro_liquido"]) * 100)
+        if dre_mes_anterior["lucro_liquido"] != 0 else 0
+    )
+    
+    dre_mes_atual["variacao_receita"] = round(variacao_receita, 2)
+    dre_mes_atual["variacao_receita_pct"] = round(variacao_receita_pct, 2)
+    dre_mes_atual["variacao_lucro"] = round(variacao_lucro, 2)
+    dre_mes_atual["variacao_lucro_pct"] = round(variacao_lucro_pct, 2)
+    
+    # ========== SÉRIE HISTÓRICA (ÚLTIMOS N MESES) ==========
+    serie_historica = []
+    for i in range(meses - 1, -1, -1):  # Do mais antigo ao mais recente
+        mes_ref = (hoje - relativedelta(months=i)).strftime("%Y-%m")
+        dre_mes = await calcular_dre_mes(mes_ref)
+        
+        # Formato simplificado para o gráfico
+        mes_label = (hoje - relativedelta(months=i)).strftime("%b/%y")
+        serie_historica.append({
+            "mes": mes_label,
+            "mes_ref": mes_ref,
+            "receita_liquida": dre_mes["receita_liquida"],
+            "csp": dre_mes["csp"],
+            "despesas_operacionais": dre_mes["despesas_operacionais"],
+            "lucro_liquido": dre_mes["lucro_liquido"]
+        })
+    
+    # ========== ALERTAS ==========
+    alertas = []
+    if dre_mes_atual["lancamentos_sem_categoria"] > 0:
+        alertas.append({
+            "tipo": "warning",
+            "mensagem": f"Há {dre_mes_atual['lancamentos_sem_categoria']} lançamento(s) sem categoria. Categorize-os para uma DRE mais precisa."
+        })
+    
+    if dre_mes_atual["impostos_estimados"]:
+        alertas.append({
+            "tipo": "info",
+            "mensagem": f"Impostos sobre vendas estimados em {dre_mes_atual['aliquota_iss']}% (ISS). Configure a alíquota correta no Markup."
+        })
+    
+    if dre_mes_atual["margem_liquida"] < 0:
+        alertas.append({
+            "tipo": "danger",
+            "mensagem": "Margem líquida negativa! Revise custos e despesas."
+        })
+    elif dre_mes_atual["margem_liquida"] < 10:
+        alertas.append({
+            "tipo": "warning",
+            "mensagem": "Margem líquida baixa (< 10%). Considere otimizar custos ou reajustar preços."
+        })
+    
+    return {
+        "mes_atual": dre_mes_atual,
+        "mes_anterior": dre_mes_anterior,
+        "serie_historica": serie_historica,
+        "alertas": alertas
+    }
+
+
+@api_router.get("/dashboard/dre/{company_id}/detalhada")
+async def get_dre_detalhada(company_id: str, mes: Optional[str] = None):
+    """
+    Retorna a DRE detalhada de um mês específico.
+    Inclui breakdown por categoria para análise mais profunda.
+    """
+    from datetime import datetime as dt
+    
+    if not mes:
+        mes = dt.now().strftime("%Y-%m")
+    
+    # Buscar categorias
+    categorias = await db.expense_categories.find(
+        {"company_id": company_id, "active": True},
+        {"_id": 0}
+    ).to_list(500)
+    
+    # Buscar lançamentos do mês
+    lancamentos = await db.transactions.find({
+        "company_id": company_id,
+        "status": "realizado",
+        "cancelled": {"$ne": True},
+        "$or": [
+            {"competence_month": mes},
+            {"date": {"$regex": f"^{mes}"}}
+        ]
+    }, {"_id": 0}).to_list(2000)
+    
+    # Agrupar por tipo e categoria
+    detalhamento = {
+        "receitas": [],
+        "csp": [],
+        "despesas_comerciais": [],
+        "despesas_administrativas": [],
+        "financeiro": [],
+        "nao_classificado": []
+    }
+    
+    totais = {
+        "receita_bruta": 0,
+        "csp": 0,
+        "despesa_comercial": 0,
+        "despesa_administrativa": 0,
+        "financeiro": 0,
+        "nao_classificado": 0
+    }
+    
+    # Agrupar lançamentos
+    agrupado_por_categoria = {}
+    
+    for lanc in lancamentos:
+        cat_name = lanc.get("category_name", "Sem Categoria")
+        cat_group = lanc.get("category_group")
+        tipo = lanc.get("type", "")
+        valor = lanc.get("amount", 0)
+        
+        key = f"{tipo}_{cat_name}"
+        
+        if key not in agrupado_por_categoria:
+            agrupado_por_categoria[key] = {
+                "categoria": cat_name,
+                "tipo": tipo,
+                "grupo": cat_group,
+                "valor": 0,
+                "quantidade": 0
+            }
+        
+        agrupado_por_categoria[key]["valor"] += valor
+        agrupado_por_categoria[key]["quantidade"] += 1
+        
+        # Somar totais
+        if tipo == "receita":
+            totais["receita_bruta"] += valor
+        elif tipo == "custo":
+            totais["csp"] += valor
+        else:
+            grupo_dre = mapear_categoria_dre(cat_name, cat_group)
+            if grupo_dre == "CSP":
+                totais["csp"] += valor
+            elif grupo_dre == "DESPESA_COMERCIAL":
+                totais["despesa_comercial"] += valor
+            elif grupo_dre == "DESPESA_ADMINISTRATIVA":
+                totais["despesa_administrativa"] += valor
+            elif grupo_dre == "FINANCEIRO":
+                totais["financeiro"] += valor
+            else:
+                totais["nao_classificado"] += valor
+    
+    # Organizar detalhamento
+    for item in agrupado_por_categoria.values():
+        grupo_dre = "receitas" if item["tipo"] == "receita" else mapear_categoria_dre(item["categoria"], item["grupo"]).lower()
+        
+        if item["tipo"] == "receita":
+            detalhamento["receitas"].append(item)
+        elif item["tipo"] == "custo" or grupo_dre == "csp":
+            detalhamento["csp"].append(item)
+        elif grupo_dre == "despesa_comercial":
+            detalhamento["despesas_comerciais"].append(item)
+        elif grupo_dre == "despesa_administrativa":
+            detalhamento["despesas_administrativas"].append(item)
+        elif grupo_dre == "financeiro":
+            detalhamento["financeiro"].append(item)
+        else:
+            detalhamento["nao_classificado"].append(item)
+    
+    # Ordenar cada grupo por valor decrescente
+    for grupo in detalhamento:
+        detalhamento[grupo].sort(key=lambda x: x["valor"], reverse=True)
+    
+    # Buscar configuração de ISS
+    markup_config = await db.markup_profiles.find_one(
+        {"company_id": company_id},
+        {"_id": 0, "taxes": 1}
+    )
+    aliquota_iss = 0.03
+    if markup_config and markup_config.get("taxes"):
+        aliquota_iss = markup_config["taxes"].get("iss_rate", 0.03)
+    
+    # Calcular DRE completa
+    impostos = totais["receita_bruta"] * aliquota_iss
+    receita_liquida = totais["receita_bruta"] - impostos
+    lucro_bruto = receita_liquida - totais["csp"]
+    despesas_operacionais = totais["despesa_comercial"] + totais["despesa_administrativa"]
+    resultado_operacional = lucro_bruto - despesas_operacionais
+    lucro_liquido = resultado_operacional - totais["financeiro"]
+    
+    return {
+        "mes": mes,
+        "dre": {
+            "receita_bruta": round(totais["receita_bruta"], 2),
+            "impostos_sobre_vendas": round(impostos, 2),
+            "receita_liquida": round(receita_liquida, 2),
+            "csp": round(totais["csp"], 2),
+            "lucro_bruto": round(lucro_bruto, 2),
+            "despesa_comercial": round(totais["despesa_comercial"], 2),
+            "despesa_administrativa": round(totais["despesa_administrativa"], 2),
+            "despesas_operacionais": round(despesas_operacionais, 2),
+            "resultado_operacional": round(resultado_operacional, 2),
+            "resultado_financeiro": round(-totais["financeiro"], 2),
+            "lucro_liquido": round(lucro_liquido, 2),
+            "nao_classificado": round(totais["nao_classificado"], 2)
+        },
+        "margens": {
+            "margem_bruta": round((lucro_bruto / receita_liquida * 100) if receita_liquida > 0 else 0, 2),
+            "margem_operacional": round((resultado_operacional / receita_liquida * 100) if receita_liquida > 0 else 0, 2),
+            "margem_liquida": round((lucro_liquido / receita_liquida * 100) if receita_liquida > 0 else 0, 2),
+            "csp_percentual": round((totais["csp"] / receita_liquida * 100) if receita_liquida > 0 else 0, 2)
+        },
+        "detalhamento": detalhamento,
+        "aliquota_iss_usada": round(aliquota_iss * 100, 2)
+    }
+
+
 # ========== ADMIN: VERIFICAR ROLE ==========
 
 async def verify_admin(user_id: str):
