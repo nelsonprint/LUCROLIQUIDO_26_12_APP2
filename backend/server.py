@@ -6082,12 +6082,6 @@ async def get_dre_detalhada(company_id: str, mes: Optional[str] = None):
     if not mes:
         mes = dt.now().strftime("%Y-%m")
     
-    # Buscar categorias
-    categorias = await db.expense_categories.find(
-        {"company_id": company_id, "active": True},
-        {"_id": 0}
-    ).to_list(500)
-    
     # Buscar lançamentos do mês
     lancamentos = await db.transactions.find({
         "company_id": company_id,
