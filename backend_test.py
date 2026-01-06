@@ -971,6 +971,372 @@ class SupervisorCronogramaTester:
             return False
 
 
+class DRETester:
+    """Test suite for DRE (Demonstração do Resultado do Exercício) endpoints"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_dre_dashboard_endpoint(self):
+        """Test GET /api/dashboard/dre/{company_id}?meses=12 - Main DRE endpoint"""
+        self.log("📊 Testing DRE dashboard endpoint...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/dashboard/dre/{self.company_id}?meses=12")
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.log("✅ DRE dashboard endpoint successful!")
+                
+                # Verify main structure
+                required_keys = ["mes_atual", "mes_anterior", "serie_historica", "alertas"]
+                for key in required_keys:
+                    if key not in result:
+                        self.log(f"❌ Missing required key: {key}", "ERROR")
+                        return False
+                    self.log(f"   ✅ {key}: Present")
+                
+                # Verify mes_atual structure
+                mes_atual = result.get("mes_atual", {})
+                required_mes_atual_fields = [
+                    "mes", "receita_bruta", "impostos_sobre_vendas", "receita_liquida", 
+                    "csp", "lucro_bruto", "despesa_comercial", "despesa_administrativa",
+                    "despesas_operacionais", "resultado_operacional", "resultado_financeiro",
+                    "lucro_liquido", "margem_bruta", "margem_liquida", "csp_percentual",
+                    "nao_classificado", "lancamentos_sem_categoria", "impostos_estimados",
+                    "aliquota_iss", "variacao_receita", "variacao_receita_pct",
+                    "variacao_lucro", "variacao_lucro_pct"
+                ]
+                
+                for field in required_mes_atual_fields:
+                    if field not in mes_atual:
+                        self.log(f"❌ Missing mes_atual field: {field}", "ERROR")
+                        return False
+                
+                self.log(f"   📊 Receita Bruta: R$ {mes_atual.get('receita_bruta', 0):,.2f}")
+                self.log(f"   📊 Receita Líquida: R$ {mes_atual.get('receita_liquida', 0):,.2f}")
+                self.log(f"   📊 CSP: R$ {mes_atual.get('csp', 0):,.2f}")
+                self.log(f"   📊 Lucro Líquido: R$ {mes_atual.get('lucro_liquido', 0):,.2f}")
+                self.log(f"   📊 Margem Bruta: {mes_atual.get('margem_bruta', 0):.2f}%")
+                self.log(f"   📊 Margem Líquida: {mes_atual.get('margem_liquida', 0):.2f}%")
+                
+                # Verify margin calculations
+                receita_liquida = mes_atual.get('receita_liquida', 0)
+                lucro_bruto = mes_atual.get('lucro_bruto', 0)
+                margem_bruta = mes_atual.get('margem_bruta', 0)
+                
+                if receita_liquida > 0:
+                    expected_margem_bruta = (lucro_bruto / receita_liquida) * 100
+                    if abs(margem_bruta - expected_margem_bruta) > 0.1:  # Allow small rounding differences
+                        self.log(f"❌ Margem bruta calculation incorrect. Expected: {expected_margem_bruta:.2f}%, Got: {margem_bruta:.2f}%", "ERROR")
+                        return False
+                    else:
+                        self.log("   ✅ Margem bruta calculation correct")
+                
+                # Verify serie_historica
+                serie_historica = result.get("serie_historica", [])
+                if len(serie_historica) != 12:
+                    self.log(f"❌ Serie histórica should have 12 months, got {len(serie_historica)}", "ERROR")
+                    return False
+                
+                # Check first item structure
+                if len(serie_historica) > 0:
+                    first_item = serie_historica[0]
+                    required_serie_fields = ["mes", "mes_ref", "receita_liquida", "csp", "despesas_operacionais", "lucro_liquido"]
+                    for field in required_serie_fields:
+                        if field not in first_item:
+                            self.log(f"❌ Missing serie_historica field: {field}", "ERROR")
+                            return False
+                    self.log(f"   ✅ Serie histórica structure correct ({len(serie_historica)} months)")
+                
+                # Verify alertas structure
+                alertas = result.get("alertas", [])
+                self.log(f"   📢 Alertas: {len(alertas)} alerts found")
+                for alerta in alertas:
+                    if "tipo" not in alerta or "mensagem" not in alerta:
+                        self.log("❌ Alert missing required fields (tipo, mensagem)", "ERROR")
+                        return False
+                    self.log(f"      🚨 {alerta['tipo']}: {alerta['mensagem'][:50]}...")
+                
+                return True
+            else:
+                self.log(f"❌ DRE dashboard endpoint failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing DRE dashboard endpoint: {str(e)}", "ERROR")
+            return False
+    
+    def test_dre_detalhada_endpoint(self):
+        """Test GET /api/dashboard/dre/{company_id}/detalhada?mes=2026-01 - Detailed DRE endpoint"""
+        self.log("📋 Testing DRE detailed endpoint...")
+        
+        try:
+            # Test with specific month
+            response = self.session.get(f"{API_BASE}/dashboard/dre/{self.company_id}/detalhada?mes=2026-01")
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.log("✅ DRE detailed endpoint successful!")
+                
+                # Verify main structure
+                required_keys = ["mes", "dre", "margens", "detalhamento", "aliquota_iss_usada"]
+                for key in required_keys:
+                    if key not in result:
+                        self.log(f"❌ Missing required key: {key}", "ERROR")
+                        return False
+                    self.log(f"   ✅ {key}: Present")
+                
+                # Verify DRE structure
+                dre = result.get("dre", {})
+                required_dre_fields = [
+                    "receita_bruta", "impostos_sobre_vendas", "receita_liquida",
+                    "csp", "lucro_bruto", "despesa_comercial", "despesa_administrativa",
+                    "despesas_operacionais", "resultado_operacional", "resultado_financeiro",
+                    "lucro_liquido", "nao_classificado"
+                ]
+                
+                for field in required_dre_fields:
+                    if field not in dre:
+                        self.log(f"❌ Missing DRE field: {field}", "ERROR")
+                        return False
+                
+                self.log(f"   📊 DRE Receita Bruta: R$ {dre.get('receita_bruta', 0):,.2f}")
+                self.log(f"   📊 DRE Receita Líquida: R$ {dre.get('receita_liquida', 0):,.2f}")
+                self.log(f"   📊 DRE CSP: R$ {dre.get('csp', 0):,.2f}")
+                self.log(f"   📊 DRE Lucro Líquido: R$ {dre.get('lucro_liquido', 0):,.2f}")
+                
+                # Verify margens structure
+                margens = result.get("margens", {})
+                required_margens_fields = ["margem_bruta", "margem_operacional", "margem_liquida", "csp_percentual"]
+                for field in required_margens_fields:
+                    if field not in margens:
+                        self.log(f"❌ Missing margens field: {field}", "ERROR")
+                        return False
+                
+                self.log(f"   📊 Margem Bruta: {margens.get('margem_bruta', 0):.2f}%")
+                self.log(f"   📊 Margem Operacional: {margens.get('margem_operacional', 0):.2f}%")
+                self.log(f"   📊 Margem Líquida: {margens.get('margem_liquida', 0):.2f}%")
+                
+                # Verify detalhamento structure
+                detalhamento = result.get("detalhamento", {})
+                required_detalhamento_keys = ["receitas", "csp", "despesas_comerciais", "despesas_administrativas", "financeiro", "nao_classificado"]
+                for key in required_detalhamento_keys:
+                    if key not in detalhamento:
+                        self.log(f"❌ Missing detalhamento key: {key}", "ERROR")
+                        return False
+                    items_count = len(detalhamento[key])
+                    self.log(f"   📋 {key}: {items_count} items")
+                
+                # Verify aliquota_iss_usada
+                aliquota_iss = result.get("aliquota_iss_usada", 0)
+                if not isinstance(aliquota_iss, (int, float)):
+                    self.log("❌ aliquota_iss_usada should be a number", "ERROR")
+                    return False
+                self.log(f"   📊 Alíquota ISS: {aliquota_iss}%")
+                
+                return True
+            else:
+                self.log(f"❌ DRE detailed endpoint failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing DRE detailed endpoint: {str(e)}", "ERROR")
+            return False
+    
+    def test_dre_detalhada_current_month(self):
+        """Test GET /api/dashboard/dre/{company_id}/detalhada - Default to current month"""
+        self.log("📅 Testing DRE detailed endpoint with current month...")
+        
+        try:
+            # Test without mes parameter (should default to current month)
+            response = self.session.get(f"{API_BASE}/dashboard/dre/{self.company_id}/detalhada")
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.log("✅ DRE detailed endpoint (current month) successful!")
+                
+                # Verify month is current month
+                current_month = datetime.now().strftime("%Y-%m")
+                returned_month = result.get("mes")
+                
+                if returned_month == current_month:
+                    self.log(f"   ✅ Correctly defaulted to current month: {current_month}")
+                    return True
+                else:
+                    self.log(f"❌ Expected current month {current_month}, got {returned_month}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ DRE detailed endpoint (current month) failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing DRE detailed endpoint (current month): {str(e)}", "ERROR")
+            return False
+    
+    def test_dre_data_consistency(self):
+        """Test consistency between main DRE and detailed DRE for same month"""
+        self.log("🔍 Testing DRE data consistency between endpoints...")
+        
+        try:
+            # Get main DRE data
+            main_response = self.session.get(f"{API_BASE}/dashboard/dre/{self.company_id}?meses=12")
+            if main_response.status_code != 200:
+                self.log("❌ Could not get main DRE data for consistency test", "ERROR")
+                return False
+            
+            main_data = main_response.json()
+            mes_atual = main_data.get("mes_atual", {})
+            current_month = mes_atual.get("mes")
+            
+            if not current_month:
+                self.log("❌ No current month found in main DRE data", "ERROR")
+                return False
+            
+            # Get detailed DRE data for same month
+            detailed_response = self.session.get(f"{API_BASE}/dashboard/dre/{self.company_id}/detalhada?mes={current_month}")
+            if detailed_response.status_code != 200:
+                self.log("❌ Could not get detailed DRE data for consistency test", "ERROR")
+                return False
+            
+            detailed_data = detailed_response.json()
+            dre_detailed = detailed_data.get("dre", {})
+            
+            # Compare key values
+            comparisons = [
+                ("receita_bruta", "Receita Bruta"),
+                ("receita_liquida", "Receita Líquida"),
+                ("csp", "CSP"),
+                ("lucro_bruto", "Lucro Bruto"),
+                ("despesa_comercial", "Despesa Comercial"),
+                ("despesa_administrativa", "Despesa Administrativa"),
+                ("despesas_operacionais", "Despesas Operacionais"),
+                ("resultado_operacional", "Resultado Operacional"),
+                ("lucro_liquido", "Lucro Líquido")
+            ]
+            
+            all_consistent = True
+            for field, label in comparisons:
+                main_value = mes_atual.get(field, 0)
+                detailed_value = dre_detailed.get(field, 0)
+                
+                # Allow small rounding differences
+                if abs(main_value - detailed_value) > 0.01:
+                    self.log(f"❌ {label} inconsistent: Main={main_value}, Detailed={detailed_value}", "ERROR")
+                    all_consistent = False
+                else:
+                    self.log(f"   ✅ {label}: Consistent (R$ {main_value:,.2f})")
+            
+            if all_consistent:
+                self.log("✅ All DRE values are consistent between endpoints!")
+                return True
+            else:
+                self.log("❌ DRE data inconsistency found between endpoints", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing DRE data consistency: {str(e)}", "ERROR")
+            return False
+    
+    def test_dre_invalid_company(self):
+        """Test DRE endpoints with invalid company ID"""
+        self.log("🚫 Testing DRE endpoints with invalid company ID...")
+        
+        try:
+            invalid_company_id = "invalid-company-id-12345"
+            
+            # Test main endpoint
+            response1 = self.session.get(f"{API_BASE}/dashboard/dre/{invalid_company_id}?meses=12")
+            
+            # Test detailed endpoint
+            response2 = self.session.get(f"{API_BASE}/dashboard/dre/{invalid_company_id}/detalhada?mes=2026-01")
+            
+            # Both should return 200 with empty/zero data (not error)
+            if response1.status_code == 200 and response2.status_code == 200:
+                result1 = response1.json()
+                result2 = response2.json()
+                
+                # Check that data is empty/zero for invalid company
+                mes_atual = result1.get("mes_atual", {})
+                dre_detailed = result2.get("dre", {})
+                
+                # Should have zero values for invalid company
+                if (mes_atual.get("receita_bruta", 0) == 0 and 
+                    dre_detailed.get("receita_bruta", 0) == 0):
+                    self.log("✅ Invalid company ID returns empty data (not error)")
+                    return True
+                else:
+                    self.log("⚠️ Invalid company ID returned non-zero data", "WARN")
+                    return True  # Still acceptable behavior
+            else:
+                self.log(f"❌ Invalid company ID test failed: {response1.status_code}, {response2.status_code}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing invalid company ID: {str(e)}", "ERROR")
+            return False
+    
+    def run_all_tests(self):
+        """Execute all DRE tests"""
+        self.log("🚀 Starting DRE (Demonstração do Resultado do Exercício) API tests")
+        self.log("=" * 70)
+        
+        tests = [
+            ("DRE Dashboard Endpoint", self.test_dre_dashboard_endpoint),
+            ("DRE Detailed Endpoint", self.test_dre_detalhada_endpoint),
+            ("DRE Detailed Current Month", self.test_dre_detalhada_current_month),
+            ("DRE Data Consistency", self.test_dre_data_consistency),
+            ("DRE Invalid Company", self.test_dre_invalid_company)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 70)
+        self.log("📊 DRE TEST SUMMARY")
+        self.log("=" * 70)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL DRE TESTS PASSED! DRE feature working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME DRE TESTS FAILED! Check logs above for details.")
+            return False
+
+
 class WhatsAppBudgetFlowTester:
     def __init__(self):
         self.session = requests.Session()
