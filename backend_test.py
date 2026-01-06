@@ -5589,6 +5589,59 @@ class PDFCapaTester:
             return False
 
 
+def main_dre_tests():
+    """Main function for DRE testing"""
+    print("🚀 Starting DRE (Demonstração do Resultado do Exercício) API Tests")
+    print("=" * 70)
+    
+    # Initialize session and login
+    session = requests.Session()
+    
+    # Login with admin credentials
+    login_data = {
+        "email": "admin@lucroliquido.com",
+        "password": "admin123"
+    }
+    
+    try:
+        response = session.post(f"{API_BASE}/auth/login", json=login_data)
+        if response.status_code != 200:
+            print(f"❌ Login failed: {response.status_code} - {response.text}")
+            return False
+        
+        user_data = response.json()
+        company_id = "cf901b3e-0eca-429c-9b8e-d723b31ecbd4"  # From review request
+        
+        print(f"✅ Login successful! User ID: {user_data['user_id']}")
+        print(f"🏢 Company ID: {company_id}")
+        
+        # Run DRE tests
+        print("\n" + "=" * 70)
+        dre_tester = DRETester(session, user_data, company_id)
+        dre_success = dre_tester.run_all_tests()
+        
+        # Final summary
+        print("\n" + "=" * 70)
+        print("🎯 FINAL DRE TEST SUMMARY")
+        print("=" * 70)
+        
+        if dre_success:
+            print("🎉 ALL DRE TESTS PASSED!")
+            print("✅ GET /api/dashboard/dre/{company_id} working correctly")
+            print("✅ GET /api/dashboard/dre/{company_id}/detalhada working correctly")
+            print("✅ DRE calculations and data consistency verified")
+            print("✅ DRE alertas and margin calculations working")
+            return True
+        else:
+            print("⚠️ SOME DRE TESTS FAILED!")
+            print("❌ DRE functionality may not be working correctly")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error in DRE tests: {str(e)}")
+        return False
+
+
 if __name__ == "__main__":
-    # Run the Orçamento Cover Model Selection tests
-    main_orcamento_capa()
+    # Run the DRE tests
+    main_dre_tests()
