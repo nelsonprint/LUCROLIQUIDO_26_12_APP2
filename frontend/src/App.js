@@ -32,6 +32,7 @@ import NovoOrcamentoGrid from './pages/NovoOrcamentoGrid';
 import Assinatura from './pages/Assinatura';
 import AdminPanel from './pages/AdminPanel';
 import Funcionarios from './pages/Funcionarios';
+import Fornecedores from './pages/Fornecedores';
 import DFCRelatorio from './pages/DFCRelatorio';
 
 // Relatórios
