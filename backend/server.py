@@ -8953,6 +8953,193 @@ async def relatorio_clientes_inadimplencia(company_id: str):
     }
 
 
+@api_router.get("/relatorios/top-indicadores/{company_id}")
+async def relatorio_top_indicadores(company_id: str):
+    """Relatório Top 10 Indicadores - Painel executivo do mês"""
+    from datetime import datetime, timedelta
+    
+    hoje = datetime.now()
+    inicio_mes = hoje.replace(day=1).strftime('%Y-%m-%d')
+    fim_mes = hoje.strftime('%Y-%m-%d')
+    
+    # Mês anterior para comparação
+    primeiro_dia_mes_passado = (hoje.replace(day=1) - timedelta(days=1)).replace(day=1)
+    ultimo_dia_mes_passado = hoje.replace(day=1) - timedelta(days=1)
+    inicio_mes_ant = primeiro_dia_mes_passado.strftime('%Y-%m-%d')
+    fim_mes_ant = ultimo_dia_mes_passado.strftime('%Y-%m-%d')
+    
+    # Buscar transações do mês atual
+    receitas_mes = await db.transactions.find({
+        "company_id": company_id,
+        "type": "receita",
+        "date": {"$gte": inicio_mes, "$lte": fim_mes}
+    }, {"_id": 0}).to_list(5000)
+    
+    despesas_mes = await db.transactions.find({
+        "company_id": company_id,
+        "type": {"$in": ["despesa", "custo"]},
+        "date": {"$gte": inicio_mes, "$lte": fim_mes}
+    }, {"_id": 0}).to_list(5000)
+    
+    # Transações do mês anterior
+    receitas_ant = await db.transactions.find({
+        "company_id": company_id,
+        "type": "receita",
+        "date": {"$gte": inicio_mes_ant, "$lte": fim_mes_ant}
+    }, {"_id": 0}).to_list(5000)
+    
+    despesas_ant = await db.transactions.find({
+        "company_id": company_id,
+        "type": {"$in": ["despesa", "custo"]},
+        "date": {"$gte": inicio_mes_ant, "$lte": fim_mes_ant}
+    }, {"_id": 0}).to_list(5000)
+    
+    # Calcular valores
+    total_receitas = sum(r.get('amount', 0) for r in receitas_mes)
+    total_despesas = sum(d.get('amount', 0) for d in despesas_mes)
+    lucro_liquido = total_receitas - total_despesas
+    
+    total_receitas_ant = sum(r.get('amount', 0) for r in receitas_ant)
+    total_despesas_ant = sum(d.get('amount', 0) for d in despesas_ant)
+    lucro_ant = total_receitas_ant - total_despesas_ant
+    
+    # Buscar orçamentos
+    orcamentos = await db.orcamentos.find({
+        "company_id": company_id,
+        "created_at": {"$gte": inicio_mes}
+    }, {"_id": 0}).to_list(1000)
+    
+    orcamentos_ant = await db.orcamentos.find({
+        "company_id": company_id,
+        "created_at": {"$gte": inicio_mes_ant, "$lt": inicio_mes}
+    }, {"_id": 0}).to_list(1000)
+    
+    total_orc = len(orcamentos)
+    valor_orc = sum(o.get('valor_total', 0) or o.get('total', 0) or 0 for o in orcamentos)
+    aprovados = len([o for o in orcamentos if o.get('status', '').lower() == 'aprovado'])
+    
+    total_orc_ant = len(orcamentos_ant) if orcamentos_ant else 1
+    
+    # Buscar clientes
+    clientes = await db.clientes.find({"empresa_id": company_id}, {"_id": 0}).to_list(1000)
+    total_clientes = len(clientes)
+    
+    # Buscar inadimplência
+    contas_atrasadas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "RECEBER",
+        "status": {"$in": ["PENDENTE", "ATRASADO"]},
+        "data_vencimento": {"$lt": fim_mes}
+    }, {"_id": 0}).to_list(1000)
+    total_inadimplencia = sum(c.get('valor', 0) for c in contas_atrasadas)
+    
+    # Calcular variações
+    def calc_variacao(atual, anterior):
+        if anterior == 0:
+            return 100 if atual > 0 else 0
+        return round(((atual - anterior) / anterior) * 100, 1)
+    
+    # Margem de lucro
+    margem = (lucro_liquido / total_receitas * 100) if total_receitas > 0 else 0
+    margem_ant = (lucro_ant / total_receitas_ant * 100) if total_receitas_ant > 0 else 0
+    
+    # Taxa de conversão
+    taxa_conversao = (aprovados / total_orc * 100) if total_orc > 0 else 0
+    
+    # Montar indicadores
+    indicadores = [
+        {
+            "id": 1,
+            "nome": "Receita Total",
+            "valor": total_receitas,
+            "tipo": "receita",
+            "variacao": calc_variacao(total_receitas, total_receitas_ant),
+            "formato": "currency"
+        },
+        {
+            "id": 2,
+            "nome": "Lucro Líquido",
+            "valor": lucro_liquido,
+            "tipo": "lucro",
+            "variacao": calc_variacao(lucro_liquido, lucro_ant),
+            "formato": "currency"
+        },
+        {
+            "id": 3,
+            "nome": "Margem de Lucro",
+            "valor": round(margem, 1),
+            "tipo": "margem",
+            "variacao": round(margem - margem_ant, 1),
+            "formato": "percent"
+        },
+        {
+            "id": 4,
+            "nome": "Total de Clientes",
+            "valor": total_clientes,
+            "tipo": "clientes",
+            "variacao": 0,
+            "formato": "number"
+        },
+        {
+            "id": 5,
+            "nome": "Orçamentos do Mês",
+            "valor": total_orc,
+            "tipo": "orcamentos",
+            "variacao": calc_variacao(total_orc, total_orc_ant),
+            "formato": "number"
+        },
+        {
+            "id": 6,
+            "nome": "Valor em Orçamentos",
+            "valor": valor_orc,
+            "tipo": "orcamentos",
+            "variacao": 0,
+            "formato": "currency"
+        },
+        {
+            "id": 7,
+            "nome": "Taxa de Conversão",
+            "valor": round(taxa_conversao, 1),
+            "tipo": "orcamentos",
+            "variacao": 0,
+            "formato": "percent"
+        },
+        {
+            "id": 8,
+            "nome": "Despesas Totais",
+            "valor": total_despesas,
+            "tipo": "despesas",
+            "variacao": calc_variacao(total_despesas, total_despesas_ant),
+            "formato": "currency"
+        },
+        {
+            "id": 9,
+            "nome": "Inadimplência",
+            "valor": total_inadimplencia,
+            "tipo": "inadimplencia",
+            "variacao": 0,
+            "formato": "currency"
+        },
+        {
+            "id": 10,
+            "nome": "Saldo de Caixa",
+            "valor": lucro_liquido,
+            "tipo": "caixa",
+            "variacao": calc_variacao(lucro_liquido, lucro_ant),
+            "formato": "currency"
+        }
+    ]
+    
+    return {
+        "indicadores": indicadores,
+        "periodo": {
+            "mes_atual": hoje.strftime('%B/%Y'),
+            "inicio": inicio_mes,
+            "fim": fim_mes
+        }
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
