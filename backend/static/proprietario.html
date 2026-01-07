@@ -699,29 +699,46 @@ function renderBarChart(data) {
 }
 
 // ============ Load DRE ============
-async function loadDRE() {
+let currentDREPeriod = 'mes';
+
+async function loadDRE(periodo = 'mes') {
+  currentDREPeriod = periodo;
   const container = document.getElementById('dreContent');
   container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   
   if (!currentCompany) return;
   
   try {
-    const res = await fetch(`${API_BASE}/dashboard/dre/${currentCompany.id}?meses=12`);
+    // Definir quantidade de meses baseado no período
+    let meses = 1;
+    if (periodo === 'trimestre') meses = 3;
+    if (periodo === 'ano') meses = 12;
+    
+    const res = await fetch(`${API_BASE}/dashboard/dre/${currentCompany.id}?meses=${meses}`);
     const data = await res.json();
     
     const mes = data.mes_atual || {};
     const serie = data.serie_historica || [];
     
+    // Texto do período
+    const hoje = new Date();
+    let periodoTexto = hoje.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+    if (periodo === 'trimestre') {
+      periodoTexto = `${Math.floor(hoje.getMonth() / 3) + 1}º Trimestre ${hoje.getFullYear()}`;
+    } else if (periodo === 'ano') {
+      periodoTexto = `Ano ${hoje.getFullYear()}`;
+    }
+    
     container.innerHTML = `
-      <div class="period-filter">
-        <button class="period-btn active">Mês Atual</button>
-        <button class="period-btn">Trimestre</button>
-        <button class="period-btn">Ano</button>
+      <div class="period-filter" id="drePeriodFilter">
+        <button class="period-btn ${periodo === 'mes' ? 'active' : ''}" onclick="loadDRE('mes')">Mês Atual</button>
+        <button class="period-btn ${periodo === 'trimestre' ? 'active' : ''}" onclick="loadDRE('trimestre')">Trimestre</button>
+        <button class="period-btn ${periodo === 'ano' ? 'active' : ''}" onclick="loadDRE('ano')">Ano</button>
       </div>
       
       <!-- DRE Card -->
       <div class="card">
-        <div class="card-title">📋 DRE - ${new Date().toLocaleString('pt-BR', {month: 'long', year: 'numeric'})}</div>
+        <div class="card-title">📋 DRE - ${periodoTexto}</div>
         
         <div class="dre-table">
           <div class="dre-row header">
