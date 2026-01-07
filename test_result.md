@@ -1,6 +1,65 @@
 # DRE (Demonstração do Resultado do Exercício) Feature Implementation
-# Testing Status: NEEDS TESTING
+# Testing Status: COMPLETED
 # Date: 2026-01-06
+
+# Fluxo de Caixa Dashboard Feature Implementation
+# Testing Status: NEEDS TESTING
+# Date: 2026-01-07
+
+fluxo_caixa_feature:
+  - task: "Fluxo de Caixa Dashboard - Backend Endpoint"
+    implemented: true
+    working: needs_testing
+    file: "server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    endpoints:
+      - "GET /api/fluxo-caixa/dashboard/{company_id}?dias=30&modo=projetado"
+      - "PATCH /api/companies/{company_id}/saldo-inicial"
+    status_history:
+      - working: needs_testing
+        agent: "main"
+        comment: "Backend endpoint implemented. Returns complete cash flow data: cards, graphs, action lists."
+
+  - task: "Fluxo de Caixa Dashboard - Frontend Component"
+    implemented: true
+    working: needs_testing
+    file: "frontend/src/components/FluxoCaixaDashboard.jsx"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    features:
+      - "7 summary cards (saldo atual, receber/pagar 7d e 30d, projetado, menor saldo)"
+      - "Period filter (7/15/30/60/90 days)"
+      - "Mode toggle (Projetado/Realizado/Em Aberto)"
+      - "Area chart for projected balance"
+      - "Bar chart for entries vs exits"
+      - "Action lists (próximos a pagar/receber, atrasados)"
+      - "Alert banner for overdue items"
+      - "Responsive layout"
+    status_history:
+      - working: needs_testing
+        agent: "main"
+        comment: "Frontend component implemented and visually verified. Displays correctly below CRO do Mês."
+
+test_criteria_fluxo_caixa:
+  backend:
+    - "GET /api/fluxo-caixa/dashboard/{company_id} returns cards, grafico_saldo, grafico_barras, acoes"
+    - "cards includes saldo_atual, a_receber_7d, a_receber_30d, a_pagar_7d, a_pagar_30d, saldo_projetado_30d, menor_saldo_30d"
+    - "grafico_saldo has daily series with saldo, entradas, saidas"
+    - "acoes includes proximos_pagar, proximos_receber, atrasados_pagar, atrasados_receber"
+    - "Mode filter works (projetado, realizado, em_aberto)"
+    - "Period filter works (7, 15, 30, 60, 90 days)"
+  frontend:
+    - "FluxoCaixaDashboard renders below CRO do Mês"
+    - "7 summary cards display with correct values"
+    - "Period and mode filters work"
+    - "Saldo Projetado chart renders with area fill"
+    - "Entradas x Saídas bar chart renders"
+    - "Alert banner shows when there are overdue items"
+    - "Action lists show clickable items"
+    - "Responsive on mobile (cards stack, charts resize)"
 
 dre_feature:
   - task: "DRE Dashboard Card - Backend Endpoint"
