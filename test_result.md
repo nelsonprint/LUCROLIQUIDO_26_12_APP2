@@ -4,7 +4,7 @@
 relatorios_module:
   - task: "Central de Relatórios - Página Principal"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/pages/Relatorios.jsx"
     priority: "critical"
     needs_retesting: false
@@ -21,6 +21,9 @@ relatorios_module:
       - working: false
         agent: "testing"
         comment: "CRITICAL: Frontend authentication/routing issue. User gets redirected to landing page when accessing /relatorios. Login works but session not maintained for reports access. Backend APIs confirmed working via curl."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Central de Relatórios page loads correctly after login. All 7 categories displayed properly with their respective reports. Navigation to individual reports working correctly. Authentication issue resolved."
 
   - task: "Relatório - Contas a Pagar por Período"
     implemented: true
