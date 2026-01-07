@@ -8416,6 +8416,111 @@ async def relatorio_funil_orcamentos(company_id: str, periodo: str = 'mes'):
     }
 
 
+@api_router.get("/relatorios/orcamentos-periodo/{company_id}")
+async def relatorio_orcamentos_periodo(company_id: str, periodo: str = 'mes'):
+    """Relatório de Orçamentos por Período - Quantidade, valor e variação mensal"""
+    from datetime import datetime
+    from collections import defaultdict
+    
+    hoje = datetime.now()
+    
+    # Calcular período (últimos 12 meses por padrão)
+    if periodo == 'mes':
+        meses = 1
+    elif periodo == 'trimestre':
+        meses = 3
+    else:  # ano
+        meses = 12
+    
+    # Buscar todos os orçamentos
+    orcamentos = await db.orcamentos.find({
+        "company_id": company_id
+    }, {"_id": 0}).to_list(10000)
+    
+    # Agrupar por mês
+    por_mes = defaultdict(lambda: {'quantidade': 0, 'valor': 0, 'aprovados': 0, 'valor_aprovado': 0})
+    
+    for orc in orcamentos:
+        # Tentar pegar data de criação
+        data_str = orc.get('created_at', orc.get('data', ''))
+        if isinstance(data_str, str) and data_str:
+            try:
+                mes_ano = data_str[:7]  # YYYY-MM
+            except:
+                mes_ano = hoje.strftime('%Y-%m')
+        else:
+            mes_ano = hoje.strftime('%Y-%m')
+        
+        valor = orc.get('valor_total', 0) or orc.get('total', 0) or 0
+        status = orc.get('status', '').lower()
+        
+        por_mes[mes_ano]['quantidade'] += 1
+        por_mes[mes_ano]['valor'] += valor
+        
+        if status == 'aprovado':
+            por_mes[mes_ano]['aprovados'] += 1
+            por_mes[mes_ano]['valor_aprovado'] += valor
+    
+    # Ordenar por mês
+    meses_ordenados = sorted(por_mes.keys(), reverse=True)[:12]
+    meses_ordenados.reverse()  # Mais antigo primeiro
+    
+    # Montar dados com variação
+    dados_meses = []
+    valor_anterior = 0
+    
+    for mes in meses_ordenados:
+        dados = por_mes[mes]
+        variacao = 0
+        if valor_anterior > 0:
+            variacao = ((dados['valor'] - valor_anterior) / valor_anterior) * 100
+        
+        dados_meses.append({
+            'mes': mes,
+            'mes_label': f"{mes[5:7]}/{mes[:4]}",
+            'quantidade': dados['quantidade'],
+            'valor': dados['valor'],
+            'aprovados': dados['aprovados'],
+            'valor_aprovado': dados['valor_aprovado'],
+            'variacao': round(variacao, 1),
+            'ticket_medio': dados['valor'] / dados['quantidade'] if dados['quantidade'] > 0 else 0,
+            'taxa_conversao': (dados['aprovados'] / dados['quantidade'] * 100) if dados['quantidade'] > 0 else 0
+        })
+        
+        valor_anterior = dados['valor']
+    
+    # Calcular totais do período selecionado
+    meses_periodo = meses_ordenados[-meses:] if len(meses_ordenados) >= meses else meses_ordenados
+    
+    total_quantidade = sum(por_mes[m]['quantidade'] for m in meses_periodo)
+    total_valor = sum(por_mes[m]['valor'] for m in meses_periodo)
+    total_aprovados = sum(por_mes[m]['aprovados'] for m in meses_periodo)
+    total_valor_aprovado = sum(por_mes[m]['valor_aprovado'] for m in meses_periodo)
+    
+    # Calcular variação em relação ao período anterior
+    variacao_periodo = 0
+    if len(meses_ordenados) > meses:
+        meses_anteriores = meses_ordenados[-(meses*2):-meses] if len(meses_ordenados) >= meses*2 else []
+        if meses_anteriores:
+            valor_anterior_periodo = sum(por_mes[m]['valor'] for m in meses_anteriores)
+            if valor_anterior_periodo > 0:
+                variacao_periodo = ((total_valor - valor_anterior_periodo) / valor_anterior_periodo) * 100
+    
+    return {
+        "resumo": {
+            "total_quantidade": total_quantidade,
+            "total_valor": total_valor,
+            "total_aprovados": total_aprovados,
+            "total_valor_aprovado": total_valor_aprovado,
+            "ticket_medio": total_valor / total_quantidade if total_quantidade > 0 else 0,
+            "taxa_conversao": (total_aprovados / total_quantidade * 100) if total_quantidade > 0 else 0,
+            "variacao_periodo": round(variacao_periodo, 1)
+        },
+        "meses": dados_meses,
+        "periodo": periodo
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
