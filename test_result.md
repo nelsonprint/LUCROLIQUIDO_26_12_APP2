@@ -4,10 +4,10 @@
 relatorios_module:
   - task: "Central de Relatórios - Página Principal"
     implemented: true
-    working: needs_testing
+    working: false
     file: "/app/frontend/src/pages/Relatorios.jsx"
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     features:
       - "Campo de busca"
       - "Categorias de relatórios (7 categorias)"
@@ -18,6 +18,9 @@ relatorios_module:
       - working: needs_testing
         agent: "main"
         comment: "Página criada com todas as categorias. Navegação para relatórios individuais implementada."
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL: Frontend authentication/routing issue. User gets redirected to landing page when accessing /relatorios. Login works but session not maintained for reports access. Backend APIs confirmed working via curl."
 
   - task: "Relatório - Contas a Pagar por Período"
     implemented: true
