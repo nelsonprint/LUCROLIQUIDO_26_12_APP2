@@ -161,11 +161,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Authentication/Session Management Fix for Reports Module"
-    - "Frontend routing issue preventing access to /relatorios"
-  stuck_tasks:
-    - "Central de Relatórios - Página Principal"
-    - "All individual report pages (authentication dependency)"
+    - "Verify all report routes are now working after adding missing routes to App.js"
+  stuck_tasks: []
   test_priority: "critical_first"
 
 agent_communication:
@@ -173,6 +170,8 @@ agent_communication:
     message: "Implementação inicial do módulo de Relatórios (Fases 1 e 2) concluída. Backend testado via curl - todos endpoints OK. Frontend precisa de testes de UI."
   - agent: "testing"
     message: "TESTING COMPLETED - Reports module tested with mixed results. Backend APIs working correctly, but frontend has authentication/routing issues preventing full UI testing. See detailed findings below."
+  - agent: "main"
+    message: "BUG FIX: Added 15 missing routes to App.js for report pages that were redirecting to dashboard. Routes added: fornecedores-ranking, inadimplencia, fluxo-realizado, dre-gerencial, dfc-completo, funil-orcamentos, orcamentos-periodo, servicos-materiais, clientes-cadastro, clientes-recorrencia, clientes-inadimplencia, top-indicadores, alertas, comparativo, pareto. Initial manual test of dre-gerencial showed successful navigation and data loading."
 
 credentials:
   email: "admin@lucroliquido.com"
