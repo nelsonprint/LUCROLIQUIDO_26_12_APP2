@@ -185,16 +185,16 @@ const RelDespesasCategoria = ({ user, onLogout }) => {
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
-                        data={data.categorias.slice(0, 10)}
+                        data={data.categorias.slice(0, 10).filter(c => c.categoria)}
                         dataKey="valor"
                         nameKey="categoria"
                         cx="50%"
                         cy="50%"
                         outerRadius={100}
-                        label={({ categoria, percentual }) => `${categoria.slice(0, 10)}... ${percentual?.toFixed(0)}%`}
+                        label={({ categoria, percentual }) => `${(categoria || 'Sem categoria').slice(0, 10)}... ${percentual?.toFixed(0)}%`}
                         labelLine={false}
                       >
-                        {data.categorias.slice(0, 10).map((entry, index) => (
+                        {data.categorias.slice(0, 10).filter(c => c.categoria).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
