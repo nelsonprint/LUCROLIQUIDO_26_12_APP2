@@ -129,7 +129,10 @@ function App() {
           <Route path="/relatorios/pagar-periodo" element={<RelContasPagar user={user} onLogout={handleLogout} />} />
           <Route path="/relatorios/receber-periodo" element={<RelContasReceber user={user} onLogout={handleLogout} />} />
           <Route path="/relatorios/pagar-aging" element={<RelAgingPagar user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/receber-aging" element={<RelAgingReceber user={user} onLogout={handleLogout} />} />
           <Route path="/relatorios/fluxo-projetado" element={<RelFluxoProjetado user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/despesas-categoria" element={<RelDespesasCategoria user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/clientes-ranking" element={<RelClientesRanking user={user} onLogout={handleLogout} />} />
           <Route path="/config-orcamento" element={<ConfiguracaoOrcamento user={user} onLogout={handleLogout} />} />
           <Route path="/assinatura" element={<Assinatura user={user} onLogout={handleLogout} />} />
           <Route 
