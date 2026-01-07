@@ -8147,6 +8147,61 @@ async def serve_supervisor_icon_512():
     return FileResponse(file_path, media_type="image/png")
 
 
+# ============ Proprietário PWA Endpoints ============
+@api_router.get("/proprietario/app")
+async def serve_proprietario_app():
+    """Servir página PWA do proprietário"""
+    file_path = static_dir / "proprietario.html"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+    return FileResponse(file_path, media_type="text/html")
+
+
+@api_router.get("/proprietario/")
+async def serve_proprietario_app_root():
+    """Servir página PWA do proprietário (rota raiz para manifest start_url)"""
+    file_path = static_dir / "proprietario.html"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+    return FileResponse(file_path, media_type="text/html")
+
+
+@api_router.get("/proprietario/manifest.json")
+async def serve_proprietario_manifest():
+    """Servir manifest do proprietário"""
+    file_path = static_dir / "manifest-proprietario.json"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Manifest não encontrado")
+    return FileResponse(file_path, media_type="application/json")
+
+
+@api_router.get("/proprietario/sw.js")
+async def serve_proprietario_sw():
+    """Servir Service Worker do proprietário"""
+    file_path = static_dir / "sw-proprietario.js"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Service Worker não encontrado")
+    return FileResponse(file_path, media_type="application/javascript")
+
+
+@api_router.get("/proprietario/icon-192.png")
+async def serve_proprietario_icon_192():
+    """Servir ícone 192x192 do proprietário"""
+    file_path = static_dir / "icon-proprietario-192.png"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Ícone não encontrado")
+    return FileResponse(file_path, media_type="image/png")
+
+
+@api_router.get("/proprietario/icon-512.png")
+async def serve_proprietario_icon_512():
+    """Servir ícone 512x512 do proprietário"""
+    file_path = static_dir / "icon-proprietario-512.png"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Ícone não encontrado")
+    return FileResponse(file_path, media_type="image/png")
+
+
 @api_router.get("/cliente/app/{token}")
 async def serve_cliente_app(token: str):
     """Servir página PWA do cliente"""
