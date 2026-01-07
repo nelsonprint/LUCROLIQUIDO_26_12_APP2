@@ -66,10 +66,10 @@ relatorios_module:
 
   - task: "Relatório - Aging Contas a Pagar"
     implemented: true
-    working: needs_testing
+    working: false
     file: "/app/frontend/src/pages/relatorios/RelAgingPagar.jsx"
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     backend_endpoint: "GET /api/relatorios/aging-pagar/{company_id}"
     features:
       - "KPIs: Total em aberto, a vencer, atrasado, maior atraso"
@@ -80,6 +80,9 @@ relatorios_module:
       - working: true
         agent: "main"
         comment: "Backend testado via curl. Resumo: total R$14.910, atrasado R$12.000."
+      - working: false
+        agent: "testing"
+        comment: "Same authentication/routing issue prevents frontend testing. Backend API working correctly."
 
   - task: "Relatório - Fluxo de Caixa Projetado"
     implemented: true
