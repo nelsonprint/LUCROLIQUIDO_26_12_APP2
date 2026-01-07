@@ -777,6 +777,30 @@ class CategoriaFuncionario(BaseModel):
 
 # ========== MODELS: FORNECEDORES ==========
 
+
+# ========== MODELS: VÍDEOS PASSO A PASSO ==========
+
+class VideoPassoAPassoCreate(BaseModel):
+    """Modelo para criação de vídeo de treinamento"""
+    titulo: str
+    url: str
+    descricao: Optional[str] = None
+    ordem: Optional[int] = 0
+    ativo: bool = True
+
+
+class VideoPassoAPasso(BaseModel):
+    """Modelo completo de vídeo de treinamento"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    titulo: str
+    url: str
+    descricao: Optional[str] = None
+    ordem: int = 0
+    ativo: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class FornecedorCreate(BaseModel):
     """Modelo para criação de fornecedor"""
     empresa_id: str
