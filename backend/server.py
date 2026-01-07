@@ -8023,6 +8023,163 @@ async def relatorio_fluxo_projetado(company_id: str, dias: int = 30):
     }
 
 
+@api_router.get("/relatorios/fluxo-realizado/{company_id}")
+async def relatorio_fluxo_realizado(company_id: str, periodo: str = 'mes'):
+    """Relatório de Fluxo de Caixa Realizado - Entradas e Saídas Efetivadas"""
+    from datetime import datetime, timedelta
+    from collections import defaultdict
+    
+    hoje = datetime.now()
+    
+    # Calcular período
+    if periodo == 'mes':
+        inicio = hoje.replace(day=1).strftime('%Y-%m-%d')
+    elif periodo == 'trimestre':
+        mes_inicio = ((hoje.month - 1) // 3) * 3 + 1
+        inicio = hoje.replace(month=mes_inicio, day=1).strftime('%Y-%m-%d')
+    else:  # ano
+        inicio = hoje.replace(month=1, day=1).strftime('%Y-%m-%d')
+    
+    fim = hoje.strftime('%Y-%m-%d')
+    
+    # Buscar transações de receita (entradas)
+    receitas = await db.transactions.find({
+        "company_id": company_id,
+        "type": "receita",
+        "date": {"$gte": inicio, "$lte": fim}
+    }, {"_id": 0}).to_list(5000)
+    
+    # Buscar transações de despesa/custo (saídas)
+    despesas = await db.transactions.find({
+        "company_id": company_id,
+        "type": {"$in": ["despesa", "custo"]},
+        "date": {"$gte": inicio, "$lte": fim}
+    }, {"_id": 0}).to_list(5000)
+    
+    # Buscar contas pagas
+    contas_pagas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "PAGAR",
+        "status": "PAGO",
+        "data_pagamento": {"$gte": inicio, "$lte": fim}
+    }, {"_id": 0}).to_list(5000)
+    
+    # Buscar contas recebidas
+    contas_recebidas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "RECEBER",
+        "status": {"$in": ["RECEBIDO", "PAGO"]},
+        "data_pagamento": {"$gte": inicio, "$lte": fim}
+    }, {"_id": 0}).to_list(5000)
+    
+    # Agrupar por dia
+    movimentos = defaultdict(lambda: {'entradas': 0, 'saidas': 0})
+    
+    # Adicionar receitas
+    for r in receitas:
+        data = r.get('date', fim)
+        movimentos[data]['entradas'] += r.get('amount', 0)
+    
+    # Adicionar contas recebidas
+    for c in contas_recebidas:
+        data = c.get('data_pagamento', fim)
+        movimentos[data]['entradas'] += c.get('valor', 0)
+    
+    # Adicionar despesas
+    for d in despesas:
+        data = d.get('date', fim)
+        movimentos[data]['saidas'] += d.get('amount', 0)
+    
+    # Adicionar contas pagas
+    for c in contas_pagas:
+        data = c.get('data_pagamento', fim)
+        movimentos[data]['saidas'] += c.get('valor', 0)
+    
+    # Ordenar por data
+    datas_ordenadas = sorted(movimentos.keys())
+    
+    # Calcular saldo acumulado
+    movimentacoes = []
+    saldo_acumulado = 0
+    
+    for data in datas_ordenadas:
+        mov = movimentos[data]
+        saldo_acumulado += mov['entradas'] - mov['saidas']
+        movimentacoes.append({
+            'data': data,
+            'entradas': mov['entradas'],
+            'saidas': mov['saidas'],
+            'saldo': saldo_acumulado
+        })
+    
+    # Calcular totais
+    total_entradas = sum(m['entradas'] for m in movimentacoes)
+    total_saidas = sum(m['saidas'] for m in movimentacoes)
+    saldo_periodo = total_entradas - total_saidas
+    
+    # Calcular médias diárias
+    dias_periodo = len(movimentacoes) if movimentacoes else 1
+    media_entradas = total_entradas / dias_periodo
+    media_saidas = total_saidas / dias_periodo
+    
+    # Detalhes das entradas
+    entradas_detalhe = []
+    for r in receitas:
+        entradas_detalhe.append({
+            'data': r.get('date', ''),
+            'descricao': r.get('description', 'Receita'),
+            'categoria': r.get('category', '-'),
+            'valor': r.get('amount', 0),
+            'origem': 'Lançamento'
+        })
+    for c in contas_recebidas:
+        entradas_detalhe.append({
+            'data': c.get('data_pagamento', ''),
+            'descricao': c.get('descricao', 'Recebimento'),
+            'categoria': c.get('categoria', '-'),
+            'valor': c.get('valor', 0),
+            'origem': 'Conta Recebida'
+        })
+    
+    # Detalhes das saídas
+    saidas_detalhe = []
+    for d in despesas:
+        saidas_detalhe.append({
+            'data': d.get('date', ''),
+            'descricao': d.get('description', 'Despesa'),
+            'categoria': d.get('category', '-'),
+            'valor': d.get('amount', 0),
+            'origem': 'Lançamento'
+        })
+    for c in contas_pagas:
+        saidas_detalhe.append({
+            'data': c.get('data_pagamento', ''),
+            'descricao': c.get('descricao', 'Pagamento'),
+            'categoria': c.get('categoria', '-'),
+            'valor': c.get('valor', 0),
+            'origem': 'Conta Paga'
+        })
+    
+    return {
+        "resumo": {
+            "total_entradas": total_entradas,
+            "total_saidas": total_saidas,
+            "saldo_periodo": saldo_periodo,
+            "media_entradas": media_entradas,
+            "media_saidas": media_saidas,
+            "qtd_entradas": len(entradas_detalhe),
+            "qtd_saidas": len(saidas_detalhe)
+        },
+        "movimentacoes": movimentacoes,
+        "entradas": sorted(entradas_detalhe, key=lambda x: x.get('data', ''), reverse=True),
+        "saidas": sorted(saidas_detalhe, key=lambda x: x.get('data', ''), reverse=True),
+        "periodo": {
+            "inicio": inicio,
+            "fim": fim
+        }
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
