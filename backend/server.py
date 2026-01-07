@@ -10158,6 +10158,99 @@ async def excluir_funcionario(funcionario_id: str):
     return {"message": "Funcionário excluído"}
 
 
+# ========== ENDPOINTS: VÍDEOS PASSO A PASSO ==========
+
+@api_router.get("/videos-passo-a-passo")
+async def listar_videos_passo_a_passo(apenas_ativos: bool = True):
+    """Listar todos os vídeos de treinamento (para usuários)"""
+    query = {"ativo": True} if apenas_ativos else {}
+    videos = await db.videos_passo_a_passo.find(query, {"_id": 0}).sort("ordem", 1).to_list(100)
+    return videos
+
+
+@api_router.get("/admin/videos-passo-a-passo")
+async def listar_videos_admin():
+    """Listar todos os vídeos (para admin)"""
+    videos = await db.videos_passo_a_passo.find({}, {"_id": 0}).sort("ordem", 1).to_list(100)
+    return videos
+
+
+@api_router.get("/admin/videos-passo-a-passo/{video_id}")
+async def obter_video(video_id: str):
+    """Obter um vídeo específico"""
+    video = await db.videos_passo_a_passo.find_one({"id": video_id}, {"_id": 0})
+    if not video:
+        raise HTTPException(status_code=404, detail="Vídeo não encontrado")
+    return video
+
+
+@api_router.post("/admin/videos-passo-a-passo")
+async def criar_video(video_data: VideoPassoAPassoCreate):
+    """Criar novo vídeo de treinamento"""
+    # Validar título
+    if not video_data.titulo.strip():
+        raise HTTPException(status_code=400, detail="Título é obrigatório")
+    
+    # Validar URL
+    if not video_data.url.strip():
+        raise HTTPException(status_code=400, detail="URL é obrigatória")
+    
+    video = VideoPassoAPasso(**video_data.model_dump())
+    
+    doc = video.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    
+    await db.videos_passo_a_passo.insert_one(doc)
+    
+    return {"message": "Vídeo criado com sucesso!", "id": video.id}
+
+
+@api_router.put("/admin/videos-passo-a-passo/{video_id}")
+async def atualizar_video(video_id: str, video_data: VideoPassoAPassoCreate):
+    """Atualizar vídeo existente"""
+    update_data = video_data.model_dump()
+    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.videos_passo_a_passo.update_one(
+        {"id": video_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Vídeo não encontrado")
+    
+    return {"message": "Vídeo atualizado com sucesso!"}
+
+
+@api_router.patch("/admin/videos-passo-a-passo/{video_id}/toggle")
+async def toggle_video_ativo(video_id: str):
+    """Ativar/Desativar vídeo"""
+    video = await db.videos_passo_a_passo.find_one({"id": video_id})
+    if not video:
+        raise HTTPException(status_code=404, detail="Vídeo não encontrado")
+    
+    novo_status = not video.get('ativo', True)
+    
+    await db.videos_passo_a_passo.update_one(
+        {"id": video_id},
+        {"$set": {"ativo": novo_status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"message": f"Vídeo {'ativado' if novo_status else 'desativado'}!", "ativo": novo_status}
+
+
+@api_router.delete("/admin/videos-passo-a-passo/{video_id}")
+async def excluir_video(video_id: str):
+    """Excluir vídeo"""
+    result = await db.videos_passo_a_passo.delete_one({"id": video_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Vídeo não encontrado")
+    
+    return {"message": "Vídeo excluído com sucesso!"}
+
+
 # ========== ENDPOINTS: FORNECEDORES ==========
 
 @api_router.get("/fornecedores/{empresa_id}")
