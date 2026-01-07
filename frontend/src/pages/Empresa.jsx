@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
-import { Building2, MapPin, Phone, Save } from 'lucide-react';
+import { Building2, MapPin, Phone, Save, Smartphone, ExternalLink, Copy, Download } from 'lucide-react';
 
 const Empresa = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
