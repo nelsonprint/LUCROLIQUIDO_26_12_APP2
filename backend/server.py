@@ -7980,6 +7980,283 @@ async def relatorio_fluxo_projetado(company_id: str, dias: int = 30):
     }
 
 
+@api_router.get("/relatorios/aging-receber/{company_id}")
+async def relatorio_aging_receber(company_id: str):
+    """Relatório de Aging (Envelhecimento) de Contas a Receber"""
+    from datetime import datetime
+    
+    hoje = datetime.now()
+    hoje_str = hoje.strftime('%Y-%m-%d')
+    
+    # Buscar contas em aberto
+    contas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "RECEBER",
+        "status": {"$nin": ["RECEBIDO", "PAGO", "CANCELADO"]}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Definir faixas
+    faixas_config = [
+        ("Vence Hoje", 0, 0),
+        ("1-7 dias", 1, 7),
+        ("8-15 dias", 8, 15),
+        ("16-30 dias", 16, 30),
+        ("31-60 dias", 31, 60),
+        ("60+ dias", 61, 9999),
+    ]
+    
+    faixas_atraso_config = [
+        ("Atrasado 1-7", -7, -1),
+        ("Atrasado 8-15", -15, -8),
+        ("Atrasado 16-30", -30, -16),
+        ("Atrasado 31-60", -60, -31),
+        ("Atrasado 60+", -9999, -61),
+    ]
+    
+    # Classificar contas nas faixas
+    faixas_result = {f[0]: {'valor': 0, 'contas': []} for f in faixas_config + faixas_atraso_config}
+    
+    total = 0
+    a_vencer = 0
+    atrasado = 0
+    maior_atraso = 0
+    
+    for conta in contas:
+        venc_str = conta.get('data_vencimento', '')
+        if not venc_str:
+            continue
+            
+        venc = datetime.strptime(venc_str, '%Y-%m-%d')
+        dias = (venc - hoje).days
+        conta['dias_atraso'] = -dias if dias < 0 else 0
+        
+        total += conta['valor']
+        
+        if dias >= 0:
+            a_vencer += conta['valor']
+            for nome, min_d, max_d in faixas_config:
+                if min_d <= dias <= max_d:
+                    faixas_result[nome]['valor'] += conta['valor']
+                    faixas_result[nome]['contas'].append(conta)
+                    break
+        else:
+            atrasado += conta['valor']
+            if -dias > maior_atraso:
+                maior_atraso = -dias
+            for nome, min_d, max_d in faixas_atraso_config:
+                if min_d <= dias <= max_d:
+                    faixas_result[nome]['valor'] += conta['valor']
+                    faixas_result[nome]['contas'].append(conta)
+                    break
+    
+    faixas = []
+    detalhes = []
+    for nome, _, _ in faixas_config + faixas_atraso_config:
+        if faixas_result[nome]['valor'] > 0:
+            faixas.append({
+                'faixa': nome,
+                'valor': faixas_result[nome]['valor'],
+                'quantidade': len(faixas_result[nome]['contas'])
+            })
+            detalhes.append({
+                'faixa': nome,
+                'total': faixas_result[nome]['valor'],
+                'contas': sorted(faixas_result[nome]['contas'], key=lambda x: x.get('data_vencimento', ''))
+            })
+    
+    return {
+        "resumo": {
+            "total": total,
+            "quantidade": len(contas),
+            "a_vencer": a_vencer,
+            "atrasado": atrasado,
+            "maior_atraso": maior_atraso
+        },
+        "faixas": faixas,
+        "detalhes": detalhes
+    }
+
+
+@api_router.get("/relatorios/despesas-categoria/{company_id}")
+async def relatorio_despesas_categoria(
+    company_id: str,
+    periodo: str = 'mes',
+    tipo: Optional[str] = None
+):
+    """Relatório de Despesas por Categoria"""
+    from datetime import datetime
+    from collections import defaultdict
+    
+    inicio, fim = get_periodo_datas(periodo)
+    
+    # Buscar transações de despesa
+    filtro = {
+        "company_id": company_id,
+        "type": "despesa",
+        "date": {"$gte": inicio, "$lte": fim}
+    }
+    
+    transacoes = await db.transactions.find(filtro, {"_id": 0}).to_list(5000)
+    
+    # Buscar categorias para mapear
+    categorias = await db.expense_categories.find({}, {"_id": 0}).to_list(500)
+    cat_map = {c['id']: c for c in categorias}
+    
+    # Agrupar por categoria
+    por_categoria = defaultdict(lambda: {'valor': 0, 'quantidade': 0, 'tipo': 'administrativa'})
+    
+    for t in transacoes:
+        cat_id = t.get('category_id', '')
+        cat = cat_map.get(cat_id, {})
+        cat_nome = cat.get('name', t.get('category', 'Sem Categoria'))
+        cat_tipo = 'comercial' if cat.get('group') == 'comercial' else 'administrativa'
+        
+        # Filtrar por tipo se especificado
+        if tipo and cat_tipo != tipo:
+            continue
+        
+        por_categoria[cat_nome]['valor'] += t.get('amount', 0)
+        por_categoria[cat_nome]['quantidade'] += 1
+        por_categoria[cat_nome]['tipo'] = cat_tipo
+    
+    # Calcular totais
+    total = sum(c['valor'] for c in por_categoria.values())
+    comercial = sum(c['valor'] for c in por_categoria.values() if c['tipo'] == 'comercial')
+    administrativa = sum(c['valor'] for c in por_categoria.values() if c['tipo'] == 'administrativa')
+    
+    # Ordenar por valor
+    categorias_ordenadas = sorted(
+        [{'categoria': k, **v, 'percentual': (v['valor'] / total * 100) if total > 0 else 0} 
+         for k, v in por_categoria.items()],
+        key=lambda x: x['valor'],
+        reverse=True
+    )
+    
+    maior = categorias_ordenadas[0] if categorias_ordenadas else None
+    
+    # Tendência dos últimos 12 meses
+    tendencia = []
+    hoje = datetime.now()
+    for i in range(11, -1, -1):
+        mes = (hoje.month - i - 1) % 12 + 1
+        ano = hoje.year - ((hoje.month - i - 1) // 12) - (1 if hoje.month - i <= 0 else 0)
+        mes_str = f"{ano}-{mes:02d}"
+        
+        mes_transacoes = await db.transactions.find({
+            "company_id": company_id,
+            "type": "despesa",
+            "date": {"$regex": f"^{mes_str}"}
+        }, {"_id": 0}).to_list(1000)
+        
+        com = 0
+        adm = 0
+        for t in mes_transacoes:
+            cat_id = t.get('category_id', '')
+            cat = cat_map.get(cat_id, {})
+            if cat.get('group') == 'comercial':
+                com += t.get('amount', 0)
+            else:
+                adm += t.get('amount', 0)
+        
+        tendencia.append({
+            'mes': mes_str,
+            'comercial': com,
+            'administrativa': adm
+        })
+    
+    return {
+        "resumo": {
+            "total": total,
+            "quantidade": sum(c['quantidade'] for c in por_categoria.values()),
+            "comercial": comercial,
+            "administrativa": administrativa,
+            "maior_categoria": maior['categoria'] if maior else None,
+            "maior_valor": maior['valor'] if maior else 0
+        },
+        "categorias": categorias_ordenadas,
+        "tendencia": tendencia
+    }
+
+
+@api_router.get("/relatorios/clientes-ranking/{company_id}")
+async def relatorio_clientes_ranking(company_id: str, periodo: str = 'ano'):
+    """Relatório de Ranking de Clientes por Receita"""
+    from collections import defaultdict
+    
+    if periodo != 'todos':
+        inicio, fim = get_periodo_datas(periodo)
+        filtro_periodo = {"data_vencimento": {"$gte": inicio, "$lte": fim}}
+    else:
+        filtro_periodo = {}
+    
+    # Buscar contas a receber
+    contas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "RECEBER",
+        **filtro_periodo
+    }, {"_id": 0}).to_list(5000)
+    
+    # Agrupar por cliente
+    por_cliente = defaultdict(lambda: {
+        'total_recebido': 0,
+        'total_pendente': 0,
+        'quantidade': 0
+    })
+    
+    for conta in contas:
+        cliente = conta.get('cliente', 'Sem Cliente')
+        if not cliente:
+            cliente = 'Sem Cliente'
+        
+        valor = conta.get('valor', 0)
+        status = conta.get('status', 'PENDENTE')
+        
+        por_cliente[cliente]['quantidade'] += 1
+        if status in ['RECEBIDO', 'PAGO']:
+            por_cliente[cliente]['total_recebido'] += valor
+        else:
+            por_cliente[cliente]['total_pendente'] += valor
+    
+    # Calcular total de receita
+    total_receita = sum(c['total_recebido'] for c in por_cliente.values())
+    
+    # Criar lista ordenada
+    clientes_ordenados = sorted(
+        [
+            {
+                'nome': k,
+                'total_recebido': v['total_recebido'],
+                'total_pendente': v['total_pendente'],
+                'quantidade': v['quantidade'],
+                'percentual': (v['total_recebido'] / total_receita * 100) if total_receita > 0 else 0
+            }
+            for k, v in por_cliente.items()
+        ],
+        key=lambda x: x['total_recebido'],
+        reverse=True
+    )
+    
+    # Adicionar posição
+    for i, c in enumerate(clientes_ordenados):
+        c['posicao'] = i + 1
+    
+    # Calcular métricas
+    top1 = clientes_ordenados[0] if clientes_ordenados else None
+    top10_valor = sum(c['total_recebido'] for c in clientes_ordenados[:10])
+    
+    return {
+        "resumo": {
+            "total_receita": total_receita,
+            "total_clientes": len(clientes_ordenados),
+            "ticket_medio": total_receita / len(clientes_ordenados) if clientes_ordenados else 0,
+            "top1_nome": top1['nome'] if top1 else None,
+            "top1_valor": top1['total_recebido'] if top1 else 0,
+            "top10_percentual": (top10_valor / total_receita * 100) if total_receita > 0 else 0
+        },
+        "clientes": clientes_ordenados
+    }
+
+
 # ========== ROTAS: FUNCIONÁRIOS ==========
 
 # Categorias padrão do sistema
