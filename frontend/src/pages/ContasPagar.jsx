@@ -125,6 +125,8 @@ const ContasPagar = ({ user, onLogout }) => {
       valor: conta.valor.toString(),
       forma_pagamento: conta.forma_pagamento,
       observacoes: conta.observacoes || '',
+      fornecedor_id: conta.fornecedor_id || '',
+      fornecedor_nome: conta.fornecedor_nome || '',
     });
     setShowDialog(true);
   };
