@@ -45,7 +45,18 @@ const ContasPagar = ({ user, onLogout }) => {
   useEffect(() => {
     fetchCategorias();
     fetchContas();
+    fetchFornecedores();
   }, [selectedMonth, filterStatus, filterCategoria]);
+
+  const fetchFornecedores = async () => {
+    if (!company.id) return;
+    try {
+      const response = await axiosInstance.get(`/fornecedores/${company.id}?status=Ativo`);
+      setFornecedores(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar fornecedores:', error);
+    }
+  };
 
   const fetchCategorias = async () => {
     try {
