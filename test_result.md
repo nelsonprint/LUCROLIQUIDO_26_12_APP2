@@ -179,7 +179,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Verify all report routes are now working after adding missing routes to App.js"
+    - "Test Fornecedores (Suppliers) module - complete CRUD functionality"
+    - "Test integration between Fornecedores and Contas a Pagar"
   stuck_tasks: []
   test_priority: "critical_first"
 
