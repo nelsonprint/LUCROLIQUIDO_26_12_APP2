@@ -177,8 +177,18 @@ function App() {
                 : <Navigate to="/dashboard" replace />
             } 
           />
+          <Route 
+            path="/admin/videos" 
+            element={
+              user.role === 'admin' 
+                ? <AdminVideos user={user} onLogout={handleLogout} /> 
+                : <Navigate to="/dashboard" replace />
+            } 
+          />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        {/* Componente Passo a Passo - Visível em todas as páginas */}
+        <PassoAPasso />
       </SubscriptionProvider>
     </BrowserRouter>
   );
