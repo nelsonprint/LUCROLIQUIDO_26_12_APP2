@@ -72,7 +72,7 @@ const RelDespesasCategoria = ({ user, onLogout }) => {
       render: (val, row) => (
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: row.cor || '#6366f1' }} />
-          {val}
+          {val || 'Sem categoria'}
         </div>
       )
     },
