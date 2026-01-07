@@ -397,7 +397,18 @@ document.querySelectorAll('.nav-item').forEach(item => {
 function loadSection(section) {
   currentSection = section;
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById(`section${section.charAt(0).toUpperCase() + section.slice(1)}`).classList.add('active');
+  
+  // Mapear nomes de seção para IDs
+  const sectionMap = {
+    'home': 'sectionHome',
+    'dashboard': 'sectionDashboard',
+    'dre': 'sectionDRE',
+    'dfc': 'sectionDFC',
+    'financeiro': 'sectionFinanceiro'
+  };
+  
+  const sectionEl = document.getElementById(sectionMap[section]);
+  if (sectionEl) sectionEl.classList.add('active');
   
   switch(section) {
     case 'home': loadHome(); break;
