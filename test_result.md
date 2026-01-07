@@ -216,10 +216,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Test Fornecedores (Suppliers) module - complete CRUD functionality"
-    - "Test integration between Fornecedores and Contas a Pagar"
+    - "Passo a Passo - Training Videos Feature"
+    - "Admin Videos Management Page"
+    - "Backend - Video API Endpoints"
   stuck_tasks: []
-  test_priority: "critical_first"
+  test_priority: "high_first"
 
 fornecedores_module:
   - task: "Fornecedores (Suppliers) Module - Complete CRUD functionality"
