@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="theme-color" content="#6366F1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Proprietário"/>
+<link rel="manifest" href="/api/proprietario/manifest.json"/>
+<title>App do Proprietário - Dashboard Executivo</title>
+<style>
+:root{--neon:#6366F1;--neon-rgb:99,102,241;--bg:#0f0f10;--card:#16171a;--muted:#9aa0a6;--text:#e8eaed;--border:#2a2d33;--danger:#ff5964;--success:#22c55e;--warning:#f59e0b;--info:#3b82f6}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
+body{padding-bottom:80px}
+
+/* Install Banner */
+.install-banner{display:none;position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#6366F1,#4F46E5);color:#fff;padding:12px;z-index:10000;text-align:center}
+.install-banner.show{display:flex;align-items:center;justify-content:center;gap:12px}
+.install-banner button{background:#fff;color:#6366F1;border:none;padding:8px 16px;border-radius:8px;font-weight:700;cursor:pointer}
+.install-banner .close{background:transparent;color:#fff;font-size:1.2rem}
+
+/* Login Screen */
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-screen.hidden{display:none}
+.login-box{background:var(--card);border-radius:16px;padding:32px;width:100%;max-width:400px;text-align:center}
+.login-box h1{font-size:1.5rem;margin-bottom:8px;color:var(--neon)}
+.login-box p{color:var(--muted);margin-bottom:24px}
+.login-box .input{width:100%;padding:14px;border-radius:10px;border:1px solid var(--border);background:#0e0f12;color:var(--text);font-size:1rem;margin-bottom:12px}
+.login-box .btn{width:100%;padding:14px;border:none;border-radius:10px;background:var(--neon);color:#fff;font-size:1rem;font-weight:700;cursor:pointer}
+.login-box .error{color:var(--danger);margin-top:12px;font-size:.9rem}
+
+/* App Screen */
+.app-screen{display:none}
+.app-screen.show{display:block}
+
+/* Header */
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100}
+.header-content{display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto}
+.header h1{font-size:1.1rem;color:var(--neon);display:flex;align-items:center;gap:8px}
+.header .company-name{font-size:.85rem;color:var(--muted)}
+.header .logout-btn{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.85rem}
+
+/* Container */
+.container{max-width:1100px;margin:0 auto;padding:12px 8px}
+
+/* Cards */
+.card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px}
+.card-title{font-size:1rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+
+/* KPI Cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.kpi-card{background:linear-gradient(135deg,rgba(99,102,241,0.1),transparent);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:14px;text-align:center}
+.kpi-card.success{background:linear-gradient(135deg,rgba(34,197,94,0.1),transparent);border-color:rgba(34,197,94,0.3)}
+.kpi-card.warning{background:linear-gradient(135deg,rgba(245,158,11,0.1),transparent);border-color:rgba(245,158,11,0.3)}
+.kpi-card.danger{background:linear-gradient(135deg,rgba(255,89,100,0.1),transparent);border-color:rgba(255,89,100,0.3)}
+.kpi-card.info{background:linear-gradient(135deg,rgba(59,130,246,0.1),transparent);border-color:rgba(59,130,246,0.3)}
+.kpi-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.kpi-value{font-size:1.3rem;font-weight:800}
+.kpi-value.positive{color:var(--success)}
+.kpi-value.negative{color:var(--danger)}
+.kpi-sub{font-size:.7rem;color:var(--muted);margin-top:4px}
+
+/* DFC Flow */
+.dfc-flow{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:8px 0;overflow-x:auto}
+.dfc-item{flex:1;min-width:60px;text-align:center;padding:8px 4px;background:#0e0f12;border-radius:8px}
+.dfc-item.highlight{border:2px solid var(--neon)}
+.dfc-item .label{font-size:.6rem;color:var(--muted);margin-bottom:2px}
+.dfc-item .value{font-size:.9rem;font-weight:700}
+.dfc-arrow{color:var(--muted);font-size:.8rem}
+
+/* Alerts */
+.alert{display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;margin-bottom:10px}
+.alert.danger{background:rgba(255,89,100,0.15);border-left:3px solid var(--danger)}
+.alert.warning{background:rgba(245,158,11,0.15);border-left:3px solid var(--warning)}
+.alert.info{background:rgba(59,130,246,0.15);border-left:3px solid var(--info)}
+.alert .icon{font-size:1.2rem}
+.alert .text{flex:1;font-size:.85rem}
+.alert .count{background:var(--danger);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:10px;font-weight:700}
+
+/* Quick Actions */
+.quick-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.quick-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 10px;background:#0e0f12;border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .2s}
+.quick-btn:hover{border-color:var(--neon);background:rgba(99,102,241,0.1)}
+.quick-btn .icon{font-size:1.5rem;margin-bottom:6px}
+.quick-btn .label{font-size:.75rem;color:var(--muted);text-align:center}
+
+/* Charts */
+.chart-container{background:#0e0f12;border-radius:10px;padding:12px;margin-top:10px;min-height:200px;position:relative}
+.chart-placeholder{display:flex;align-items:center;justify-content:center;height:180px;color:var(--muted)}
+
+/* Waterfall Chart */
+.waterfall{display:flex;align-items:flex-end;justify-content:space-around;height:200px;padding:10px 0;gap:8px}
+.waterfall-bar{display:flex;flex-direction:column;align-items:center;flex:1}
+.waterfall-bar .bar{width:100%;max-width:50px;border-radius:4px 4px 0 0;transition:height .3s}
+.waterfall-bar .bar.positive{background:var(--success)}
+.waterfall-bar .bar.negative{background:var(--danger)}
+.waterfall-bar .bar.neutral{background:var(--neon)}
+.waterfall-bar .label{font-size:.6rem;color:var(--muted);margin-top:6px;text-align:center}
+.waterfall-bar .value{font-size:.7rem;font-weight:700;margin-bottom:4px}
+
+/* List Items */
+.list-item{display:flex;align-items:center;justify-content:space-between;padding:12px;background:#0e0f12;border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .2s}
+.list-item:hover{background:#1a1b1f}
+.list-item .info{flex:1}
+.list-item .title{font-size:.9rem;font-weight:500;margin-bottom:2px}
+.list-item .subtitle{font-size:.75rem;color:var(--muted)}
+.list-item .value{font-weight:700;text-align:right}
+.list-item .value.positive{color:var(--success)}
+.list-item .value.negative{color:var(--danger)}
+.list-item .status{font-size:.65rem;padding:2px 8px;border-radius:4px;margin-top:4px}
+.list-item .status.pendente{background:rgba(245,158,11,0.2);color:var(--warning)}
+.list-item .status.atrasado{background:rgba(255,89,100,0.2);color:var(--danger)}
+.list-item .status.pago{background:rgba(34,197,94,0.2);color:var(--success)}
+
+/* Tabs */
+.tabs{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.tab{padding:10px 16px;border-radius:8px;background:#0e0f12;border:1px solid var(--border);color:var(--muted);cursor:pointer;white-space:nowrap;font-size:.85rem}
+.tab.active{background:var(--neon);border-color:var(--neon);color:#fff;font-weight:600}
+
+/* Period Filter */
+.period-filter{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.period-btn{padding:6px 12px;border-radius:6px;background:#0e0f12;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:.75rem}
+.period-btn.active{background:var(--neon);border-color:var(--neon);color:#fff}
+
+/* Bottom Nav */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;padding:8px 12px;cursor:pointer;color:var(--muted);transition:color .2s}
+.nav-item.active{color:var(--neon)}
+.nav-item .icon{font-size:1.3rem;margin-bottom:4px}
+.nav-item .label{font-size:.65rem}
+
+/* Pull to Refresh */
+.ptr{text-align:center;padding:20px;color:var(--muted);display:none}
+.ptr.show{display:block}
+
+/* Loading */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px}
+.spinner{width:30px;height:30px;border:3px solid var(--border);border-top-color:var(--neon);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Empty State */
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state .icon{font-size:3rem;margin-bottom:16px;opacity:.5}
+.empty-state .title{font-size:1rem;margin-bottom:8px}
+.empty-state .desc{font-size:.85rem}
+
+/* Toast */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:8px;z-index:10001;display:none}
+.toast.show{display:block}
+
+/* Sections */
+.section{display:none}
+.section.active{display:block}
+
+/* Expandable */
+.expandable-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:12px;background:#0e0f12;border-radius:10px;margin-bottom:8px}
+.expandable-header .title{font-weight:600}
+.expandable-header .arrow{transition:transform .2s}
+.expandable-header.open .arrow{transform:rotate(180deg)}
+.expandable-content{display:none;padding:0 12px 12px}
+.expandable-content.show{display:block}
+
+/* DRE Table */
+.dre-table{font-size:.85rem}
+.dre-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.dre-row:last-child{border-bottom:none}
+.dre-row.header{font-weight:700;color:var(--neon)}
+.dre-row.total{font-weight:700;background:rgba(99,102,241,0.1);margin:0 -12px;padding:10px 12px;border-radius:8px}
+.dre-row .label{flex:1}
+.dre-row .value{font-weight:600}
+.dre-row .pct{color:var(--muted);margin-left:8px;font-size:.75rem}
+
+/* Skeleton */
+.skeleton{background:linear-gradient(90deg,var(--border) 25%,#3a3d45 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+</style>
+</head>
+<body>
+
+<!-- Install Banner -->
+<div id="installBanner" class="install-banner">
+  <span>📲 Instale o App</span>
+  <button id="installBtn">Instalar</button>
+  <button class="close" id="closeBanner">×</button>
+</div>
+
+<!-- Login Screen -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <div style="font-size:3rem;margin-bottom:16px">📊</div>
+    <h1>App do Proprietário</h1>
+    <p>Dashboard executivo da sua empresa</p>
+    <input type="email" id="loginEmail" class="input" placeholder="E-mail"/>
+    <input type="password" id="loginPassword" class="input" placeholder="Senha"/>
+    <button id="loginBtn" class="btn">Entrar</button>
+    <div id="loginError" class="error" style="display:none"></div>
+  </div>
+</div>
+
+<!-- App Screen -->
+<div id="appScreen" class="app-screen">
+  
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <div>
+        <h1>📊 Proprietário</h1>
+        <div class="company-name" id="companyName">Carregando...</div>
+      </div>
+      <button class="logout-btn" id="logoutBtn">Sair</button>
+    </div>
+  </div>
+
+  <!-- Pull to Refresh -->
+  <div id="ptr" class="ptr">↻ Puxe para atualizar</div>
+
+  <!-- Main Content -->
+  <div class="container" id="mainContent">
+    
+    <!-- Section: Visão Geral (Home) -->
+    <div id="sectionHome" class="section active">
+      <div id="homeContent">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Section: Dashboard -->
+    <div id="sectionDashboard" class="section">
+      <div id="dashboardContent">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Section: DRE -->
+    <div id="sectionDRE" class="section">
+      <div id="dreContent">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Section: DFC -->
+    <div id="sectionDFC" class="section">
+      <div id="dfcContent">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Section: Financeiro -->
+    <div id="sectionFinanceiro" class="section">
+      <div id="financeiroContent">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <div class="nav-item active" data-section="home">
+      <div class="icon">🏠</div>
+      <div class="label">Visão Geral</div>
+    </div>
+    <div class="nav-item" data-section="dashboard">
+      <div class="icon">📈</div>
+      <div class="label">Dashboard</div>
+    </div>
+    <div class="nav-item" data-section="dre">
+      <div class="icon">📋</div>
+      <div class="label">DRE</div>
+    </div>
+    <div class="nav-item" data-section="dfc">
+      <div class="icon">💰</div>
+      <div class="label">DFC</div>
+    </div>
+    <div class="nav-item" data-section="financeiro">
+      <div class="icon">💳</div>
+      <div class="label">Contas</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+const API_BASE = window.location.origin + '/api';
+let currentUser = null;
+let currentCompany = null;
+let currentSection = 'home';
+let deferredPrompt = null;
+
+// ============ PWA Install ============
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+
+document.getElementById('installBtn')?.addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('installBanner').classList.remove('show');
+  }
+});
+
+document.getElementById('closeBanner')?.addEventListener('click', () => {
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+// ============ Auth ============
+async function login() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const errorEl = document.getElementById('loginError');
+  
+  if (!email || !password) {
+    errorEl.textContent = 'Preencha todos os campos';
+    errorEl.style.display = 'block';
+    return;
+  }
+  
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.detail || 'Erro no login');
+    }
+    
+    currentUser = data;
+    localStorage.setItem('proprietario_user', JSON.stringify(data));
+    
+    // Buscar empresa
+    const compRes = await fetch(`${API_BASE}/companies/${data.user_id}`);
+    const companies = await compRes.json();
+    
+    if (companies.length > 0) {
+      currentCompany = companies[0];
+      localStorage.setItem('proprietario_company', JSON.stringify(currentCompany));
+    }
+    
+    showApp();
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+  }
+}
+
+function logout() {
+  localStorage.removeItem('proprietario_user');
+  localStorage.removeItem('proprietario_company');
+  currentUser = null;
+  currentCompany = null;
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('appScreen').classList.remove('show');
+}
+
+function checkAuth() {
+  const saved = localStorage.getItem('proprietario_user');
+  const savedCompany = localStorage.getItem('proprietario_company');
+  
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    if (savedCompany) currentCompany = JSON.parse(savedCompany);
+    showApp();
+  }
+}
+
+function showApp() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appScreen').classList.add('show');
+  document.getElementById('companyName').textContent = currentCompany?.name || 'Empresa';
+  loadSection('home');
+}
+
+// ============ Navigation ============
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const section = item.dataset.section;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    loadSection(section);
+  });
+});
+
+function loadSection(section) {
+  currentSection = section;
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(`section${section.charAt(0).toUpperCase() + section.slice(1)}`).classList.add('active');
+  
+  switch(section) {
+    case 'home': loadHome(); break;
+    case 'dashboard': loadDashboard(); break;
+    case 'dre': loadDRE(); break;
+    case 'dfc': loadDFC(); break;
+    case 'financeiro': loadFinanceiro(); break;
+  }
+}
+
+// ============ Helpers ============
+function formatCurrency(value) {
+  if (value === undefined || value === null) return '—';
+  return 'R$ ' + Math.abs(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+function formatCurrencyShort(value) {
+  if (value === undefined || value === null) return '—';
+  const sign = value < 0 ? '-' : '';
+  const abs = Math.abs(value);
+  if (abs >= 1000000) return sign + 'R$ ' + (abs / 1000000).toFixed(1) + 'M';
+  if (abs >= 1000) return sign + 'R$ ' + (abs / 1000).toFixed(1) + 'k';
+  return sign + 'R$ ' + abs.toFixed(0);
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function getCurrentMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// ============ Load Home (Visão Geral) ============
+async function loadHome() {
+  const container = document.getElementById('homeContent');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  
+  if (!currentCompany) return;
+  
+  try {
+    const month = getCurrentMonth();
+    
+    // Fetch all data in parallel
+    const [metricsRes, dreRes, dfcRes, contasRes] = await Promise.all([
+      fetch(`${API_BASE}/metrics/${currentCompany.id}/${month}`),
+      fetch(`${API_BASE}/dfc/resumo-mensal/${currentCompany.id}?mes=${month}`),
+      fetch(`${API_BASE}/dashboard/dre/${currentCompany.id}?meses=1`),
+      fetch(`${API_BASE}/contas/resumo?company_id=${currentCompany.id}`)
+    ]);
+    
+    const metrics = await metricsRes.json();
+    const dfc = await dfcRes.json();
+    const dre = await dreRes.json();
+    const contas = await contasRes.json();
+    
+    const mesAtual = dre.mes_atual || {};
+    
+    container.innerHTML = `
+      <!-- KPIs -->
+      <div class="card">
+        <div class="card-title">📊 Resumo do Mês</div>
+        <div class="kpi-grid">
+          <div class="kpi-card ${metrics.lucro_liquido >= 0 ? 'success' : 'danger'}">
+            <div class="kpi-label">Lucro Líquido</div>
+            <div class="kpi-value ${metrics.lucro_liquido >= 0 ? 'positive' : 'negative'}">${formatCurrencyShort(metrics.lucro_liquido)}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Receita Líquida</div>
+            <div class="kpi-value">${formatCurrencyShort(metrics.receita_liquida || metrics.faturamento)}</div>
+          </div>
+          <div class="kpi-card info">
+            <div class="kpi-label">Margem Líquida</div>
+            <div class="kpi-value">${(mesAtual.margem_liquida || 0).toFixed(1)}%</div>
+          </div>
+          <div class="kpi-card warning">
+            <div class="kpi-label">CSP</div>
+            <div class="kpi-value">${(mesAtual.csp_percentual || 0).toFixed(1)}%</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- DFC Resumo -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💰 Fluxo de Caixa</div>
+        </div>
+        <div class="dfc-flow">
+          <div class="dfc-item">
+            <div class="label">Inicial</div>
+            <div class="value">${formatCurrencyShort(dfc.saldo_inicial)}</div>
+          </div>
+          <div class="dfc-arrow">→</div>
+          <div class="dfc-item ${dfc.operacional >= 0 ? '' : 'danger'}">
+            <div class="label">Oper.</div>
+            <div class="value" style="color:${dfc.operacional >= 0 ? 'var(--success)' : 'var(--danger)'}">${dfc.operacional >= 0 ? '+' : ''}${formatCurrencyShort(dfc.operacional)}</div>
+          </div>
+          <div class="dfc-arrow">→</div>
+          <div class="dfc-item highlight">
+            <div class="label">Final</div>
+            <div class="value" style="color:var(--neon)">${formatCurrencyShort(dfc.saldo_final)}</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:8px">
+          <span style="font-size:.75rem;color:${dfc.variacao_liquida >= 0 ? 'var(--success)' : 'var(--danger)'}">
+            ${dfc.variacao_liquida >= 0 ? '▲' : '▼'} Variação: ${formatCurrency(dfc.variacao_liquida)}
+          </span>
+        </div>
+      </div>
+      
+      <!-- Alertas -->
+      <div class="card">
+        <div class="card-title">⚠️ Alertas</div>
+        ${(contas.atrasados_pagar || 0) > 0 ? `
+          <div class="alert danger">
+            <div class="icon">🔴</div>
+            <div class="text">Contas a pagar atrasadas</div>
+            <div class="count">${contas.atrasados_pagar}</div>
+          </div>
+        ` : ''}
+        ${(contas.atrasados_receber || 0) > 0 ? `
+          <div class="alert warning">
+            <div class="icon">🟡</div>
+            <div class="text">Contas a receber atrasadas</div>
+            <div class="count">${contas.atrasados_receber}</div>
+          </div>
+        ` : ''}
+        ${(contas.vencendo_7d || 0) > 0 ? `
+          <div class="alert info">
+            <div class="icon">📅</div>
+            <div class="text">Vencendo nos próximos 7 dias</div>
+            <div class="count">${contas.vencendo_7d}</div>
+          </div>
+        ` : ''}
+        ${(!contas.atrasados_pagar && !contas.atrasados_receber && !contas.vencendo_7d) ? `
+          <div class="alert info">
+            <div class="icon">✅</div>
+            <div class="text">Nenhum alerta no momento</div>
+          </div>
+        ` : ''}
+      </div>
+      
+      <!-- Ações Rápidas -->
+      <div class="card">
+        <div class="card-title">⚡ Ações Rápidas</div>
+        <div class="quick-actions">
+          <div class="quick-btn" onclick="loadSection('dashboard')">
+            <div class="icon">📈</div>
+            <div class="label">Dashboard Completo</div>
+          </div>
+          <div class="quick-btn" onclick="loadSection('dre')">
+            <div class="icon">📋</div>
+            <div class="label">Ver DRE</div>
+          </div>
+          <div class="quick-btn" onclick="loadSection('dfc')">
+            <div class="icon">💰</div>
+            <div class="label">Ver DFC</div>
+          </div>
+          <div class="quick-btn" onclick="loadSection('financeiro')">
+            <div class="icon">💳</div>
+            <div class="label">Contas</div>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error('Erro ao carregar home:', err);
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">⚠️</div>
+        <div class="title">Erro ao carregar dados</div>
+        <div class="desc">${err.message}</div>
+        <button class="btn" style="margin-top:16px" onclick="loadHome()">Tentar novamente</button>
+      </div>
+    `;
+  }
+}
+
+// ============ Load Dashboard ============
+async function loadDashboard() {
+  const container = document.getElementById('dashboardContent');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  
+  if (!currentCompany) return;
+  
+  try {
+    const month = getCurrentMonth();
+    const [metricsRes, dreRes] = await Promise.all([
+      fetch(`${API_BASE}/metrics/${currentCompany.id}/${month}`),
+      fetch(`${API_BASE}/dashboard/dre/${currentCompany.id}?meses=12`)
+    ]);
+    
+    const metrics = await metricsRes.json();
+    const dre = await dreRes.json();
+    
+    const mesAtual = dre.mes_atual || {};
+    const serieHistorica = dre.serie_historica || [];
+    
+    container.innerHTML = `
+      <!-- CRO do Mês -->
+      <div class="card">
+        <div class="card-title">📊 CRO do Mês</div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Receita Líquida</div>
+            <div class="kpi-value">${formatCurrencyShort(metrics.receita_liquida || metrics.faturamento)}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Custos</div>
+            <div class="kpi-value">${formatCurrencyShort(metrics.custos)}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Despesas</div>
+            <div class="kpi-value">${formatCurrencyShort(metrics.despesas)}</div>
+          </div>
+          <div class="kpi-card ${metrics.lucro_liquido >= 0 ? 'success' : 'danger'}">
+            <div class="kpi-label">Lucro Líquido</div>
+            <div class="kpi-value ${metrics.lucro_liquido >= 0 ? 'positive' : 'negative'}">${formatCurrencyShort(metrics.lucro_liquido)}</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Evolução -->
+      <div class="card">
+        <div class="card-title">📈 Evolução (12 meses)</div>
+        <div class="chart-container" id="chartEvolucao">
+          ${renderBarChart(serieHistorica)}
+        </div>
+      </div>
+      
+      <!-- DRE Resumo -->
+      <div class="card">
+        <div class="card-title">📋 DRE - Resumo</div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Margem Bruta</div>
+            <div class="kpi-value">${(mesAtual.margem_bruta || 0).toFixed(1)}%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Margem Líquida</div>
+            <div class="kpi-value">${(mesAtual.margem_liquida || 0).toFixed(1)}%</div>
+          </div>
+          <div class="kpi-card warning">
+            <div class="kpi-label">CSP</div>
+            <div class="kpi-value">${(mesAtual.csp_percentual || 0).toFixed(1)}%</div>
+          </div>
+          <div class="kpi-card info">
+            <div class="kpi-label">Impostos</div>
+            <div class="kpi-value">${formatCurrencyShort(mesAtual.impostos_sobre_vendas)}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error('Erro ao carregar dashboard:', err);
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">⚠️</div>
+        <div class="title">Erro ao carregar</div>
+        <button class="btn" style="margin-top:16px" onclick="loadDashboard()">Tentar novamente</button>
+      </div>
+    `;
+  }
+}
+
+function renderBarChart(data) {
+  if (!data || data.length === 0) return '<div class="chart-placeholder">Sem dados</div>';
+  
+  const maxValue = Math.max(...data.map(d => Math.max(d.receita_liquida || 0, Math.abs(d.lucro_liquido || 0))));
+  
+  return `
+    <div style="display:flex;align-items:flex-end;justify-content:space-around;height:180px;padding:10px 0;gap:4px;overflow-x:auto">
+      ${data.slice(-6).map(d => `
+        <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:40px">
+          <div style="font-size:.6rem;font-weight:700;color:${(d.lucro_liquido || 0) >= 0 ? 'var(--success)' : 'var(--danger)'};margin-bottom:4px">
+            ${formatCurrencyShort(d.lucro_liquido)}
+          </div>
+          <div style="width:100%;max-width:30px;height:${Math.max(10, (d.receita_liquida || 0) / maxValue * 120)}px;background:var(--neon);border-radius:4px 4px 0 0"></div>
+          <div style="font-size:.55rem;color:var(--muted);margin-top:4px">${d.mes}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ============ Load DRE ============
+async function loadDRE() {
+  const container = document.getElementById('dreContent');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  
+  if (!currentCompany) return;
+  
+  try {
+    const res = await fetch(`${API_BASE}/dashboard/dre/${currentCompany.id}?meses=12`);
+    const data = await res.json();
+    
+    const mes = data.mes_atual || {};
+    const serie = data.serie_historica || [];
+    
+    container.innerHTML = `
+      <div class="period-filter">
+        <button class="period-btn active">Mês Atual</button>
+        <button class="period-btn">Trimestre</button>
+        <button class="period-btn">Ano</button>
+      </div>
+      
+      <!-- DRE Card -->
+      <div class="card">
+        <div class="card-title">📋 DRE - ${new Date().toLocaleString('pt-BR', {month: 'long', year: 'numeric'})}</div>
+        
+        <div class="dre-table">
+          <div class="dre-row header">
+            <span class="label">Conta</span>
+            <span class="value">Valor</span>
+          </div>
+          
+          <div class="dre-row">
+            <span class="label">RECEITA BRUTA</span>
+            <span class="value">${formatCurrency(mes.receita_bruta)}</span>
+          </div>
+          <div class="dre-row" style="color:var(--danger)">
+            <span class="label">(-) Impostos</span>
+            <span class="value">(${formatCurrency(mes.impostos_sobre_vendas)})</span>
+          </div>
+          <div class="dre-row" style="font-weight:600;color:var(--success)">
+            <span class="label">(=) RECEITA LÍQUIDA</span>
+            <span class="value">${formatCurrency(mes.receita_liquida)}</span>
+          </div>
+          <div class="dre-row" style="color:var(--warning)">
+            <span class="label">(-) CSP</span>
+            <span class="value">(${formatCurrency(mes.csp)})<span class="pct">${(mes.csp_percentual || 0).toFixed(1)}%</span></span>
+          </div>
+          <div class="dre-row" style="font-weight:600">
+            <span class="label">(=) LUCRO BRUTO</span>
+            <span class="value">${formatCurrency(mes.lucro_bruto)}<span class="pct">${(mes.margem_bruta || 0).toFixed(1)}%</span></span>
+          </div>
+          <div class="dre-row" style="color:var(--danger)">
+            <span class="label">(-) Desp. Operacionais</span>
+            <span class="value">(${formatCurrency(mes.despesas_operacionais)})</span>
+          </div>
+          <div class="dre-row" style="font-weight:600">
+            <span class="label">(=) RESULTADO OPERACIONAL</span>
+            <span class="value">${formatCurrency(mes.resultado_operacional)}</span>
+          </div>
+          <div class="dre-row total" style="color:${(mes.lucro_liquido || 0) >= 0 ? 'var(--success)' : 'var(--danger)'}">
+            <span class="label">(=) LUCRO LÍQUIDO</span>
+            <span class="value">${formatCurrency(mes.lucro_liquido)}<span class="pct">${(mes.margem_liquida || 0).toFixed(1)}%</span></span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Gráfico Histórico -->
+      <div class="card">
+        <div class="card-title">📈 Histórico (12 meses)</div>
+        <div class="chart-container">
+          ${renderBarChart(serie)}
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error('Erro ao carregar DRE:', err);
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">⚠️</div>
+        <div class="title">Erro ao carregar DRE</div>
+        <button class="btn" style="margin-top:16px" onclick="loadDRE()">Tentar novamente</button>
+      </div>
+    `;
+  }
+}
+
+// ============ Load DFC ============
+async function loadDFC() {
+  const container = document.getElementById('dfcContent');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  
+  if (!currentCompany) return;
+  
+  try {
+    const hoje = new Date();
+    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
+    
+    const res = await fetch(`${API_BASE}/dfc/relatorio/${currentCompany.id}?periodo_inicio=${inicio}&periodo_fim=${fim}`);
+    const data = await res.json();
+    
+    container.innerHTML = `
+      <div class="period-filter">
+        <button class="period-btn active">Mês</button>
+        <button class="period-btn">Trimestre</button>
+        <button class="period-btn">Ano</button>
+      </div>
+      
+      <!-- DFC Cards -->
+      <div class="kpi-grid" style="margin-bottom:12px">
+        <div class="kpi-card info">
+          <div class="kpi-label">Saldo Inicial</div>
+          <div class="kpi-value">${formatCurrencyShort(data.saldo_inicial)}</div>
+        </div>
+        <div class="kpi-card ${data.saldo_final >= 0 ? 'success' : 'danger'}">
+          <div class="kpi-label">Saldo Final</div>
+          <div class="kpi-value ${data.saldo_final >= 0 ? 'positive' : 'negative'}">${formatCurrencyShort(data.saldo_final)}</div>
+        </div>
+      </div>
+      
+      <!-- Waterfall -->
+      <div class="card">
+        <div class="card-title">📊 Gráfico Cascata</div>
+        <div class="waterfall">
+          ${renderWaterfall(data.waterfall)}
+        </div>
+      </div>
+      
+      <!-- Detalhamento -->
+      <div class="card">
+        <div class="card-title">📋 Detalhamento</div>
+        
+        <!-- Operacional -->
+        <div class="expandable-header" onclick="toggleExpand(this)">
+          <span class="title" style="color:${data.operacional.liquido >= 0 ? 'var(--success)' : 'var(--danger)'}">
+            🏢 Operacional: ${data.operacional.liquido >= 0 ? '+' : ''}${formatCurrency(data.operacional.liquido)}
+          </span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="expandable-content">
+          <div class="list-item">
+            <div class="info">
+              <div class="title">Entradas</div>
+            </div>
+            <div class="value positive">${formatCurrency(data.operacional.entradas)}</div>
+          </div>
+          <div class="list-item">
+            <div class="info">
+              <div class="title">Saídas</div>
+            </div>
+            <div class="value negative">-${formatCurrency(data.operacional.saidas)}</div>
+          </div>
+        </div>
+        
+        <!-- Investimento -->
+        <div class="expandable-header" onclick="toggleExpand(this)">
+          <span class="title" style="color:${data.investimento.liquido >= 0 ? 'var(--neon)' : 'var(--warning)'}">
+            🏦 Investimento: ${data.investimento.liquido >= 0 ? '+' : ''}${formatCurrency(data.investimento.liquido)}
+          </span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="expandable-content">
+          <div class="list-item">
+            <div class="info"><div class="title">Entradas</div></div>
+            <div class="value positive">${formatCurrency(data.investimento.entradas)}</div>
+          </div>
+          <div class="list-item">
+            <div class="info"><div class="title">Saídas</div></div>
+            <div class="value negative">-${formatCurrency(data.investimento.saidas)}</div>
+          </div>
+        </div>
+        
+        <!-- Financiamento -->
+        <div class="expandable-header" onclick="toggleExpand(this)">
+          <span class="title" style="color:${data.financiamento.liquido >= 0 ? 'var(--info)' : 'var(--warning)'}">
+            💳 Financiamento: ${data.financiamento.liquido >= 0 ? '+' : ''}${formatCurrency(data.financiamento.liquido)}
+          </span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="expandable-content">
+          <div class="list-item">
+            <div class="info"><div class="title">Entradas</div></div>
+            <div class="value positive">${formatCurrency(data.financiamento.entradas)}</div>
+          </div>
+          <div class="list-item">
+            <div class="info"><div class="title">Saídas</div></div>
+            <div class="value negative">-${formatCurrency(data.financiamento.saidas)}</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Resumo Final -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(99,102,241,0.1),transparent)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:.8rem;color:var(--muted)">Variação Líquida</div>
+            <div style="font-size:1.5rem;font-weight:800;color:${data.variacao_liquida >= 0 ? 'var(--success)' : 'var(--danger)'}">
+              ${data.variacao_liquida >= 0 ? '+' : ''}${formatCurrency(data.variacao_liquida)}
+            </div>
+          </div>
+          <div style="font-size:3rem">${data.variacao_liquida >= 0 ? '📈' : '📉'}</div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error('Erro ao carregar DFC:', err);
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">⚠️</div>
+        <div class="title">Erro ao carregar DFC</div>
+        <button class="btn" style="margin-top:16px" onclick="loadDFC()">Tentar novamente</button>
+      </div>
+    `;
+  }
+}
+
+function renderWaterfall(data) {
+  if (!data || data.length === 0) return '<div class="chart-placeholder">Sem dados</div>';
+  
+  const maxAbs = Math.max(...data.map(d => Math.abs(d.value)));
+  
+  return data.map(d => {
+    const height = Math.max(20, Math.abs(d.value) / maxAbs * 150);
+    let barClass = 'neutral';
+    if (d.tipo === 'operacional' || d.tipo === 'investimento' || d.tipo === 'financiamento') {
+      barClass = d.value >= 0 ? 'positive' : 'negative';
+    }
+    
+    return `
+      <div class="waterfall-bar">
+        <div class="value" style="color:${d.value >= 0 ? 'var(--success)' : 'var(--danger)'}">
+          ${formatCurrencyShort(d.value)}
+        </div>
+        <div class="bar ${barClass}" style="height:${height}px"></div>
+        <div class="label">${d.name.replace(' ', '<br>')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleExpand(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('show');
+}
+
+// ============ Load Financeiro ============
+async function loadFinanceiro() {
+  const container = document.getElementById('financeiroContent');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  
+  if (!currentCompany) return;
+  
+  try {
+    const [pagarRes, receberRes] = await Promise.all([
+      fetch(`${API_BASE}/contas/pagar?company_id=${currentCompany.id}`),
+      fetch(`${API_BASE}/contas/receber?company_id=${currentCompany.id}`)
+    ]);
+    
+    const pagar = await pagarRes.json();
+    const receber = await receberRes.json();
+    
+    const hoje = new Date().toISOString().split('T')[0];
+    
+    // Filtrar e ordenar
+    const pagarPendentes = pagar.filter(c => c.status !== 'PAGO').sort((a, b) => a.data_vencimento?.localeCompare(b.data_vencimento));
+    const receberPendentes = receber.filter(c => c.status !== 'RECEBIDO').sort((a, b) => a.data_vencimento?.localeCompare(b.data_vencimento));
+    
+    container.innerHTML = `
+      <div class="tabs" id="financeiroTabs">
+        <div class="tab active" data-tab="pagar">A Pagar (${pagarPendentes.length})</div>
+        <div class="tab" data-tab="receber">A Receber (${receberPendentes.length})</div>
+      </div>
+      
+      <!-- A Pagar -->
+      <div id="tabPagar" class="tab-content">
+        ${pagarPendentes.length === 0 ? `
+          <div class="empty-state">
+            <div class="icon">✅</div>
+            <div class="title">Nenhuma conta a pagar pendente</div>
+          </div>
+        ` : pagarPendentes.slice(0, 20).map(c => `
+          <div class="list-item">
+            <div class="info">
+              <div class="title">${c.descricao || 'Sem descrição'}</div>
+              <div class="subtitle">${c.data_vencimento || '—'}</div>
+              <div class="status ${c.data_vencimento < hoje ? 'atrasado' : 'pendente'}">
+                ${c.data_vencimento < hoje ? 'ATRASADO' : 'PENDENTE'}
+              </div>
+            </div>
+            <div class="value negative">${formatCurrency(c.valor)}</div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <!-- A Receber -->
+      <div id="tabReceber" class="tab-content" style="display:none">
+        ${receberPendentes.length === 0 ? `
+          <div class="empty-state">
+            <div class="icon">✅</div>
+            <div class="title">Nenhuma conta a receber pendente</div>
+          </div>
+        ` : receberPendentes.slice(0, 20).map(c => `
+          <div class="list-item">
+            <div class="info">
+              <div class="title">${c.descricao || 'Sem descrição'}</div>
+              <div class="subtitle">${c.data_vencimento || '—'}</div>
+              <div class="status ${c.data_vencimento < hoje ? 'atrasado' : 'pendente'}">
+                ${c.data_vencimento < hoje ? 'ATRASADO' : 'PENDENTE'}
+              </div>
+            </div>
+            <div class="value positive">${formatCurrency(c.valor)}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    
+    // Tab switching
+    document.querySelectorAll('#financeiroTabs .tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('#financeiroTabs .tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        document.getElementById('tabPagar').style.display = tab.dataset.tab === 'pagar' ? 'block' : 'none';
+        document.getElementById('tabReceber').style.display = tab.dataset.tab === 'receber' ? 'block' : 'none';
+      });
+    });
+    
+  } catch (err) {
+    console.error('Erro ao carregar financeiro:', err);
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">⚠️</div>
+        <div class="title">Erro ao carregar contas</div>
+        <button class="btn" style="margin-top:16px" onclick="loadFinanceiro()">Tentar novamente</button>
+      </div>
+    `;
+  }
+}
+
+// ============ Event Listeners ============
+document.getElementById('loginBtn').addEventListener('click', login);
+document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') login();
+});
+document.getElementById('logoutBtn').addEventListener('click', logout);
+
+// Pull to refresh
+let startY = 0;
+document.addEventListener('touchstart', (e) => {
+  startY = e.touches[0].pageY;
+});
+
+document.addEventListener('touchmove', (e) => {
+  const y = e.touches[0].pageY;
+  const scroll = window.scrollY;
+  if (scroll === 0 && y > startY + 50) {
+    document.getElementById('ptr').classList.add('show');
+  }
+});
+
+document.addEventListener('touchend', () => {
+  if (document.getElementById('ptr').classList.contains('show')) {
+    document.getElementById('ptr').classList.remove('show');
+    loadSection(currentSection);
+    showToast('Atualizando...');
+  }
+});
+
+// Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/api/proprietario/sw.js').catch(console.error);
+}
+
+// Init
+checkAuth();
+</script>
+</body>
+</html>
