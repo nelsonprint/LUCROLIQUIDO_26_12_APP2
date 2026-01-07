@@ -782,11 +782,13 @@ const Dashboard = ({ user, onLogout }) => {
 
         {/* Score de Saúde Financeira removido para simplificar */}
 
-        {/* Card Resumo DFC + Gráficos Markup/DRE */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* Card DFC Resumo */}
-          <DFCResumoCard companyId={selectedCompany?.id} />
-          
+        {/* Card DFC - Largura Total (abaixo de Evolução, acima de Markup/DRE) */}
+        <div className="mt-6">
+          <DFCResumoCard companyId={selectedCompany?.id} fullWidth={true} />
+        </div>
+
+        {/* Gráficos Markup/BDI e DRE lado a lado */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           {/* Markup/BDI */}
           <MarkupDonutChart 
             key={markupRefreshKey}
