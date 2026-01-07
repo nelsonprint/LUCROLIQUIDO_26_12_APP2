@@ -284,6 +284,8 @@ class ContaCreate(BaseModel):
     valor: float
     forma_pagamento: str  # PIX, Boleto, Cartão, Dinheiro, Transferência
     observacoes: Optional[str] = None
+    fornecedor_id: Optional[str] = None  # ID do fornecedor (para contas a pagar)
+    fornecedor_nome: Optional[str] = None  # Nome do fornecedor (denormalizado)
 
 class Conta(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -301,6 +303,8 @@ class Conta(BaseModel):
     forma_pagamento: str
     observacoes: Optional[str] = None
     lancamento_id: Optional[str] = None  # ID do lançamento vinculado
+    fornecedor_id: Optional[str] = None  # ID do fornecedor (para contas a pagar)
+    fornecedor_nome: Optional[str] = None  # Nome do fornecedor (denormalizado)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
