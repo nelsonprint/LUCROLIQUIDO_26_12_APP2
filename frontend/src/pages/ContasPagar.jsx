@@ -188,6 +188,8 @@ const ContasPagar = ({ user, onLogout }) => {
       valor: '',
       forma_pagamento: 'PIX',
       observacoes: '',
+      fornecedor_id: '',
+      fornecedor_nome: '',
     });
     setEditingConta(null);
   };
