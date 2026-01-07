@@ -8182,6 +8182,127 @@ async def relatorio_fluxo_realizado(company_id: str, periodo: str = 'mes'):
     }
 
 
+@api_router.get("/relatorios/inadimplencia/{company_id}")
+async def relatorio_inadimplencia(company_id: str):
+    """Relatório de Análise de Inadimplência - Clientes com contas em atraso"""
+    from datetime import datetime
+    from collections import defaultdict
+    
+    hoje = datetime.now()
+    hoje_str = hoje.strftime('%Y-%m-%d')
+    
+    # Buscar contas a receber atrasadas
+    contas_atrasadas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "RECEBER",
+        "status": {"$in": ["PENDENTE", "ATRASADO"]},
+        "data_vencimento": {"$lt": hoje_str}
+    }, {"_id": 0}).to_list(5000)
+    
+    # Buscar clientes
+    clientes_dict = {}
+    clientes_data = await db.clientes.find({"empresa_id": company_id}, {"_id": 0}).to_list(1000)
+    for c in clientes_data:
+        clientes_dict[c.get('id')] = c.get('nome', 'Cliente não identificado')
+    
+    # Agrupar por cliente
+    inadimplentes = defaultdict(lambda: {
+        'cliente_id': '',
+        'cliente': 'Não identificado',
+        'valor_atrasado': 0,
+        'quantidade': 0,
+        'maior_atraso': 0,
+        'titulos': []
+    })
+    
+    for conta in contas_atrasadas:
+        cliente_id = conta.get('cliente_id', 'sem_cliente')
+        cliente_nome = clientes_dict.get(cliente_id, conta.get('descricao', 'Não identificado'))
+        
+        # Calcular dias de atraso
+        try:
+            data_venc = datetime.strptime(conta.get('data_vencimento', hoje_str), '%Y-%m-%d')
+            dias_atraso = (hoje - data_venc).days
+        except:
+            dias_atraso = 0
+        
+        inadimplentes[cliente_id]['cliente_id'] = cliente_id
+        inadimplentes[cliente_id]['cliente'] = cliente_nome
+        inadimplentes[cliente_id]['valor_atrasado'] += conta.get('valor', 0)
+        inadimplentes[cliente_id]['quantidade'] += 1
+        inadimplentes[cliente_id]['maior_atraso'] = max(inadimplentes[cliente_id]['maior_atraso'], dias_atraso)
+        inadimplentes[cliente_id]['titulos'].append({
+            'id': conta.get('id'),
+            'descricao': conta.get('descricao', '-'),
+            'valor': conta.get('valor', 0),
+            'vencimento': conta.get('data_vencimento', ''),
+            'dias_atraso': dias_atraso
+        })
+    
+    # Converter para lista e ordenar por valor
+    clientes_list = list(inadimplentes.values())
+    clientes_list.sort(key=lambda x: x['valor_atrasado'], reverse=True)
+    
+    # Calcular resumo
+    total_inadimplencia = sum(c['valor_atrasado'] for c in clientes_list)
+    total_clientes = len(clientes_list)
+    total_titulos = sum(c['quantidade'] for c in clientes_list)
+    maior_devedor = clientes_list[0] if clientes_list else None
+    
+    # Agrupar por faixa de atraso
+    faixas = {
+        '1-7 dias': {'valor': 0, 'quantidade': 0},
+        '8-15 dias': {'valor': 0, 'quantidade': 0},
+        '16-30 dias': {'valor': 0, 'quantidade': 0},
+        '31-60 dias': {'valor': 0, 'quantidade': 0},
+        '61-90 dias': {'valor': 0, 'quantidade': 0},
+        '90+ dias': {'valor': 0, 'quantidade': 0}
+    }
+    
+    for conta in contas_atrasadas:
+        try:
+            data_venc = datetime.strptime(conta.get('data_vencimento', hoje_str), '%Y-%m-%d')
+            dias = (hoje - data_venc).days
+        except:
+            dias = 0
+            
+        valor = conta.get('valor', 0)
+        
+        if dias <= 7:
+            faixas['1-7 dias']['valor'] += valor
+            faixas['1-7 dias']['quantidade'] += 1
+        elif dias <= 15:
+            faixas['8-15 dias']['valor'] += valor
+            faixas['8-15 dias']['quantidade'] += 1
+        elif dias <= 30:
+            faixas['16-30 dias']['valor'] += valor
+            faixas['16-30 dias']['quantidade'] += 1
+        elif dias <= 60:
+            faixas['31-60 dias']['valor'] += valor
+            faixas['31-60 dias']['quantidade'] += 1
+        elif dias <= 90:
+            faixas['61-90 dias']['valor'] += valor
+            faixas['61-90 dias']['quantidade'] += 1
+        else:
+            faixas['90+ dias']['valor'] += valor
+            faixas['90+ dias']['quantidade'] += 1
+    
+    # Converter faixas para lista
+    faixas_list = [{'faixa': k, **v} for k, v in faixas.items()]
+    
+    return {
+        "resumo": {
+            "total_inadimplencia": total_inadimplencia,
+            "total_clientes": total_clientes,
+            "total_titulos": total_titulos,
+            "maior_devedor": maior_devedor['cliente'] if maior_devedor else '-',
+            "maior_valor": maior_devedor['valor_atrasado'] if maior_devedor else 0
+        },
+        "clientes": clientes_list,
+        "faixas": faixas_list
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
