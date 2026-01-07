@@ -8521,6 +8521,127 @@ async def relatorio_orcamentos_periodo(company_id: str, periodo: str = 'mes'):
     }
 
 
+@api_router.get("/relatorios/servicos-materiais/{company_id}")
+async def relatorio_servicos_materiais(company_id: str, periodo: str = 'mes'):
+    """Relatório de Serviços x Materiais - Composição dos orçamentos"""
+    from datetime import datetime
+    from collections import defaultdict
+    
+    hoje = datetime.now()
+    
+    # Calcular período
+    if periodo == 'mes':
+        inicio = hoje.replace(day=1).strftime('%Y-%m-%d')
+    elif periodo == 'trimestre':
+        mes_inicio = ((hoje.month - 1) // 3) * 3 + 1
+        inicio = hoje.replace(month=mes_inicio, day=1).strftime('%Y-%m-%d')
+    else:  # ano
+        inicio = hoje.replace(month=1, day=1).strftime('%Y-%m-%d')
+    
+    fim = hoje.strftime('%Y-%m-%d')
+    
+    # Buscar orçamentos
+    orcamentos = await db.orcamentos.find({
+        "company_id": company_id
+    }, {"_id": 0}).to_list(10000)
+    
+    # Calcular totais
+    total_servicos = 0
+    total_materiais = 0
+    total_geral = 0
+    qtd_orcamentos = 0
+    
+    # Agrupar por mês para tendência
+    por_mes = defaultdict(lambda: {'servicos': 0, 'materiais': 0})
+    
+    # Detalhamento por serviço e material
+    servicos_detalhe = defaultdict(lambda: {'quantidade': 0, 'valor': 0})
+    materiais_detalhe = defaultdict(lambda: {'quantidade': 0, 'valor': 0})
+    
+    for orc in orcamentos:
+        # Verificar data
+        data_str = orc.get('created_at', orc.get('data', ''))
+        if isinstance(data_str, str) and len(data_str) >= 7:
+            mes_ano = data_str[:7]
+        else:
+            mes_ano = hoje.strftime('%Y-%m')
+        
+        qtd_orcamentos += 1
+        
+        # Somar serviços
+        servicos = orc.get('servicos', []) or []
+        for srv in servicos:
+            valor = srv.get('valor_total', 0) or srv.get('preco', 0) or 0
+            total_servicos += valor
+            por_mes[mes_ano]['servicos'] += valor
+            nome = srv.get('nome', srv.get('descricao', 'Serviço'))
+            servicos_detalhe[nome]['quantidade'] += 1
+            servicos_detalhe[nome]['valor'] += valor
+        
+        # Somar materiais
+        materiais = orc.get('materiais', []) or []
+        for mat in materiais:
+            valor = mat.get('valor_total', 0) or (mat.get('quantidade', 0) * mat.get('preco_unitario', 0)) or 0
+            total_materiais += valor
+            por_mes[mes_ano]['materiais'] += valor
+            nome = mat.get('nome', mat.get('descricao', 'Material'))
+            materiais_detalhe[nome]['quantidade'] += mat.get('quantidade', 1)
+            materiais_detalhe[nome]['valor'] += valor
+        
+        # Se não tem detalhes, usar valores totais do orçamento
+        if not servicos and not materiais:
+            valor_servicos = orc.get('valor_servicos', 0) or 0
+            valor_materiais = orc.get('valor_materiais', 0) or 0
+            total_servicos += valor_servicos
+            total_materiais += valor_materiais
+            por_mes[mes_ano]['servicos'] += valor_servicos
+            por_mes[mes_ano]['materiais'] += valor_materiais
+    
+    total_geral = total_servicos + total_materiais
+    
+    # Calcular percentuais
+    perc_servicos = (total_servicos / total_geral * 100) if total_geral > 0 else 0
+    perc_materiais = (total_materiais / total_geral * 100) if total_geral > 0 else 0
+    
+    # Ordenar detalhamentos por valor
+    servicos_list = [{'nome': k, **v} for k, v in servicos_detalhe.items()]
+    servicos_list.sort(key=lambda x: x['valor'], reverse=True)
+    
+    materiais_list = [{'nome': k, **v} for k, v in materiais_detalhe.items()]
+    materiais_list.sort(key=lambda x: x['valor'], reverse=True)
+    
+    # Tendência mensal
+    meses_ordenados = sorted(por_mes.keys())[-12:]
+    tendencia = [
+        {
+            'mes': m,
+            'mes_label': f"{m[5:7]}/{m[:4]}",
+            'servicos': por_mes[m]['servicos'],
+            'materiais': por_mes[m]['materiais']
+        }
+        for m in meses_ordenados
+    ]
+    
+    return {
+        "resumo": {
+            "valor_servicos": total_servicos,
+            "valor_materiais": total_materiais,
+            "total_geral": total_geral,
+            "perc_servicos": round(perc_servicos, 1),
+            "perc_materiais": round(perc_materiais, 1),
+            "qtd_orcamentos": qtd_orcamentos,
+            "ticket_medio": total_geral / qtd_orcamentos if qtd_orcamentos > 0 else 0
+        },
+        "servicos": servicos_list[:20],
+        "materiais": materiais_list[:20],
+        "tendencia": tendencia,
+        "periodo": {
+            "inicio": inicio,
+            "fim": fim
+        }
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
