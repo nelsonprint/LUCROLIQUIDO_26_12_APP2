@@ -771,6 +771,45 @@ class CategoriaFuncionario(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+# ========== MODELS: FORNECEDORES ==========
+
+class FornecedorCreate(BaseModel):
+    """Modelo para criação de fornecedor"""
+    empresa_id: str
+    nome: str  # Nome/Razão Social
+    cnpj_cpf: Optional[str] = None
+    telefone: Optional[str] = None
+    whatsapp: Optional[str] = None
+    email: Optional[str] = None
+    endereco: Optional[str] = None
+    cidade: Optional[str] = None
+    uf: Optional[str] = None
+    fornecedor_de: Optional[str] = None  # Tipo de fornecimento (ex: "Materiais elétricos", "Mão de obra")
+    site: Optional[str] = None
+    observacoes: Optional[str] = None
+
+
+class Fornecedor(BaseModel):
+    """Modelo completo de fornecedor"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    empresa_id: str
+    nome: str
+    cnpj_cpf: Optional[str] = None
+    telefone: Optional[str] = None
+    whatsapp: Optional[str] = None
+    email: Optional[str] = None
+    endereco: Optional[str] = None
+    cidade: Optional[str] = None
+    uf: Optional[str] = None
+    fornecedor_de: Optional[str] = None
+    site: Optional[str] = None
+    observacoes: Optional[str] = None
+    status: str = "Ativo"  # Ativo, Inativo
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 # ========== MODELS: CRONOGRAMA DE OBRA (SUPERVISOR) ==========
 
 class CronogramaEtapaMedia(BaseModel):
