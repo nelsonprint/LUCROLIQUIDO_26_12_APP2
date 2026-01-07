@@ -1,171 +1,371 @@
-<analysis>**original_problem_statement:**
-O usuário forneceu uma especificação detalhada (PRD) para uma nova funcionalidade no dashboard.
-
-**Objetivo:** Criar e adicionar no dashboard um Card “DRE (Serviços)”.
-
-**Funcionalidades Principais:**
-1.  **Card DRE (Serviços):**
-    *   Exibir um demonstrativo resumido da DRE (Demonstração do Resultado do Exercício) do mês atual, incluindo valores e margens principais.
-    *   Posicionar o novo card ao lado do gráfico existente Markup/BDI - Últimos 12 Meses, mantendo o alinhamento e a responsividade.
-
-2.  **Estrutura e Cálculo da DRE:**
-    *   A DRE deve seguir a estrutura padrão para prestadoras de serviços: Receita Bruta -> Receita Líquida -> Lucro Bruto -> Resultado Operacional (EBIT) -> Lucro Líquido.
-    *   Os custos e despesas devem ser mapeados a partir das categorias existentes no sistema (CSP, Despesas Comerciais, Despesas Administrativas, etc.).
-
-3.  **Métricas no Card (Mês Atual):**
-    *   Receita Líquida (R$)
-    *   Lucro Líquido (R$)
-    *   Margem Bruta (%)
-    *   Margem Líquida (%)
-    *   CSP (%)
-    *   Variação da Receita e Lucro Líquido em relação ao mês anterior (Δ R$ e Δ %).
-
-4.  **Gráfico (Últimos 12 Meses):**
-    *   Criar um gráfico de barras empilhadas mostrando a tendência de Receita Líquida, Custos do Serviço (CSP), Despesas Operacionais e Lucro Líquido.
-    *   Deve incluir tooltips interativos com os valores detalhados de cada mês.
-
-5.  **Layout e Responsividade:**
-    *   Em desktop, exibir os gráficos Markup/BDI e DRE lado a lado.
-    *   Em mobile, empilhá-los verticalmente.
-
-6.  **Interação (Drill-down):**
-    *   Incluir um botão Ver DRE detalhada que, ao ser clicado, abrirá um modal ou uma nova página com a tabela DRE completa do mês selecionado.
-
-7.  **Fluxo de Dados:**
-    *   Implementar um endpoint no backend que retorne os dados agregados para o resumo do mês atual e a série histórica dos últimos 12 meses.
-    *   Lidar com lançamentos não categorizados, exibindo um aviso ao usuário.
+<analysis>
+**original_problem_statement:**
+O usuário solicitou uma série de novas funcionalidades e melhorias para um dashboard financeiro:
+1.  **Card DRE (Serviços):** Adicionar um card no dashboard para a Demonstração do Resultado do Exercício.
+2.  **Ajuste do CRO:** Corrigir uma discrepância no card CRO do Mês para que seus cálculos (especificamente o lucro líquido) ficassem consistentes com os da DRE, deduzindo os impostos sobre vendas.
+3.  **Módulo de Fluxo de Caixa:** Implementar uma seção completa de Fluxo de Caixa no dashboard, incluindo cards de resumo, gráficos de projeção e listas de ações para contas a pagar/receber.
+4.  **Relatório DFC:** Criar um relatório completo de Demonstração do Fluxo de Caixa (DFC) com uma nova página, gráfico em cascata e um card de resumo no dashboard. O usuário solicitou um ajuste de layout específico para este card.
+5.  **App do Proprietário:** Criar uma nova aplicação PWA (Progressive Web App) para o proprietário da empresa, que consolide todas as informações do dashboard (KPIs, DRE, DFC, Fluxo de Caixa) em um formato mobile.
 
 **User's preferred language**: Português
 
 **what currently exists?**
-O sistema possui um dashboard com vários KPIs e um gráfico de Markup/BDI. A funcionalidade de capa de orçamento foi totalmente refatorada: os 20 modelos geométricos pré-definidos foram removidos, e agora o sistema suporta apenas o upload de uma imagem personalizada como capa. Sobre essa imagem, são sobrepostas as informações da empresa (logo, nome fantasia, razão social, CNPJ, telefone) e o título PROPOSTA COMERCIAL, com design e posicionamento ajustados conforme solicitação do usuário. O botão Baixar PDF foi removido da visualização web, incentivando o uso da função Imprimir / Salvar como PDF do navegador. O fluxo de pagamento com Boleto Bancário foi dividido em duas modalidades (Entrada + Boletos e Boleto para X dias). Foi corrigido um bug crítico que impedia que os materiais adicionados a um novo orçamento fossem salvos no banco de dados.
+O sistema possui um dashboard web completo com os seguintes módulos:
+*   KPIs principais e um gráfico de CRO do Mês.
+*   Gráfico Markup/BDI.
+*   Um card de **DRE (Serviços)** com resumo do mês, gráfico de tendência e um modal de detalhamento.
+*   Uma seção completa de **Fluxo de Caixa** com filtros, cards de resumo, gráficos de projeção de saldo e listas de ações para contas vencidas e a vencer.
+*   Um card resumo de **DFC (Demonstrativo do Fluxo de Caixa)** em largura total no dashboard.
+*   Uma página de relatório completa para o **DFC** () com gráfico em cascata (waterfall) e tabelas detalhadas com drill-down.
+*   Existem dois PWAs (Progressive Web Apps) para os perfis de Supervisor e Vendedor.
 
 **Last working item**:
--   **Last item agent was working:** O agente recebeu uma nova e detalhada requisição para implementar um card de **DRE (Demonstração do Resultado do Exercício)** no dashboard. O agente iniciou o trabalho analisando o código do arquivo  para entender a estrutura atual e planejar a inserção do novo componente.
--   **Status:** NOT STARTED
+-   **Last item agent was working:** O agente iniciou a criação do novo App do Proprietário, um PWA que irá consolidar as informações do dashboard para visualização mobile. O agente analisou a estrutura dos apps existentes e criou o arquivo HTML principal para o novo app.
+-   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** both. Será necessário um backend testing agent para validar o novo endpoint da DRE e seus cálculos, e um frontend testing agent para verificar a renderização do novo card, o gráfico, as interações (tooltip, modal) e a responsividade no dashboard.
+-   **Which testing method agent to use?** frontend testing agent. O novo PWA é uma feature complexa que requer testes de UI, navegação, busca de dados, responsividade e funcionalidade PWA (instalação, offline) em todas as suas telas.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-Nenhum. As tarefas anteriores foram concluídas ou removidas pelo usuário. O trabalho atual é uma nova feature.
+Nenhum. O trabalho atual é a implementação de uma nova feature.
 
 **In progress Task List**:
--   **Task 1: Implementar Card DRE (Serviços) no Dashboard (P0)**
-    -   **Where to resume:** O agente deve começar o planejamento da implementação a partir da análise já iniciada do . O próximo passo é projetar o endpoint do backend e, em seguida, criar os componentes do frontend.
-    -   **What will be achieved with this?** O dashboard terá uma nova e poderosa ferramenta de análise financeira, permitindo ao usuário visualizar a saúde financeira do seu negócio de forma rápida e intuitiva.
-    -   **Status:** NOT STARTED
-    -   **Should Test frontend/backend/both after fix?** Both
+-   **Task 1: Criar o App do Proprietário (P0)**
+    -   **Where to resume:** O agente já criou o arquivo . O próximo passo é criar os arquivos PWA associados (, , ícones) e começar a desenvolver o conteúdo do app, implementando as diferentes telas (Visão Geral, Dashboard, DRE, DFC) com JavaScript para buscar dados das APIs existentes.
+    -   **What will be achieved with this?** O proprietário da empresa terá um aplicativo móvel para acompanhar os indicadores financeiros e relatórios do dashboard de forma rápida e executiva.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Frontend
     -   **Blocked on something:** Não.
 
 **Upcoming and Future Tasks**
--   **Upcoming Tasks:**
-    -   **(P0) Fase 1: Backend da DRE**
-        -   Criar um novo endpoint (ex: ) em .
-        -   Implementar a lógica de agregação de dados para calcular as linhas da DRE (Receita, Custos, Despesas, Lucro) para o mês atual e para os últimos 12 meses, buscando dados das coleções de orçamentos e despesas.
-        -   O endpoint deve retornar um JSON com o resumo do mês atual e a série histórica para o gráfico.
-    -   **(P0) Fase 2: Frontend - Card e Gráfico da DRE**
-        -   Criar um novo componente React (ex: ) para o card da DRE.
-        -   Em , adicionar o novo componente ao grid, ao lado do gráfico de Markup.
-        -   Implementar a chamada ao novo endpoint da DRE.
-        -   Renderizar as métricas do mês atual (Receita, Lucro, Margens).
-        -   Usar  (ou a biblioteca de gráficos existente) para criar o gráfico de barras empilhadas dos últimos 12 meses com tooltips interativos.
-    -   **(P1) Fase 3: Frontend - Modal de DRE Detalhada**
-        -   Criar um modal que é acionado pelo botão Ver DRE detalhada.
-        -   O modal deve exibir uma tabela com a DRE completa do mês selecionado.
-        -   Adicionar um seletor para permitir que o usuário visualize a DRE de outros meses (dos últimos 12).
+-   **Upcoming Tasks (parte da feature atual):**
+    -   **(P0) Fase 1: Finalizar a estrutura do PWA e o backend:**
+        -   Criar ,  e ícones necessários.
+        -   Criar um novo endpoint em  para servir o arquivo .
+        -   Criar novas rotas de API no backend se as existentes não forem adequadas para as telas resumidas do novo app.
+    -   **(P0) Fase 2: Implementar as telas do App:**
+        -   **Tela Visão Geral:** Implementar a tela inicial executiva com os principais KPIs.
+        -   **Tela Dashboard Completo:** Replicar o dashboard web em formato mobile.
+        -   **Tela DRE e DFC:** Criar as telas dedicadas para os relatórios.
+        -   **Tela Financeiro:** Implementar as listas de contas a pagar/receber.
+        -   **Tela Empresa:** Implementar a tela de visualização dos dados da empresa.
+    -   **(P0) Fase 3: Integrar o link do App na UI Web:**
+        -   Modificar  para adicionar a seção App do Proprietário com botões para abrir/instalar/copiar o link.
 -   **Future Tasks:**
-    -   O usuário removeu explicitamente as tarefas futuras da sessão anterior (Importação CSV, Refinar UI do supervisor, etc). A única tarefa futura/pendente de baixo nível é a correção do deploy no servidor Jelastic, que foi novamente despriorizada pelo usuário.
+    -   A correção do deploy no servidor Jelastic do usuário permanece como uma tarefa de baixa prioridade, explicitamente despriorizada pelo usuário.
 
 **Completed work in this session**
--   **Refatoração da Capa do Orçamento:**
-    -   Removida toda a funcionalidade de 20 modelos de capa geométricos pré-definidos (frontend e backend).
-    -   Simplificada a página de configuração para ter apenas a opção de upload de imagem personalizada ().
-    -   Implementado um overlay na capa personalizada que exibe de forma centralizada a logo da empresa (se houver), Nome Fantasia, Razão Social, CNPJ e Telefone.
-    -   Adicionado o título PROPOSTA COMERCIAL no centro da capa, com fundo semitransparente e fonte aumentada para melhor estética.
--   **Refatoração do PDF e Visualização Web:**
-    -   Unificada a geração de PDF para usar a visualização HTML (), garantindo que o PDF baixado seja idêntico ao que o cliente vê na tela, incluindo a capa personalizada.
-    -   Removido o botão Baixar PDF da visualização web, conforme solicitado.
-    -   Corrigido o layout dos botões na visualização web para serem menores e mais compactos.
--   **Refatoração do Pagamento com Boleto:**
-    -   A forma de pagamento Boleto Bancário foi dividida em duas novas modalidades nos formulários (, ):
-        1.  Entrada + Boletos
-        2.  Boleto para X dias
--   **Correção de Bug Crítico:**
-    -   Corrigido o bug que impedia que os materiais adicionados durante a criação de um **novo orçamento** fossem salvos no banco de dados. A correção envolveu levantar o estado do componente  para o componente pai .
+-   **Módulo DRE:** Implementado card de DRE (Demonstrativo do Resultado do Exercício) no dashboard, com endpoint de backend, componente de frontend, gráfico de tendência e modal detalhado.
+-   **Ajuste no CRO:** Corrigido o cálculo do CRO do Mês para deduzir impostos sobre vendas, alinhando-o com a DRE, após feedback do usuário sobre a discrepância de valores.
+-   **Módulo de Fluxo de Caixa:** Implementada uma seção completa de Fluxo de Caixa no dashboard, com cards, gráficos de projeção, listas de ações e correção de um bug que impedia a visualização de lançamentos já realizados.
+-   **Módulo DFC:** Implementado um relatório completo de DFC (Demonstração do Fluxo de Caixa), incluindo um endpoint de backend com classificação de atividades (Operacional, Investimento, Financiamento), uma página de relatório detalhada com gráfico em cascata (waterfall) e um card de resumo no dashboard.
+-   **Ajuste de Layout do DFC:** O layout do card de resumo do DFC no dashboard foi refeito para ocupar toda a largura da tela, conforme solicitação do usuário.
+-   **Correção de Bug Crítico na DFC:** Corrigido um bug na lógica de classificação do DFC que estava categorizando todas as receitas como despesas devido a uma regra de mapeamento incorreta em .
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Deploy no servidor Jelastic do usuário continua quebrado**
-    -   **Debug checklist:** A configuração do NGINX no Load Balancer do ambiente de produção do usuário está incorreta.
-    -   **Why to solve this issue and what will be achieved with this?** A aplicação do usuário em seu ambiente de produção está completamente inutilizável. A correção é essencial.
-    -   **Status:** NOT STARTED. O usuário explicitamente despriorizou esta tarefa em favor de novas funcionalidades. O agente deve estar ciente de que o ambiente de produção do cliente não reflete as últimas alterações.
-    -   **Is recurring issue?** Y
+    -   **Debug checklist:** O problema reside na configuração do NGINX no ambiente de produção do usuário.
+    -   **Why to solve this issue and what will be achieved with this?** A aplicação do usuário em produção está inutilizável. A correção é necessária para que as novas features sejam publicadas.
+    -   **Should Test frontend/backend/both after fix:** Both
+    -   **Is recurring issue?** Y (Status: NOT STARTED, por despriorização do usuário).
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork:** Sim, o problema do deploy no Jelastic.
--   **Recurrence count:** 3
+-   **Issue recurrence in previous fork:** Sim, o problema de deploy no Jelastic.
+-   **Recurrence count:** 4
 -   **Status:** NOT STARTED
 
 **Code Architecture**
-A aplicação segue uma arquitetura monorepo com frontend React e backend FastAPI. Mudanças significativas nesta sessão:
--   A geração de PDF foi migrada de uma abordagem mista (ReportLab no backend, html2pdf.js no frontend) para uma abordagem unificada e client-side, usando  para converter a visualização web em PDF. Isso garante consistência visual.
--   A lógica de capa geométrica foi completamente removida do . A capa agora é uma imagem de fundo em um  na visualização HTML.
--   No frontend, foi implementado o padrão de state lifting entre os componentes  e  para corrigir o bug de salvamento de materiais.
+A aplicação segue uma arquitetura monorepo (React/FastAPI). Uma característica importante é o uso de arquivos HTML estáticos servidos pelo backend para criar PWAs (Progressive Web Apps) para diferentes perfis de usuário (, , e agora o novo ). A lógica principal do backend está consolidada em .
 
 **Key Technical Concepts**
--   **Client-Side PDF Generation:** Utilização de  para gerar PDFs a partir do DOM, garantindo consistência visual entre a tela e o arquivo final.
--   **State Lifting in React:** Passar callbacks de um componente pai para um filho para permitir que o filho comunique mudanças de estado para cima (ex: ).
--   **CSS Overlay:** Uso de CSS (positioning, z-index, rgba para transparência) para sobrepor texto e informações sobre uma imagem de fundo (a capa personalizada).
--   **Feature Simplification:** Remoção drástica de código (frontend e backend) relacionado a uma funcionalidade (capas geométricas) que se tornou complexa e foi despriorizada pelo usuário.
+-   **PWA (Progressive Web App):** A nova tarefa consiste em criar um PWA, seguindo o padrão já estabelecido no projeto (HTML estático + Service Worker + Manifest).
+-   **API Development (FastAPI):** O agente demonstrou alta proficiência criando e depurando múltiplos endpoints complexos com agregações MongoDB para gerar relatórios financeiros (DRE, DFC, Fluxo de Caixa).
+-   **React Development:** Foram criados diversos componentes (, , ) e uma nova página de relatório (), além de múltiplas refatorações no .
+-   **Financial Reporting Logic:** O agente implementou a lógica de negócio para construir demonstrativos financeiros, incluindo a classificação de transações em categorias contábeis (Operacional, Investimento, Financiamento) e a reconciliação de saldos.
 
 **key DB schema**
--   **orcamentos:** Novos campos foram adicionados para suportar as novas modalidades de boleto:  (string: 'com_entrada' ou 'prazo_fixo'),  (number).
+-   **transactions:** Coleção central para todos os lançamentos financeiros. Contém  ('receita'/'despesa'), , Wed Jan  7 04:52:23 UTC 2026, , e . É a fonte primária para os relatórios DRE e DFC.
+-   **contas:** Coleção para contas a pagar e a receber. Contém , , , e . Essencial para a projeção do Fluxo de Caixa.
+-   **expense_categories:** Usada para categorizar transações. A sessão revelou uma falha nesta estrutura (um campo  genérico), que levou a uma classificação incorreta no DFC e exigiu uma correção na lógica do backend.
 
 **All files of reference**
--   **Backend (modificados):**
-    -   : Sofreu grandes alterações. Remoção das funções  e . Modificação da geração de HTML () para incluir a nova capa personalizada com overlay de informações, remoção do botão Baixar PDF e ajuste nos dados da empresa.
--   **Frontend (modificados):**
-    -   : Simplificado para remover toda a UI relacionada aos modelos de capa pré-definidos.
-    -   : Adicionados novos estados para os tipos de boleto e para os materiais; UI de boleto refatorada; lógica de salvamento de orçamento atualizada para incluir materiais.
-    -   : Adicionados novos estados e UI para as novas modalidades de boleto. Corrigido um bug de variável indefinida ().
-    -   : Modificado para aceitar a prop  e levantar o estado da lista de materiais para o componente pai.
-    -   : Arquivo analisado em preparação para a nova tarefa da DRE.
+-   **Backend (criados/modificados):**
+    -   : Sofreu modificações massivas para adicionar os endpoints , ,  e para corrigir múltiplos bugs de lógica financeira e classificação de dados.
+    -   : (Criado) Arquivo base para o novo App do Proprietário.
+-   **Frontend (criados/modificados):**
+    -   : Fortemente modificado para integrar os novos módulos de DRE, Fluxo de Caixa e DFC, além de ter seu layout reajustado várias vezes.
+    -   : (Criado)
+    -   : (Criado)
+    -   : (Criado e depois reescrito)
+    -   : (Criado)
+    -   : Modificado para adicionar a rota .
+    -   : Modificado para adicionar o link do relatório DFC.
 
 **Critical Info for New Agent**
--   **Nova Feature (P0):** A prioridade máxima agora é a implementação do card de DRE no dashboard, conforme o PRD detalhado fornecido pelo usuário.
--   **Deploy em Produção (Jelastic):** Este problema crítico persiste, mas o usuário pediu para ignorá-lo por enquanto. É crucial que o próximo agente não tente resolver isso sem a aprovação do usuário, mas deve estar ciente de que qualquer coisa desenvolvida não estará disponível para o cliente final até que o deploy seja corrigido.
--   **PDFs são Gerados no Cliente:** Lembre-se que a geração de PDF agora é 100% client-side usando  a partir da visualização web. Não há mais geração de PDF com ReportLab no backend para os orçamentos.
+-   **Padrão de PWA:** O novo App do Proprietário deve seguir estritamente o padrão dos apps existentes (, ), que consiste em um arquivo HTML estático com JavaScript client-side para toda a lógica e renderização.
+-   **Separação de Dados por Empresa:** Um problema relatado pelo usuário foi causado por ele estar visualizando dados de uma empresa diferente da qual os inseriu. É fundamental que todas as chamadas de API sejam sempre filtradas pelo  correto.
+-   **Acurácia Financeira:** O usuário é muito atento à consistência dos dados financeiros. Verifique se todos os cálculos (impostos, classificações, etc.) são consistentes entre os diferentes módulos (DRE, DFC, CRO).
+-   **Layout é Importante:** O usuário dá feedback preciso sobre o layout. Siga as instruções de posicionamento e dimensionamento dos componentes no dashboard com atenção.
 
 **documents and test reports created in this job**
--   
--   
--   
+-    foi atualizado várias vezes durante a sessão para refletir o status dos testes.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Usuário (557):** tudo certo - Aprova a correção do bug de salvamento de materiais.
-2.  **Agente (559):** Finaliza a tarefa com um resumo.
-3.  **Usuário (560):** Envia um PRD detalhado para uma nova feature: um card de **DRE (Demonstração do Resultado do Exercício)** para o dashboard.
-4.  **Agente (561):** Confirma o início da nova tarefa e começa a analisar o código do dashboard.
-5.  **Agente (562-564):** Visualiza o código de .
+1.  **Usuário (290):** Solicitou o ajuste do layout do card DFC, pois estava muito apertado. Pediu que ficasse em largura total, abaixo do gráfico Evolução.
+2.  **Agente (291-304):** Entendeu, moveu o card, reescreveu o componente para o layout expandido e confirmou com screenshots que o novo layout estava correto e na posição solicitada.
+3.  **Agente (305):** Finalizou a tarefa de ajuste de layout.
+4.  **Usuário (306):** Enviou um PRD detalhado para uma nova feature: App do Proprietário.
+5.  **Agente (307):** Confirmou o início do trabalho na nova feature.
+6.  **Agente (308-314):** Analisou a estrutura dos PWAs existentes (, ).
+7.  **Agente (315-323):** Analisou a página  para planejar onde adicionar o link para o novo app.
+8.  **Agente (324):** Criou o arquivo base .
+9.  **Agente (325):** Iniciou o planejamento para criar o manifest e o service worker do PWA.
+10. **Usuário (Pendentes):** Não há mensagens pendentes do usuário. A próxima ação é continuar o desenvolvimento do App do Proprietário e, ao final, confirmar o plano com o usuário.
 
 **Project Health Check:**
--   **Broken:** O ambiente de produção do usuário no Jelastic permanece quebrado devido a um problema de configuração do NGINX. As últimas funcionalidades não estão em produção.
--   **Working:** O ambiente de desenvolvimento local está estável e funcional, com todas as últimas correções e refatorações aplicadas.
+-   **Broken:** O ambiente de produção do usuário no Jelastic. Este é um problema conhecido e despriorizado.
+-   **Working:** O ambiente de desenvolvimento está estável e todas as novas funcionalidades (DRE, Fluxo de Caixa, DFC) foram implementadas e testadas com sucesso.
 
 **3rd Party Integrations**
--   : Agora é a única ferramenta usada para gerar os PDFs dos orçamentos, sendo executada no lado do cliente.
--   Mercado Pago — requer User API Key
--   OpenAI GPT-4o-mini — usa Emergent LLM Key
--    — APIs do navegador.
+-   : Para geração de PDF.
+-   Mercado Pago: Requer chave de API do usuário.
+-   OpenAI GPT-4o-mini: Usa a chave Emergent LLM.
+-   : APIs do navegador para os aplicativos.
+-   : Biblioteca de gráficos usada para os dashboards.
 
 **Testing status**
--   Testing agent used after significant changes: YES (para validar as correções de backend na funcionalidade de capa).
--   Troubleshoot agent used after agent stuck in loop: NO
--   Test files created: Nenhum arquivo de teste permanente.
--   Known regressions: Nenhuma no ambiente de desenvolvimento.
+-   **Testing agent used after significant changes:** YES. O agente de testes de backend foi usado para validar os novos endpoints. O agente de frontend foi chamado, mas apresentou falha na autenticação, o que foi corretamente diagnosticado pelo agente principal como uma limitação do script de teste, validando a UI manualmente com screenshots.
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** Nenhum.
+-   **Known regressions:** Nenhuma no ambiente de desenvolvimento.
 
 **Credentials to test flow:**
 -   **Admin User:**  / 
 
 **What agent forgot to execute**
--   O agente seguiu as instruções do usuário de forma diligente, incluindo a despriorização do problema crítico de deploy no Jelastic. Portanto, não esqueceu de executar nada, mas sim seguiu a prioridade definida pelo usuário.</analysis>
+-   O agente seguiu todas as instruções do usuário de forma diligente, incluindo a despriorização de tarefas. Não há tarefas esquecidas.
+Certifique-se se o agente já implementou  o app do proprietário:
+Você é uma IA de desenvolvimento responsável por criar um novo app interno chamado App do Proprietário, para o dono da empresa acompanhar todo o conteúdo do dashboard do sistema web: cards, gráficos, relatórios e detalhamentos (drill-down), com foco total em clareza, rapidez e leitura executiva.
+
+1) Objetivo do App
+
+O proprietário precisa visualizar, no celular (e opcionalmente no desktop), tudo que ele já vê no dashboard web, porém em um formato mobile:
+
+KPIs principais
+
+Todos os gráficos do dashboard
+
+Detalhamentos por clique
+
+Relatórios (DRE e DFC)
+
+Filtros por período e por unidade/conta (se existir)
+
+Ações rápidas (ex.: abrir lista de contas a pagar/receber, ver atrasados, ver top clientes, etc.)
+
+O proprietário não precisa cadastrar dados operacionais como vendedor/supervisor. O foco é gestão e acompanhamento.
+
+2) Padrão visual e comportamento
+
+O app deve seguir o mesmo modelo do app interno já existente (Supervisor e Vendedor), reutilizando:
+
+identidade visual (cores, tipografia, bordas, cards)
+
+navegação (menu inferior ou lateral, o que já for padrão)
+
+componentes existentes de card/gráfico/lista
+
+padrões de loading, mensagens vazias e erros
+
+padrões de filtros por data
+
+O app deve ser fluido, com leitura em “scroll” e sem poluição visual.
+
+3) Onde colocar o link do app (obrigatório)
+
+Na página Dados da Empresa (no sistema web), adicionar como ÚLTIMO item do formulário uma seção chamada:
+
+“App do Proprietário”
+
+Essa seção deve conter:
+
+texto curto explicando: “Acompanhe o dashboard e relatórios da empresa pelo app.”
+
+botão “Abrir App” (abre o app se já instalado)
+
+botão “Instalar App” (caso seja instalável)
+
+botão “Copiar link do app”
+
+opcional premium: QR Code para abrir/instalar rapidamente
+
+Essa área deve ser bem clara e ficar visualmente como a última parte do formulário.
+
+4) Telas do App do Proprietário (estrutura obrigatória)
+Tela 1 — “Visão Geral” (home executiva)
+
+Uma tela com leitura rápida em 10 segundos:
+
+Saldo/indicadores principais (os mesmos do dashboard)
+
+Resumo do mês:
+
+CRO do mês
+
+Markup/BDI
+
+DRE (resumo do mês): Receita líquida, lucro líquido, margens, CSP/CMV
+
+DFC (resumo do mês): Operacional, Investimento, Financiamento, variação, saldo final
+
+“Alertas do dia”:
+
+contas a pagar/receber vencendo
+
+atrasados
+
+queda de margem / lucro negativo (se houver regra)
+
+Botões rápidos:
+
+“Ver Dashboard Completo”
+
+“Ver DRE”
+
+“Ver DFC”
+
+“Ver Contas a Pagar/Receber”
+
+Tela 2 — “Dashboard Completo”
+
+Deve replicar a estrutura do dashboard web, em formato mobile:
+
+os cards e gráficos do dashboard, em ordem lógica
+
+cada gráfico deve ter:
+
+título
+
+filtro de período
+
+tooltip/legenda simples
+
+opção “Ver detalhes” (abrir drill-down)
+
+manter consistência com o layout do sistema
+
+Tela 3 — “DRE”
+
+Card resumo do mês atual
+
+Série histórica (últimos 12 meses) em gráfico claro
+
+Botão “Detalhar”
+
+Detalhamento por:
+
+Serviços e Materiais separados (Receita Serviço / Receita Material, CSP / CMV)
+
+Despesas operacionais separadas (Comercial / Administrativa)
+
+Drill-down: ao clicar numa linha, abrir os lançamentos/itens que compõem aquele valor
+
+Tela 4 — “DFC”
+
+Exibir o DFC exatamente no padrão já implementado no web:
+
+Saldo inicial, Operacional, Investimento, Financiamento, Variação, Saldo final
+
+Gráfico cascata (waterfall)
+
+Composição da variação
+
+Detalhamento por atividade (expandir e ver itens)
+
+Deve ter filtro de período: mês / trimestre / ano / intervalo
+
+Tela 5 — “Financeiro (Contas)”
+
+abas: A Pagar / A Receber
+
+filtros: período, status (aberto, realizado, atrasado)
+
+lista objetiva com:
+
+vencimento, descrição, valor, status
+
+Atalhos:
+
+“Atrasados”
+
+“Próximos 7 dias”
+
+Ao tocar em um item, abrir detalhes do lançamento
+
+Tela 6 — “Empresa”
+
+dados principais da empresa (somente leitura)
+
+atalhos:
+
+“Plano de contas”
+
+“Configurações de relatórios”
+
+“Usuários e permissões” (somente visualização ou limitado conforme regra)
+
+5) Acesso e segurança (obrigatório)
+
+O App do Proprietário deve ter:
+
+Acesso apenas para usuário com perfil Proprietário / Admin
+
+Garantir que ele veja somente os dados da empresa dele
+
+Suportar autenticação igual ao padrão já usado nos apps internos existentes
+
+Opção de biometria/PIN (se o padrão dos apps internos já tiver)
+
+6) Performance e experiência
+
+Carregamento rápido: primeiro renderizar a Visão Geral com skeleton
+
+Gráficos otimizados para mobile
+
+Permitir atualizar com “puxar para atualizar”
+
+Cache leve (para abrir rápido) e atualizar ao entrar no app
+
+Estados:
+
+sem dados
+
+dados parciais
+
+erro amigável com “tentar novamente”
+
+7) Critérios de aceite (o que define como pronto)
+
+O projeto será considerado concluído quando:
+
+Existe um App do Proprietário no mesmo padrão do app do Supervisor/Vendedor.
+
+O app mostra todo o conteúdo do dashboard (cards + gráficos + drill-down).
+
+Tem telas dedicadas para DRE e DFC completas.
+
+Existe uma seção “App do Proprietário” dentro de Dados da Empresa, como último item do formulário, com botões para abrir/instalar/copiar link (e QR opcional).
+
+O app é responsivo, leve e fácil de interpretar.
+
+8) Entrega esperada
+
+Entregar o App pronto, integrado e navegável, com:
+
+menu, telas, filtros, drill-down, estados, e link no “Dados da Empresa”
+
+manter padrão visual/UX do sistema existente
+
+sem alterar o comportamento dos apps já existentes (Supervisor/Vendedor)
+
+</analysis>
