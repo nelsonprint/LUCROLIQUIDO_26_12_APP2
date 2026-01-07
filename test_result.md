@@ -124,7 +124,7 @@ relatorios_module:
 
   - task: "Componentes Reutilizáveis"
     implemented: true
-    working: needs_testing
+    working: "NA"
     file: "/app/frontend/src/components/ReportLayout.jsx"
     priority: "high"
     features:
@@ -132,6 +132,10 @@ relatorios_module:
       - "KPICard - card de indicador"
       - "ReportTable - tabela com busca, ordenação, paginação"
       - "exportToExcel - função de exportação CSV"
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Components code reviewed - well structured and implemented. Cannot test UI due to authentication issue preventing access to reports pages."
 
 test_criteria:
   backend:
