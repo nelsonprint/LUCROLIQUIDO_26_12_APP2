@@ -114,6 +114,7 @@ function App() {
           <Route path="/funcionarios" element={<Funcionarios user={user} onLogout={handleLogout} />} />
           <Route path="/tabela-precos" element={<TabelaPrecos user={user} onLogout={handleLogout} />} />
           <Route path="/plano-contas" element={<PlanoContas user={user} onLogout={handleLogout} />} />
+          <Route path="/dfc" element={<DFCRelatorio user={user} onLogout={handleLogout} />} />
           <Route path="/config-orcamento" element={<ConfiguracaoOrcamento user={user} onLogout={handleLogout} />} />
           <Route path="/assinatura" element={<Assinatura user={user} onLogout={handleLogout} />} />
           <Route 
