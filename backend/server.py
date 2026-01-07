@@ -8715,6 +8715,142 @@ async def relatorio_clientes_cadastro(company_id: str, status: str = None):
     }
 
 
+@api_router.get("/relatorios/clientes-recorrencia/{company_id}")
+async def relatorio_clientes_recorrencia(company_id: str):
+    """Relatório de Recorrência de Clientes - Frequência de compras e fidelização"""
+    from datetime import datetime
+    from collections import defaultdict
+    
+    hoje = datetime.now()
+    
+    # Buscar clientes
+    clientes = await db.clientes.find({"empresa_id": company_id}, {"_id": 0}).to_list(5000)
+    clientes_dict = {c.get('id'): c.get('nome', 'Cliente') for c in clientes}
+    
+    # Buscar orçamentos aprovados (vendas)
+    orcamentos = await db.orcamentos.find({
+        "company_id": company_id,
+        "status": {"$in": ["aprovado", "Aprovado", "APROVADO", "finalizado", "Finalizado"]}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Se não houver orçamentos aprovados, buscar todos
+    if not orcamentos:
+        orcamentos = await db.orcamentos.find({
+            "company_id": company_id
+        }, {"_id": 0}).to_list(10000)
+    
+    # Agrupar por cliente
+    compras_cliente = defaultdict(lambda: {
+        'compras': [],
+        'total': 0,
+        'quantidade': 0
+    })
+    
+    for orc in orcamentos:
+        cliente_id = orc.get('cliente_id')
+        if not cliente_id:
+            continue
+            
+        valor = orc.get('valor_total', 0) or orc.get('total', 0) or 0
+        data = orc.get('created_at', orc.get('data', hoje.strftime('%Y-%m-%d')))
+        
+        compras_cliente[cliente_id]['compras'].append({
+            'data': data,
+            'valor': valor
+        })
+        compras_cliente[cliente_id]['total'] += valor
+        compras_cliente[cliente_id]['quantidade'] += 1
+    
+    # Calcular métricas de recorrência
+    clientes_recorrencia = []
+    recorrentes = 0
+    novos = 0
+    inativos = 0
+    
+    for cliente_id, dados in compras_cliente.items():
+        compras = sorted(dados['compras'], key=lambda x: x.get('data', ''), reverse=True)
+        quantidade = dados['quantidade']
+        
+        # Calcular frequência média (dias entre compras)
+        frequencia_dias = 0
+        if len(compras) > 1:
+            datas = []
+            for c in compras:
+                try:
+                    d = c.get('data', '')[:10]
+                    datas.append(datetime.strptime(d, '%Y-%m-%d'))
+                except:
+                    pass
+            
+            if len(datas) > 1:
+                datas.sort()
+                intervalos = [(datas[i+1] - datas[i]).days for i in range(len(datas)-1)]
+                frequencia_dias = sum(intervalos) / len(intervalos) if intervalos else 0
+        
+        # Determinar classificação
+        ultima_compra = compras[0].get('data', '')[:10] if compras else ''
+        try:
+            dias_ultima = (hoje - datetime.strptime(ultima_compra, '%Y-%m-%d')).days
+        except:
+            dias_ultima = 999
+        
+        if quantidade >= 3:
+            classificacao = 'Fiel'
+            recorrentes += 1
+        elif quantidade == 2:
+            classificacao = 'Recorrente'
+            recorrentes += 1
+        elif dias_ultima > 180:
+            classificacao = 'Inativo'
+            inativos += 1
+        else:
+            classificacao = 'Novo'
+            novos += 1
+        
+        # Determinar frequência textual
+        if frequencia_dias == 0:
+            frequencia_texto = 'Única compra'
+        elif frequencia_dias <= 30:
+            frequencia_texto = 'Mensal'
+        elif frequencia_dias <= 90:
+            frequencia_texto = 'Trimestral'
+        elif frequencia_dias <= 180:
+            frequencia_texto = 'Semestral'
+        else:
+            frequencia_texto = 'Anual'
+        
+        clientes_recorrencia.append({
+            'cliente_id': cliente_id,
+            'nome': clientes_dict.get(cliente_id, 'Cliente não identificado'),
+            'total_compras': dados['total'],
+            'quantidade_compras': quantidade,
+            'frequencia': frequencia_texto,
+            'frequencia_dias': round(frequencia_dias, 0),
+            'ultima_compra': ultima_compra,
+            'dias_ultima': dias_ultima,
+            'classificacao': classificacao
+        })
+    
+    # Ordenar por valor total
+    clientes_recorrencia.sort(key=lambda x: x['total_compras'], reverse=True)
+    
+    # Calcular resumo
+    total_clientes = len(clientes_recorrencia)
+    valor_total = sum(c['total_compras'] for c in clientes_recorrencia)
+    
+    return {
+        "resumo": {
+            "total_clientes": total_clientes,
+            "recorrentes": recorrentes,
+            "novos": novos,
+            "inativos": inativos,
+            "valor_total": valor_total,
+            "taxa_recorrencia": round((recorrentes / total_clientes * 100) if total_clientes > 0 else 0, 1)
+        },
+        "clientes": clientes_recorrencia
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
