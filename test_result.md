@@ -45,10 +45,10 @@ relatorios_module:
 
   - task: "Relatório - Contas a Receber por Período"
     implemented: true
-    working: needs_testing
+    working: false
     file: "/app/frontend/src/pages/relatorios/RelContasReceber.jsx"
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     backend_endpoint: "GET /api/relatorios/contas-receber/{company_id}"
     features:
       - "KPIs: Total pendente, recebido, atrasado, próximo recebimento"
@@ -60,6 +60,9 @@ relatorios_module:
       - working: true
         agent: "main"
         comment: "Backend testado via curl."
+      - working: false
+        agent: "testing"
+        comment: "Same authentication/routing issue as other reports. Cannot access frontend page due to session management problem."
 
   - task: "Relatório - Aging Contas a Pagar"
     implemented: true
