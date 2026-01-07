@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Target, Calculator, CreditCard, Shield, LogOut, BookOpen, Receipt, ChevronDown, ChevronRight, Package, Settings, Users, Layers, FolderTree, UserCheck, Banknote, BarChart3, Truck } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Calculator, CreditCard, Shield, LogOut, BookOpen, Receipt, ChevronDown, ChevronRight, Package, Settings, Users, Layers, FolderTree, UserCheck, Banknote, BarChart3, Truck, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificacoesPanel from '@/components/NotificacoesPanel';
 
