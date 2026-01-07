@@ -31,6 +31,7 @@ export const Sidebar = ({ user, onLogout, onNavigate }) => {
         { path: '/contas-receber', label: 'Contas a Receber' }
       ]
     },
+    { path: '/dfc', icon: Banknote, label: 'DFC' },
     { path: '/categorias', icon: BookOpen, label: 'Categorias' },
     { path: '/clientes', icon: Users, label: 'Clientes' },
     { path: '/funcionarios', icon: UserCheck, label: 'Funcionários' },
