@@ -8303,6 +8303,105 @@ async def relatorio_inadimplencia(company_id: str):
     }
 
 
+@api_router.get("/relatorios/funil-orcamentos/{company_id}")
+async def relatorio_funil_orcamentos(company_id: str, periodo: str = 'mes'):
+    """Relatório de Funil de Orçamentos - Conversão por etapa do processo comercial"""
+    from datetime import datetime
+    
+    hoje = datetime.now()
+    
+    # Calcular período
+    if periodo == 'mes':
+        inicio = hoje.replace(day=1).strftime('%Y-%m-%d')
+    elif periodo == 'trimestre':
+        mes_inicio = ((hoje.month - 1) // 3) * 3 + 1
+        inicio = hoje.replace(month=mes_inicio, day=1).strftime('%Y-%m-%d')
+    else:  # ano
+        inicio = hoje.replace(month=1, day=1).strftime('%Y-%m-%d')
+    
+    fim = hoje.strftime('%Y-%m-%d')
+    
+    # Buscar orçamentos no período
+    orcamentos = await db.orcamentos.find({
+        "company_id": company_id,
+        "created_at": {"$gte": inicio}
+    }, {"_id": 0}).to_list(5000)
+    
+    # Se não encontrar com created_at, tentar com data
+    if not orcamentos:
+        orcamentos = await db.orcamentos.find({
+            "company_id": company_id
+        }, {"_id": 0}).to_list(5000)
+    
+    # Definir status do funil
+    status_order = ['rascunho', 'enviado', 'negociacao', 'aprovado', 'recusado']
+    status_labels = {
+        'rascunho': 'Rascunho',
+        'enviado': 'Enviado',
+        'negociacao': 'Em Negociação',
+        'aprovado': 'Aprovado',
+        'recusado': 'Recusado'
+    }
+    
+    # Contar por status
+    funil = {s: {'quantidade': 0, 'valor': 0} for s in status_order}
+    
+    total_orcamentos = len(orcamentos)
+    valor_total = 0
+    
+    for orc in orcamentos:
+        status = orc.get('status', 'rascunho').lower()
+        if status not in funil:
+            status = 'rascunho'
+        
+        valor = orc.get('valor_total', 0) or orc.get('total', 0) or 0
+        funil[status]['quantidade'] += 1
+        funil[status]['valor'] += valor
+        valor_total += valor
+    
+    # Calcular taxas de conversão
+    funil_data = []
+    quantidade_anterior = total_orcamentos
+    
+    for status in status_order:
+        dados = funil[status]
+        taxa = (dados['quantidade'] / quantidade_anterior * 100) if quantidade_anterior > 0 else 0
+        
+        funil_data.append({
+            'status': status,
+            'label': status_labels.get(status, status),
+            'quantidade': dados['quantidade'],
+            'valor': dados['valor'],
+            'taxa': round(taxa, 1)
+        })
+        
+        # Para o próximo nível (exceto recusado)
+        if status != 'recusado' and dados['quantidade'] > 0:
+            quantidade_anterior = dados['quantidade']
+    
+    # Calcular métricas
+    aprovados = funil['aprovado']['quantidade']
+    taxa_conversao = (aprovados / total_orcamentos * 100) if total_orcamentos > 0 else 0
+    ticket_medio = valor_total / total_orcamentos if total_orcamentos > 0 else 0
+    valor_aprovado = funil['aprovado']['valor']
+    
+    return {
+        "resumo": {
+            "total_orcamentos": total_orcamentos,
+            "valor_total": valor_total,
+            "taxa_conversao": round(taxa_conversao, 1),
+            "ticket_medio": ticket_medio,
+            "aprovados": aprovados,
+            "valor_aprovado": valor_aprovado
+        },
+        "funil": funil_data,
+        "periodo": {
+            "inicio": inicio,
+            "fim": fim
+        }
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
