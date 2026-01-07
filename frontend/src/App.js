@@ -39,7 +39,10 @@ import Relatorios from './pages/Relatorios';
 import RelContasPagar from './pages/relatorios/RelContasPagar';
 import RelContasReceber from './pages/relatorios/RelContasReceber';
 import RelAgingPagar from './pages/relatorios/RelAgingPagar';
+import RelAgingReceber from './pages/relatorios/RelAgingReceber';
 import RelFluxoProjetado from './pages/relatorios/RelFluxoProjetado';
+import RelDespesasCategoria from './pages/relatorios/RelDespesasCategoria';
+import RelClientesRanking from './pages/relatorios/RelClientesRanking';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
