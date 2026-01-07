@@ -48,9 +48,10 @@ export const Sidebar = ({ user, onLogout, onNavigate }) => {
     { path: '/assinatura', icon: CreditCard, label: 'Assinatura' },
   ];
 
-  // Adicionar item admin se usuário for admin
+  // Adicionar items admin se usuário for admin
   if (user?.role === 'admin') {
     menuItems.push({ path: '/admin', icon: Shield, label: 'Admin' });
+    menuItems.push({ path: '/admin/videos', icon: Video, label: 'Vídeos Passo a Passo' });
   }
 
   return (
