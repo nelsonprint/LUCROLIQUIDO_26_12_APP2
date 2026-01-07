@@ -5871,10 +5871,31 @@ async def get_fluxo_caixa_dashboard(
             a_pagar_30d += valor
     
     # ========== GERAR SÉRIE DIÁRIA DO SALDO ==========
-    # Agrupar por dia
+    # Agrupar por dia - CONTAS A PAGAR/RECEBER
     entradas_por_dia = {}
     saidas_por_dia = {}
     
+    # ===== INCLUIR LANÇAMENTOS (TRANSACTIONS) NO GRÁFICO =====
+    # Buscar lançamentos realizados no período
+    lancamentos = await db.transactions.find({
+        "company_id": company_id,
+        "status": "realizado",
+        "cancelled": {"$ne": True},
+        "date": {"$gte": hoje_str, "$lte": data_fim_str}
+    }, {"_id": 0, "type": 1, "amount": 1, "date": 1}).to_list(2000)
+    
+    # Adicionar lançamentos ao gráfico
+    for lanc in lancamentos:
+        data_ref = lanc.get("date", "")[:10]
+        valor = lanc.get("amount", 0)
+        tipo = lanc.get("type", "")
+        
+        if tipo == "receita":
+            entradas_por_dia[data_ref] = entradas_por_dia.get(data_ref, 0) + valor
+        elif tipo in ["despesa", "custo"]:
+            saidas_por_dia[data_ref] = saidas_por_dia.get(data_ref, 0) + valor
+    
+    # ===== PROCESSAR CONTAS A RECEBER =====
     for c in contas_receber:
         if modo == "realizado" and c.get("status") not in ["PAGO", "RECEBIDO"]:
             continue
