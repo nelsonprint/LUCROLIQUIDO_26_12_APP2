@@ -9458,6 +9458,153 @@ async def relatorio_comparativo(company_id: str):
     }
 
 
+@api_router.get("/relatorios/pareto/{company_id}")
+async def relatorio_pareto(company_id: str, tipo: str = 'clientes'):
+    """Relatório Análise Pareto (80/20) - Concentração de receita e custos"""
+    from datetime import datetime
+    from collections import defaultdict
+    
+    hoje = datetime.now()
+    inicio_ano = hoje.replace(month=1, day=1).strftime('%Y-%m-%d')
+    fim = hoje.strftime('%Y-%m-%d')
+    
+    items = []
+    total_geral = 0
+    
+    if tipo == 'clientes':
+        # Buscar clientes e seus valores
+        clientes = await db.clientes.find({"empresa_id": company_id}, {"_id": 0}).to_list(1000)
+        clientes_dict = {c.get('id'): c.get('nome', 'Cliente') for c in clientes}
+        
+        # Buscar orçamentos aprovados
+        orcamentos = await db.orcamentos.find({
+            "company_id": company_id,
+            "status": {"$in": ["aprovado", "Aprovado", "APROVADO", "finalizado"]}
+        }, {"_id": 0}).to_list(10000)
+        
+        # Se não tiver aprovados, buscar todos
+        if not orcamentos:
+            orcamentos = await db.orcamentos.find({
+                "company_id": company_id
+            }, {"_id": 0}).to_list(10000)
+        
+        # Agrupar por cliente
+        valores_cliente = defaultdict(float)
+        for orc in orcamentos:
+            cliente_id = orc.get('cliente_id')
+            valor = orc.get('valor_total', 0) or orc.get('total', 0) or 0
+            if cliente_id:
+                valores_cliente[cliente_id] += valor
+            total_geral += valor
+        
+        # Montar lista
+        for cliente_id, valor in valores_cliente.items():
+            items.append({
+                'id': cliente_id,
+                'nome': clientes_dict.get(cliente_id, 'Cliente não identificado'),
+                'valor': valor
+            })
+    
+    elif tipo == 'categorias_despesa':
+        # Buscar despesas por categoria
+        despesas = await db.transactions.find({
+            "company_id": company_id,
+            "type": {"$in": ["despesa", "custo"]},
+            "date": {"$gte": inicio_ano}
+        }, {"_id": 0}).to_list(10000)
+        
+        valores_cat = defaultdict(float)
+        for d in despesas:
+            cat = d.get('category', 'Sem categoria')
+            valor = d.get('amount', 0)
+            valores_cat[cat] += valor
+            total_geral += valor
+        
+        for cat, valor in valores_cat.items():
+            items.append({
+                'id': cat,
+                'nome': cat,
+                'valor': valor
+            })
+    
+    elif tipo == 'servicos':
+        # Buscar serviços dos orçamentos
+        orcamentos = await db.orcamentos.find({
+            "company_id": company_id
+        }, {"_id": 0}).to_list(10000)
+        
+        valores_srv = defaultdict(float)
+        for orc in orcamentos:
+            servicos = orc.get('servicos', []) or []
+            for srv in servicos:
+                nome = srv.get('nome', srv.get('descricao', 'Serviço'))
+                valor = srv.get('valor_total', 0) or srv.get('preco', 0) or 0
+                valores_srv[nome] += valor
+                total_geral += valor
+        
+        for nome, valor in valores_srv.items():
+            items.append({
+                'id': nome,
+                'nome': nome,
+                'valor': valor
+            })
+    
+    elif tipo == 'fornecedores':
+        # Buscar contas pagas por fornecedor
+        contas = await db.contas.find({
+            "company_id": company_id,
+            "tipo": "PAGAR",
+            "status": "PAGO"
+        }, {"_id": 0}).to_list(10000)
+        
+        valores_forn = defaultdict(float)
+        for c in contas:
+            forn = c.get('fornecedor_nome', c.get('descricao', 'Não identificado'))
+            valor = c.get('valor', 0)
+            valores_forn[forn] += valor
+            total_geral += valor
+        
+        for forn, valor in valores_forn.items():
+            items.append({
+                'id': forn,
+                'nome': forn,
+                'valor': valor
+            })
+    
+    # Ordenar por valor decrescente
+    items.sort(key=lambda x: x['valor'], reverse=True)
+    
+    # Calcular percentuais e acumulado
+    acumulado = 0
+    for i, item in enumerate(items):
+        item['posicao'] = i + 1
+        item['percentual'] = (item['valor'] / total_geral * 100) if total_geral > 0 else 0
+        acumulado += item['percentual']
+        item['acumulado'] = acumulado
+        
+        # Marcar se está nos 80%
+        item['grupo_80'] = acumulado <= 80
+    
+    # Calcular métricas Pareto
+    itens_80 = len([i for i in items if i.get('grupo_80')])
+    total_itens = len(items)
+    perc_itens_80 = (itens_80 / total_itens * 100) if total_itens > 0 else 0
+    valor_80 = sum(i['valor'] for i in items if i.get('grupo_80'))
+    
+    return {
+        "resumo": {
+            "total_geral": total_geral,
+            "total_itens": total_itens,
+            "itens_80": itens_80,
+            "perc_itens_80": round(perc_itens_80, 1),
+            "valor_80": valor_80,
+            "concentracao": f"{itens_80} itens representam 80% do total" if itens_80 > 0 else "Sem dados"
+        },
+        "items": items[:50],  # Top 50
+        "tipo": tipo
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
