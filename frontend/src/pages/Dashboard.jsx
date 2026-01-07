@@ -13,6 +13,7 @@ import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip
 import MarkupConfigModal from '@/components/MarkupConfigModal';
 import MarkupDonutChart from '@/components/MarkupDonutChart';
 import DREChart from '@/components/DREChart';
+import FluxoCaixaDashboard from '@/components/FluxoCaixaDashboard';
 
 const Dashboard = ({ user, onLogout }) => {
   const [showCompanyModal, setShowCompanyModal] = useState(false);
