@@ -6066,6 +6066,348 @@ async def update_saldo_inicial(company_id: str, saldo_data: dict):
     return {"message": "Saldo inicial atualizado com sucesso!", "saldo_inicial": saldo_inicial}
 
 
+# ========== DFC (DEMONSTRAÇÃO DO FLUXO DE CAIXA) ==========
+
+# Mapeamento padrão de categorias para grupos do DFC
+DFC_CATEGORY_MAPPING = {
+    # Grupo: OPERACIONAL - Entradas
+    "recebimento_clientes": "OPERACIONAL_ENTRADA",
+    "receita_servicos": "OPERACIONAL_ENTRADA",
+    "receita_vendas": "OPERACIONAL_ENTRADA",
+    "outras_receitas_operacionais": "OPERACIONAL_ENTRADA",
+    
+    # Grupo: OPERACIONAL - Saídas
+    "fornecedores": "OPERACIONAL_SAIDA",
+    "materiais": "OPERACIONAL_SAIDA",
+    "salarios": "OPERACIONAL_SAIDA",
+    "encargos": "OPERACIONAL_SAIDA",
+    "beneficios": "OPERACIONAL_SAIDA",
+    "aluguel": "OPERACIONAL_SAIDA",
+    "energia": "OPERACIONAL_SAIDA",
+    "internet": "OPERACIONAL_SAIDA",
+    "telefone": "OPERACIONAL_SAIDA",
+    "sistemas": "OPERACIONAL_SAIDA",
+    "contador": "OPERACIONAL_SAIDA",
+    "marketing": "OPERACIONAL_SAIDA",
+    "propaganda": "OPERACIONAL_SAIDA",
+    "despesas_comerciais": "OPERACIONAL_SAIDA",
+    "despesas_administrativas": "OPERACIONAL_SAIDA",
+    "impostos": "OPERACIONAL_SAIDA",
+    "tributos": "OPERACIONAL_SAIDA",
+    "iss": "OPERACIONAL_SAIDA",
+    "juros": "OPERACIONAL_SAIDA",  # Juros são operacionais
+    "terceiros": "OPERACIONAL_SAIDA",
+    "subcontratacao": "OPERACIONAL_SAIDA",
+    "manutencao": "OPERACIONAL_SAIDA",
+    "combustivel": "OPERACIONAL_SAIDA",
+    "transporte": "OPERACIONAL_SAIDA",
+    "alimentacao": "OPERACIONAL_SAIDA",
+    "viagem": "OPERACIONAL_SAIDA",
+    "seguros": "OPERACIONAL_SAIDA",
+    
+    # Grupo: INVESTIMENTO - Saídas
+    "equipamentos": "INVESTIMENTO_SAIDA",
+    "maquinas": "INVESTIMENTO_SAIDA",
+    "veiculos": "INVESTIMENTO_SAIDA",
+    "ferramentas": "INVESTIMENTO_SAIDA",
+    "obras": "INVESTIMENTO_SAIDA",
+    "benfeitorias": "INVESTIMENTO_SAIDA",
+    "software": "INVESTIMENTO_SAIDA",
+    "imoveis": "INVESTIMENTO_SAIDA",
+    "investimentos": "INVESTIMENTO_SAIDA",
+    
+    # Grupo: INVESTIMENTO - Entradas
+    "venda_equipamentos": "INVESTIMENTO_ENTRADA",
+    "venda_ativos": "INVESTIMENTO_ENTRADA",
+    "resgate_aplicacoes": "INVESTIMENTO_ENTRADA",
+    
+    # Grupo: FINANCIAMENTO - Entradas
+    "emprestimos_recebidos": "FINANCIAMENTO_ENTRADA",
+    "financiamentos_recebidos": "FINANCIAMENTO_ENTRADA",
+    "aporte_socios": "FINANCIAMENTO_ENTRADA",
+    "capital_social": "FINANCIAMENTO_ENTRADA",
+    
+    # Grupo: FINANCIAMENTO - Saídas
+    "pagamento_emprestimos": "FINANCIAMENTO_SAIDA",
+    "pagamento_financiamentos": "FINANCIAMENTO_SAIDA",
+    "amortizacao": "FINANCIAMENTO_SAIDA",
+    "retirada_socios": "FINANCIAMENTO_SAIDA",
+    "distribuicao_lucros": "FINANCIAMENTO_SAIDA",
+    "dividendos": "FINANCIAMENTO_SAIDA",
+    "pro_labore": "FINANCIAMENTO_SAIDA",
+}
+
+def classificar_para_dfc(categoria_nome: str, categoria_grupo: str, tipo_lancamento: str) -> str:
+    """Classifica uma categoria/lançamento para o grupo do DFC"""
+    if not categoria_nome:
+        return "NAO_CLASSIFICADO"
+    
+    nome_lower = categoria_nome.lower().replace(" ", "_").replace("-", "_")
+    
+    # Verificar mapeamento direto
+    for key, grupo in DFC_CATEGORY_MAPPING.items():
+        if key in nome_lower:
+            return grupo
+    
+    # Classificação por grupo da categoria
+    if categoria_grupo:
+        grupo_lower = categoria_grupo.lower()
+        if grupo_lower == "direta_obra":
+            return "OPERACIONAL_SAIDA"  # CSP é operacional
+        elif grupo_lower == "fixa":
+            return "OPERACIONAL_SAIDA"  # Despesas fixas são operacionais
+        elif grupo_lower == "variavel_indireta":
+            return "OPERACIONAL_SAIDA"
+    
+    # Classificação por tipo de lançamento
+    if tipo_lancamento == "receita":
+        return "OPERACIONAL_ENTRADA"
+    elif tipo_lancamento in ["despesa", "custo"]:
+        return "OPERACIONAL_SAIDA"
+    
+    return "NAO_CLASSIFICADO"
+
+
+@api_router.get("/dfc/relatorio/{company_id}")
+async def get_dfc_relatorio(
+    company_id: str,
+    periodo_inicio: str,  # YYYY-MM-DD
+    periodo_fim: str      # YYYY-MM-DD
+):
+    """
+    Gera o Demonstrativo do Fluxo de Caixa (DFC) para o período especificado.
+    
+    Estrutura:
+    - Saldo Inicial
+    - Fluxo Operacional (Entradas - Saídas)
+    - Fluxo de Investimentos
+    - Fluxo de Financiamentos
+    - Variação Líquida
+    - Saldo Final
+    
+    Usa apenas movimentações REALIZADAS (pagas/recebidas).
+    """
+    from datetime import datetime as dt, timedelta
+    
+    # ========== CALCULAR SALDO INICIAL ==========
+    # Saldo inicial = saldo_inicial da empresa + movimentações até o dia anterior ao período
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0, "saldo_inicial": 1})
+    saldo_base = company.get("saldo_inicial", 0) if company else 0
+    
+    # Movimentações realizadas ANTES do período
+    dia_anterior = (dt.strptime(periodo_inicio, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    pipeline_antes = [
+        {"$match": {
+            "company_id": company_id,
+            "status": "realizado",
+            "cancelled": {"$ne": True},
+            "date": {"$lte": dia_anterior}
+        }},
+        {"$group": {
+            "_id": "$type",
+            "total": {"$sum": "$amount"}
+        }}
+    ]
+    
+    result_antes = await db.transactions.aggregate(pipeline_antes).to_list(None)
+    
+    receitas_antes = 0
+    despesas_antes = 0
+    for r in result_antes:
+        if r['_id'] == 'receita':
+            receitas_antes = r['total']
+        elif r['_id'] in ['despesa', 'custo']:
+            despesas_antes += r['total']
+    
+    saldo_inicial = saldo_base + receitas_antes - despesas_antes
+    
+    # ========== BUSCAR LANÇAMENTOS DO PERÍODO ==========
+    lancamentos = await db.transactions.find({
+        "company_id": company_id,
+        "status": "realizado",
+        "cancelled": {"$ne": True},
+        "date": {"$gte": periodo_inicio, "$lte": periodo_fim}
+    }, {"_id": 0}).to_list(5000)
+    
+    # ========== CLASSIFICAR E AGRUPAR ==========
+    # Estrutura para armazenar os fluxos
+    fluxos = {
+        "OPERACIONAL_ENTRADA": {"total": 0, "detalhes": {}},
+        "OPERACIONAL_SAIDA": {"total": 0, "detalhes": {}},
+        "INVESTIMENTO_ENTRADA": {"total": 0, "detalhes": {}},
+        "INVESTIMENTO_SAIDA": {"total": 0, "detalhes": {}},
+        "FINANCIAMENTO_ENTRADA": {"total": 0, "detalhes": {}},
+        "FINANCIAMENTO_SAIDA": {"total": 0, "detalhes": {}},
+        "NAO_CLASSIFICADO": {"total": 0, "detalhes": {}}
+    }
+    
+    lancamentos_nao_classificados = 0
+    
+    for lanc in lancamentos:
+        valor = lanc.get("amount", 0)
+        tipo = lanc.get("type", "")
+        categoria_nome = lanc.get("category_name", "") or lanc.get("description", "Sem Categoria")
+        categoria_grupo = lanc.get("category_group", "")
+        
+        # Classificar para DFC
+        grupo_dfc = classificar_para_dfc(categoria_nome, categoria_grupo, tipo)
+        
+        # Se não classificado, usar tipo como fallback
+        if grupo_dfc == "NAO_CLASSIFICADO":
+            lancamentos_nao_classificados += 1
+            if tipo == "receita":
+                grupo_dfc = "OPERACIONAL_ENTRADA"
+            elif tipo in ["despesa", "custo"]:
+                grupo_dfc = "OPERACIONAL_SAIDA"
+        
+        # Adicionar ao grupo
+        fluxos[grupo_dfc]["total"] += valor
+        
+        # Agrupar por categoria para detalhamento
+        if categoria_nome not in fluxos[grupo_dfc]["detalhes"]:
+            fluxos[grupo_dfc]["detalhes"][categoria_nome] = {
+                "valor": 0,
+                "quantidade": 0,
+                "lancamentos": []
+            }
+        
+        fluxos[grupo_dfc]["detalhes"][categoria_nome]["valor"] += valor
+        fluxos[grupo_dfc]["detalhes"][categoria_nome]["quantidade"] += 1
+        fluxos[grupo_dfc]["detalhes"][categoria_nome]["lancamentos"].append({
+            "id": lanc.get("id"),
+            "data": lanc.get("date"),
+            "descricao": lanc.get("description", ""),
+            "valor": valor
+        })
+    
+    # ========== CALCULAR TOTAIS POR ATIVIDADE ==========
+    operacional_entradas = fluxos["OPERACIONAL_ENTRADA"]["total"]
+    operacional_saidas = fluxos["OPERACIONAL_SAIDA"]["total"]
+    operacional_liquido = operacional_entradas - operacional_saidas
+    
+    investimento_entradas = fluxos["INVESTIMENTO_ENTRADA"]["total"]
+    investimento_saidas = fluxos["INVESTIMENTO_SAIDA"]["total"]
+    investimento_liquido = investimento_entradas - investimento_saidas
+    
+    financiamento_entradas = fluxos["FINANCIAMENTO_ENTRADA"]["total"]
+    financiamento_saidas = fluxos["FINANCIAMENTO_SAIDA"]["total"]
+    financiamento_liquido = financiamento_entradas - financiamento_saidas
+    
+    variacao_liquida = operacional_liquido + investimento_liquido + financiamento_liquido
+    saldo_final = saldo_inicial + variacao_liquida
+    
+    # ========== FORMATAR DETALHES PARA RETORNO ==========
+    def formatar_detalhes(grupo):
+        detalhes = fluxos[grupo]["detalhes"]
+        return sorted([
+            {
+                "categoria": cat,
+                "valor": round(info["valor"], 2),
+                "quantidade": info["quantidade"],
+                "lancamentos": info["lancamentos"][:10]  # Limitar a 10 para não sobrecarregar
+            }
+            for cat, info in detalhes.items()
+        ], key=lambda x: -x["valor"])
+    
+    # ========== ALERTAS ==========
+    alertas = []
+    
+    if lancamentos_nao_classificados > 0:
+        alertas.append({
+            "tipo": "warning",
+            "mensagem": f"Há {lancamentos_nao_classificados} lançamento(s) sem classificação adequada. Configure o mapeamento de categorias para DFC."
+        })
+    
+    if operacional_liquido < 0:
+        alertas.append({
+            "tipo": "danger",
+            "mensagem": f"Fluxo operacional negativo! A empresa consumiu R$ {abs(operacional_liquido):,.2f} nas operações."
+        })
+    
+    if saldo_final < 0:
+        alertas.append({
+            "tipo": "danger",
+            "mensagem": f"Saldo final negativo! O caixa ficou em R$ {saldo_final:,.2f}."
+        })
+    
+    return {
+        "periodo": {
+            "inicio": periodo_inicio,
+            "fim": periodo_fim
+        },
+        "saldo_inicial": round(saldo_inicial, 2),
+        "operacional": {
+            "entradas": round(operacional_entradas, 2),
+            "saidas": round(operacional_saidas, 2),
+            "liquido": round(operacional_liquido, 2),
+            "detalhes_entradas": formatar_detalhes("OPERACIONAL_ENTRADA"),
+            "detalhes_saidas": formatar_detalhes("OPERACIONAL_SAIDA")
+        },
+        "investimento": {
+            "entradas": round(investimento_entradas, 2),
+            "saidas": round(investimento_saidas, 2),
+            "liquido": round(investimento_liquido, 2),
+            "detalhes_entradas": formatar_detalhes("INVESTIMENTO_ENTRADA"),
+            "detalhes_saidas": formatar_detalhes("INVESTIMENTO_SAIDA")
+        },
+        "financiamento": {
+            "entradas": round(financiamento_entradas, 2),
+            "saidas": round(financiamento_saidas, 2),
+            "liquido": round(financiamento_liquido, 2),
+            "detalhes_entradas": formatar_detalhes("FINANCIAMENTO_ENTRADA"),
+            "detalhes_saidas": formatar_detalhes("FINANCIAMENTO_SAIDA")
+        },
+        "variacao_liquida": round(variacao_liquida, 2),
+        "saldo_final": round(saldo_final, 2),
+        "nao_classificados": {
+            "total": round(fluxos["NAO_CLASSIFICADO"]["total"], 2),
+            "quantidade": lancamentos_nao_classificados,
+            "detalhes": formatar_detalhes("NAO_CLASSIFICADO")
+        },
+        "alertas": alertas,
+        "waterfall": [
+            {"name": "Saldo Inicial", "value": round(saldo_inicial, 2), "tipo": "base"},
+            {"name": "Operacional", "value": round(operacional_liquido, 2), "tipo": "operacional"},
+            {"name": "Investimentos", "value": round(investimento_liquido, 2), "tipo": "investimento"},
+            {"name": "Financiamentos", "value": round(financiamento_liquido, 2), "tipo": "financiamento"},
+            {"name": "Saldo Final", "value": round(saldo_final, 2), "tipo": "total"}
+        ]
+    }
+
+
+@api_router.get("/dfc/resumo-mensal/{company_id}")
+async def get_dfc_resumo_mensal(company_id: str, mes: Optional[str] = None):
+    """
+    Retorna um resumo simplificado do DFC para o mês atual (para o card do dashboard).
+    """
+    from datetime import datetime as dt
+    from calendar import monthrange
+    
+    if not mes:
+        mes = dt.now().strftime("%Y-%m")
+    
+    # Calcular primeiro e último dia do mês
+    ano, mes_num = map(int, mes.split("-"))
+    primeiro_dia = f"{mes}-01"
+    ultimo_dia = f"{mes}-{monthrange(ano, mes_num)[1]:02d}"
+    
+    # Usar o endpoint completo
+    dfc = await get_dfc_relatorio(company_id, primeiro_dia, ultimo_dia)
+    
+    return {
+        "mes": mes,
+        "saldo_inicial": dfc["saldo_inicial"],
+        "operacional": dfc["operacional"]["liquido"],
+        "investimento": dfc["investimento"]["liquido"],
+        "financiamento": dfc["financiamento"]["liquido"],
+        "variacao_liquida": dfc["variacao_liquida"],
+        "saldo_final": dfc["saldo_final"],
+        "operacional_positivo": dfc["operacional"]["liquido"] >= 0,
+        "alertas": len(dfc["alertas"])
+    }
+
+
 @api_router.get("/contas/pagar-por-categoria")
 async def get_contas_pagar_por_categoria(company_id: str, mes: Optional[str] = None):
     """Agrupa contas a pagar por categoria"""
