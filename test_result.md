@@ -86,10 +86,10 @@ relatorios_module:
 
   - task: "Relatório - Fluxo de Caixa Projetado"
     implemented: true
-    working: needs_testing
+    working: false
     file: "/app/frontend/src/pages/relatorios/RelFluxoProjetado.jsx"
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     backend_endpoint: "GET /api/relatorios/fluxo-projetado/{company_id}"
     features:
       - "KPIs: Saldo atual, entradas, saídas, saldo final, dias negativos"
@@ -102,6 +102,9 @@ relatorios_module:
       - working: true
         agent: "main"
         comment: "Backend testado via curl. Saldo final projetado: R$21.290."
+      - working: false
+        agent: "testing"
+        comment: "Same authentication/routing issue prevents frontend testing. Backend API working correctly."
 
   - task: "Backend - Endpoints de Relatórios"
     implemented: true
