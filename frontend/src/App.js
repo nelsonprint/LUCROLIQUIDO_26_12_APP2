@@ -9,6 +9,7 @@ import { SubscriptionProvider } from './contexts/SubscriptionContext';
 
 // Components
 import { SubscriptionExpiredBanner } from './components/SubscriptionExpiredBanner';
+import PassoAPasso from './components/PassoAPasso';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -31,6 +32,7 @@ import PlanoContas from './pages/PlanoContas';
 import NovoOrcamentoGrid from './pages/NovoOrcamentoGrid';
 import Assinatura from './pages/Assinatura';
 import AdminPanel from './pages/AdminPanel';
+import AdminVideos from './pages/AdminVideos';
 import Funcionarios from './pages/Funcionarios';
 import Fornecedores from './pages/Fornecedores';
 import DFCRelatorio from './pages/DFCRelatorio';
