@@ -1,4 +1,4 @@
-# Módulo de Relatórios - Testing Status
+# Módulo de Relatórios e Fornecedores - Testing Status
 # Date: 2026-01-07
 
 relatorios_module:
