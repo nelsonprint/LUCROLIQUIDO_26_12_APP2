@@ -204,12 +204,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "App do Proprietário - Full PWA testing"
-    - "Empresa.jsx - App section testing"
-  stuck_tasks: []
-  test_all: true
-  test_priority: "critical_first"
+    - "App do Proprietário - Section on Empresa.jsx"
+  stuck_tasks:
+    - "App do Proprietário - Section on Empresa.jsx"
+  test_all: false
+  test_priority: "stuck_first"
 
 agent_communication:
   - agent: "main"
     message: "App do Proprietário PWA implementation complete. All screens implemented and verified via screenshots: Login, Visão Geral, Dashboard, DRE, DFC, Financeiro. Section added to Empresa.jsx with buttons for Abrir App, Copiar Link, Como Instalar. Needs comprehensive testing by testing agent."
+  - agent: "testing"
+    message: "PWA testing complete - all screens working perfectly. However, Empresa.jsx section not accessible due to authentication/routing issue. Users cannot access /empresa page directly - redirects to landing page. Need to investigate proper login flow for web system or check if section is properly implemented in authenticated routes."
