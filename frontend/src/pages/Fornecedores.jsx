@@ -432,7 +432,7 @@ const Fornecedores = ({ user, onLogout }) => {
                 <Input
                   id="cnpj_cpf"
                   value={formData.cnpj_cpf}
-                  onChange={(e) => setFormData({ ...formData, cnpj_cpf: maskCPFCNPJ(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, cnpj_cpf: maskCpfCnpj(e.target.value) })}
                   className="bg-zinc-800 border-zinc-700"
                   placeholder="00.000.000/0001-00"
                 />
