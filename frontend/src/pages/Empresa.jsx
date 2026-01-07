@@ -441,6 +441,69 @@ const Empresa = ({ user, onLogout }) => {
               </CardContent>
             </Card>
 
+            {/* Card 4: App do Proprietário */}
+            <Card className="bg-zinc-900 border-zinc-800 border-l-4 border-l-indigo-500">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Smartphone className="w-5 h-5 mr-2" />
+                  App do Proprietário
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-zinc-400 text-sm">
+                  Acompanhe o dashboard e relatórios da empresa pelo app. Instale no seu celular para acesso rápido aos indicadores financeiros, DRE, DFC e fluxo de caixa.
+                </p>
+                
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const baseUrl = formData.app_url || window.location.origin;
+                      window.open(`${baseUrl}/api/proprietario/app`, '_blank');
+                    }}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Abrir App
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const baseUrl = formData.app_url || window.location.origin;
+                      const appUrl = `${baseUrl}/api/proprietario/app`;
+                      navigator.clipboard.writeText(appUrl);
+                      toast.success('Link copiado para a área de transferência!');
+                    }}
+                    className="border-zinc-700 hover:bg-zinc-800"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copiar Link
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      toast.info('Para instalar: Abra o app no navegador do celular e clique em "Adicionar à Tela Inicial"');
+                    }}
+                    className="border-zinc-700 hover:bg-zinc-800"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Como Instalar
+                  </Button>
+                </div>
+
+                <div className="mt-4 p-4 bg-zinc-800/50 rounded-lg">
+                  <p className="text-xs text-zinc-500">
+                    <strong>Dica:</strong> No iPhone, abra o link no Safari e toque em "Compartilhar" → "Adicionar à Tela de Início". 
+                    No Android, abra no Chrome e toque nos 3 pontos → "Instalar app" ou "Adicionar à Tela inicial".
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Botão Salvar */}
             <div className="flex justify-end">
               <Button
