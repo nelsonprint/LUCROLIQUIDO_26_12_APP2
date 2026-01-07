@@ -137,6 +137,7 @@ function App() {
           <Route path="/orcamentos/novo" element={<NovoOrcamentoGrid user={user} onLogout={handleLogout} />} />
           <Route path="/materiais" element={<Materiais user={user} onLogout={handleLogout} />} />
           <Route path="/clientes" element={<Clientes user={user} onLogout={handleLogout} />} />
+          <Route path="/fornecedores" element={<Fornecedores user={user} onLogout={handleLogout} />} />
           <Route path="/funcionarios" element={<Funcionarios user={user} onLogout={handleLogout} />} />
           <Route path="/tabela-precos" element={<TabelaPrecos user={user} onLogout={handleLogout} />} />
           <Route path="/plano-contas" element={<PlanoContas user={user} onLogout={handleLogout} />} />
