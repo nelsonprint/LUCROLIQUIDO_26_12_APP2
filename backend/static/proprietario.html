@@ -785,7 +785,10 @@ async function loadDRE() {
 }
 
 // ============ Load DFC ============
-async function loadDFC() {
+let currentDFCPeriod = 'mes';
+
+async function loadDFC(periodo = 'mes') {
+  currentDFCPeriod = periodo;
   const container = document.getElementById('dfcContent');
   container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   
@@ -793,17 +796,44 @@ async function loadDFC() {
   
   try {
     const hoje = new Date();
-    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
+    let inicio, fim;
     
-    const res = await fetch(`${API_BASE}/dfc/relatorio/${currentCompany.id}?periodo_inicio=${inicio}&periodo_fim=${fim}`);
+    // Calcular período baseado na seleção
+    if (periodo === 'mes') {
+      inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    } else if (periodo === 'trimestre') {
+      // Trimestre atual
+      const trimestre = Math.floor(hoje.getMonth() / 3);
+      inicio = new Date(hoje.getFullYear(), trimestre * 3, 1);
+      fim = new Date(hoje.getFullYear(), trimestre * 3 + 3, 0);
+    } else if (periodo === 'ano') {
+      inicio = new Date(hoje.getFullYear(), 0, 1);
+      fim = new Date(hoje.getFullYear(), 11, 31);
+    }
+    
+    const inicioStr = inicio.toISOString().split('T')[0];
+    const fimStr = fim.toISOString().split('T')[0];
+    
+    const res = await fetch(`${API_BASE}/dfc/relatorio/${currentCompany.id}?periodo_inicio=${inicioStr}&periodo_fim=${fimStr}`);
     const data = await res.json();
     
+    // Texto do período
+    const periodoTexto = periodo === 'mes' 
+      ? hoje.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })
+      : periodo === 'trimestre' 
+        ? `${Math.floor(hoje.getMonth() / 3) + 1}º Trimestre ${hoje.getFullYear()}`
+        : `Ano ${hoje.getFullYear()}`;
+    
     container.innerHTML = `
-      <div class="period-filter">
-        <button class="period-btn active">Mês</button>
-        <button class="period-btn">Trimestre</button>
-        <button class="period-btn">Ano</button>
+      <div class="period-filter" id="dfcPeriodFilter">
+        <button class="period-btn ${periodo === 'mes' ? 'active' : ''}" onclick="loadDFC('mes')">Mês</button>
+        <button class="period-btn ${periodo === 'trimestre' ? 'active' : ''}" onclick="loadDFC('trimestre')">Trimestre</button>
+        <button class="period-btn ${periodo === 'ano' ? 'active' : ''}" onclick="loadDFC('ano')">Ano</button>
+      </div>
+      
+      <div style="text-align:center;margin-bottom:12px;color:var(--muted);font-size:.85rem">
+        📅 ${periodoTexto}
       </div>
       
       <!-- DFC Cards -->
