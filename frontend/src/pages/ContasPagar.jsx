@@ -592,26 +592,6 @@ const ContasPagar = ({ user, onLogout }) => {
             </div>
 
             <div>
-              <Label>Forma de Pagamento *</Label>
-              <Select
-                required
-                value={formData.forma_pagamento}
-                onValueChange={(value) => setFormData({ ...formData, forma_pagamento: value })}
-              >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PIX">PIX</SelectItem>
-                  <SelectItem value="Boleto">Boleto</SelectItem>
-                  <SelectItem value="Cartão">Cartão</SelectItem>
-                  <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                  <SelectItem value="Transferência">Transferência</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
               <Label>Observações</Label>
               <Textarea
                 value={formData.observacoes}
