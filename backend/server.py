@@ -9303,6 +9303,161 @@ async def relatorio_alertas(company_id: str):
     }
 
 
+@api_router.get("/relatorios/comparativo/{company_id}")
+async def relatorio_comparativo(company_id: str):
+    """Relatório Comparativo - Mês atual vs anterior vs média 3 meses"""
+    from datetime import datetime, timedelta
+    from collections import defaultdict
+    
+    hoje = datetime.now()
+    
+    # Definir períodos
+    inicio_mes_atual = hoje.replace(day=1)
+    fim_mes_atual = hoje
+    
+    inicio_mes_ant = (inicio_mes_atual - timedelta(days=1)).replace(day=1)
+    fim_mes_ant = inicio_mes_atual - timedelta(days=1)
+    
+    # Últimos 3 meses para média
+    inicio_3m = (inicio_mes_atual - timedelta(days=90)).replace(day=1)
+    
+    async def get_dados_periodo(inicio, fim):
+        inicio_str = inicio.strftime('%Y-%m-%d')
+        fim_str = fim.strftime('%Y-%m-%d')
+        
+        receitas = await db.transactions.find({
+            "company_id": company_id,
+            "type": "receita",
+            "date": {"$gte": inicio_str, "$lte": fim_str}
+        }, {"_id": 0}).to_list(5000)
+        
+        despesas = await db.transactions.find({
+            "company_id": company_id,
+            "type": {"$in": ["despesa", "custo"]},
+            "date": {"$gte": inicio_str, "$lte": fim_str}
+        }, {"_id": 0}).to_list(5000)
+        
+        orcamentos = await db.orcamentos.find({
+            "company_id": company_id,
+            "created_at": {"$gte": inicio_str, "$lte": fim_str}
+        }, {"_id": 0}).to_list(1000)
+        
+        total_receitas = sum(r.get('amount', 0) for r in receitas)
+        total_despesas = sum(d.get('amount', 0) for d in despesas)
+        total_orcamentos = len(orcamentos)
+        valor_orcamentos = sum(o.get('valor_total', 0) or o.get('total', 0) or 0 for o in orcamentos)
+        aprovados = len([o for o in orcamentos if o.get('status', '').lower() == 'aprovado'])
+        
+        return {
+            'receitas': total_receitas,
+            'despesas': total_despesas,
+            'lucro': total_receitas - total_despesas,
+            'margem': ((total_receitas - total_despesas) / total_receitas * 100) if total_receitas > 0 else 0,
+            'orcamentos': total_orcamentos,
+            'valor_orcamentos': valor_orcamentos,
+            'aprovados': aprovados,
+            'taxa_conversao': (aprovados / total_orcamentos * 100) if total_orcamentos > 0 else 0
+        }
+    
+    # Buscar dados de cada período
+    dados_atual = await get_dados_periodo(inicio_mes_atual, fim_mes_atual)
+    dados_anterior = await get_dados_periodo(inicio_mes_ant, fim_mes_ant)
+    
+    # Média dos últimos 3 meses
+    dados_3m_total = defaultdict(float)
+    for i in range(3):
+        inicio = (inicio_mes_atual - timedelta(days=30 * (i + 1))).replace(day=1)
+        fim = (inicio + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        dados_mes = await get_dados_periodo(inicio, fim)
+        for k, v in dados_mes.items():
+            dados_3m_total[k] += v
+    
+    media_3m = {k: v / 3 for k, v in dados_3m_total.items()}
+    
+    # Calcular variações
+    def calc_var(atual, anterior):
+        if anterior == 0:
+            return 100 if atual > 0 else 0
+        return round(((atual - anterior) / anterior) * 100, 1)
+    
+    # Montar métricas comparativas
+    metricas = [
+        {
+            "nome": "Receitas",
+            "mes_atual": dados_atual['receitas'],
+            "mes_anterior": dados_anterior['receitas'],
+            "media_3m": media_3m['receitas'],
+            "var_mes": calc_var(dados_atual['receitas'], dados_anterior['receitas']),
+            "var_media": calc_var(dados_atual['receitas'], media_3m['receitas']),
+            "formato": "currency"
+        },
+        {
+            "nome": "Despesas",
+            "mes_atual": dados_atual['despesas'],
+            "mes_anterior": dados_anterior['despesas'],
+            "media_3m": media_3m['despesas'],
+            "var_mes": calc_var(dados_atual['despesas'], dados_anterior['despesas']),
+            "var_media": calc_var(dados_atual['despesas'], media_3m['despesas']),
+            "formato": "currency",
+            "inverter": True  # Menos é melhor
+        },
+        {
+            "nome": "Lucro Líquido",
+            "mes_atual": dados_atual['lucro'],
+            "mes_anterior": dados_anterior['lucro'],
+            "media_3m": media_3m['lucro'],
+            "var_mes": calc_var(dados_atual['lucro'], dados_anterior['lucro']),
+            "var_media": calc_var(dados_atual['lucro'], media_3m['lucro']),
+            "formato": "currency"
+        },
+        {
+            "nome": "Margem de Lucro",
+            "mes_atual": round(dados_atual['margem'], 1),
+            "mes_anterior": round(dados_anterior['margem'], 1),
+            "media_3m": round(media_3m['margem'], 1),
+            "var_mes": round(dados_atual['margem'] - dados_anterior['margem'], 1),
+            "var_media": round(dados_atual['margem'] - media_3m['margem'], 1),
+            "formato": "percent"
+        },
+        {
+            "nome": "Qtd Orçamentos",
+            "mes_atual": dados_atual['orcamentos'],
+            "mes_anterior": dados_anterior['orcamentos'],
+            "media_3m": round(media_3m['orcamentos'], 1),
+            "var_mes": calc_var(dados_atual['orcamentos'], dados_anterior['orcamentos']),
+            "var_media": calc_var(dados_atual['orcamentos'], media_3m['orcamentos']),
+            "formato": "number"
+        },
+        {
+            "nome": "Valor Orçamentos",
+            "mes_atual": dados_atual['valor_orcamentos'],
+            "mes_anterior": dados_anterior['valor_orcamentos'],
+            "media_3m": media_3m['valor_orcamentos'],
+            "var_mes": calc_var(dados_atual['valor_orcamentos'], dados_anterior['valor_orcamentos']),
+            "var_media": calc_var(dados_atual['valor_orcamentos'], media_3m['valor_orcamentos']),
+            "formato": "currency"
+        },
+        {
+            "nome": "Taxa Conversão",
+            "mes_atual": round(dados_atual['taxa_conversao'], 1),
+            "mes_anterior": round(dados_anterior['taxa_conversao'], 1),
+            "media_3m": round(media_3m['taxa_conversao'], 1),
+            "var_mes": round(dados_atual['taxa_conversao'] - dados_anterior['taxa_conversao'], 1),
+            "var_media": round(dados_atual['taxa_conversao'] - media_3m['taxa_conversao'], 1),
+            "formato": "percent"
+        }
+    ]
+    
+    return {
+        "metricas": metricas,
+        "periodos": {
+            "mes_atual": hoje.strftime('%B/%Y'),
+            "mes_anterior": fim_mes_ant.strftime('%B/%Y'),
+            "media_3m": "Média 3 meses"
+        }
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
