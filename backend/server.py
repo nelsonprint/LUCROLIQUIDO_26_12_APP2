@@ -6139,30 +6139,49 @@ DFC_CATEGORY_MAPPING = {
 
 def classificar_para_dfc(categoria_nome: str, categoria_grupo: str, tipo_lancamento: str) -> str:
     """Classifica uma categoria/lançamento para o grupo do DFC"""
+    
+    # PRIMEIRO: Classificação por tipo de lançamento (mais confiável)
+    # Receitas são SEMPRE entradas operacionais por padrão
+    if tipo_lancamento == "receita":
+        # Verificar se é entrada de investimento ou financiamento
+        if categoria_nome:
+            nome_lower = categoria_nome.lower().replace(" ", "_").replace("-", "_")
+            if any(key in nome_lower for key in ["venda_equipamentos", "venda_ativos", "resgate_aplicacoes"]):
+                return "INVESTIMENTO_ENTRADA"
+            if any(key in nome_lower for key in ["emprestimos_recebidos", "financiamentos_recebidos", "aporte_socios", "capital_social"]):
+                return "FINANCIAMENTO_ENTRADA"
+        return "OPERACIONAL_ENTRADA"
+    
+    # Para despesas e custos, verificar categoria
     if not categoria_nome:
+        if tipo_lancamento in ["despesa", "custo"]:
+            return "OPERACIONAL_SAIDA"
         return "NAO_CLASSIFICADO"
     
     nome_lower = categoria_nome.lower().replace(" ", "_").replace("-", "_")
     
-    # Verificar mapeamento direto
+    # Verificar mapeamento direto para despesas específicas
     for key, grupo in DFC_CATEGORY_MAPPING.items():
         if key in nome_lower:
-            return grupo
+            # Só aplicar se for consistente com o tipo
+            if tipo_lancamento in ["despesa", "custo"] and "SAIDA" in grupo:
+                return grupo
+            elif tipo_lancamento in ["despesa", "custo"] and "ENTRADA" in grupo:
+                # Despesa mapeada como entrada? Incomum, mas respeitar
+                return grupo
     
-    # Classificação por grupo da categoria
-    if categoria_grupo:
-        grupo_lower = categoria_grupo.lower()
-        if grupo_lower == "direta_obra":
-            return "OPERACIONAL_SAIDA"  # CSP é operacional
-        elif grupo_lower == "fixa":
-            return "OPERACIONAL_SAIDA"  # Despesas fixas são operacionais
-        elif grupo_lower == "variavel_indireta":
-            return "OPERACIONAL_SAIDA"
+    # Verificar categorias de investimento
+    investimento_keywords = ["equipamentos", "maquinas", "veiculos", "ferramentas", "obras", "benfeitorias", "software", "imoveis", "investimentos"]
+    if any(kw in nome_lower for kw in investimento_keywords):
+        return "INVESTIMENTO_SAIDA"
     
-    # Classificação por tipo de lançamento
-    if tipo_lancamento == "receita":
-        return "OPERACIONAL_ENTRADA"
-    elif tipo_lancamento in ["despesa", "custo"]:
+    # Verificar categorias de financiamento
+    financiamento_saida_keywords = ["pagamento_emprestimos", "pagamento_financiamentos", "amortizacao", "retirada_socios", "distribuicao_lucros", "dividendos", "pro_labore"]
+    if any(kw in nome_lower for kw in financiamento_saida_keywords):
+        return "FINANCIAMENTO_SAIDA"
+    
+    # Default: despesas e custos são operacionais
+    if tipo_lancamento in ["despesa", "custo"]:
         return "OPERACIONAL_SAIDA"
     
     return "NAO_CLASSIFICADO"
