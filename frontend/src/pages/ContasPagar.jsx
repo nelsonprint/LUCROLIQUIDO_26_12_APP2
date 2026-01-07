@@ -19,6 +19,7 @@ const ContasPagar = ({ user, onLogout }) => {
   const [contas, setContas] = useState([]);
   const [filteredContas, setFilteredContas] = useState([]);
   const [categorias, setCategorias] = useState([]);
+  const [fornecedores, setFornecedores] = useState([]);
   const [showDialog, setShowDialog] = useState(false);
   const [editingConta, setEditingConta] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -35,6 +36,8 @@ const ContasPagar = ({ user, onLogout }) => {
     valor: '',
     forma_pagamento: 'PIX',
     observacoes: '',
+    fornecedor_id: '',
+    fornecedor_nome: '',
   });
 
   const company = JSON.parse(localStorage.getItem('company') || '{}');
