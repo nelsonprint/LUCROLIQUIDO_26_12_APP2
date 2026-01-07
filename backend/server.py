@@ -7132,7 +7132,10 @@ async def admin_subscriptions(user_id: str, status: Optional[str] = None):
     await verify_admin(user_id)
     
     # Usar aggregation pipeline para evitar N+1 queries
-    match_stage = {"$match": {}}
+    # Primeiro, buscar IDs de admins para excluí-los
+    admin_ids = await db.users.distinct("id", {"role": "admin"})
+    
+    match_stage = {"$match": {"user_id": {"$nin": admin_ids}}}
     if status:
         match_stage["$match"]["status"] = status
     
