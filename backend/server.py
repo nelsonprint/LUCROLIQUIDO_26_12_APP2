@@ -7061,8 +7061,8 @@ async def verify_admin(user_id: str):
 async def admin_stats(user_id: str):
     await verify_admin(user_id)
     
-    # Total de usuários
-    total_users = await db.users.count_documents({})
+    # Total de usuários (excluindo admins - apenas usuários que pagam assinatura)
+    total_users = await db.users.count_documents({"role": {"$ne": "admin"}})
     
     # Assinaturas ativas
     active_subs = await db.subscriptions.count_documents({"status": "active"})
@@ -7076,7 +7076,7 @@ async def admin_stats(user_id: str):
     # Taxa de conversão (trial -> active)
     # total_trials pode ser usado no futuro para cálculos mais detalhados
     # total_trials = await db.subscriptions.count_documents({"status": "trial"})
-    conversion_rate = (active_subs / max(total_users - 1, 1)) * 100  # -1 para excluir admin
+    conversion_rate = (active_subs / max(total_users, 1)) * 100  # Usuários já não inclui admin
     
     # Total de empresas
     total_companies = await db.companies.count_documents({})
