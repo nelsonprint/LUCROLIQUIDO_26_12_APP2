@@ -5723,6 +5723,328 @@ async def get_fluxo_caixa_projetado(company_id: str, meses: int = 6):
     
     return resultado
 
+
+@api_router.get("/fluxo-caixa/dashboard/{company_id}")
+async def get_fluxo_caixa_dashboard(
+    company_id: str, 
+    dias: int = 30, 
+    modo: str = "projetado"  # realizado, em_aberto, projetado
+):
+    """
+    Retorna dados completos de Fluxo de Caixa para o Dashboard.
+    
+    Modos:
+    - realizado: apenas o que já foi pago/recebido
+    - em_aberto: apenas títulos pendentes/atrasados
+    - projetado: realizado até hoje + em aberto daqui para frente (padrão)
+    
+    Retorna:
+    - cards: saldo atual, a receber/pagar 7 e 30 dias, saldo projetado, menor saldo
+    - grafico_saldo: série diária do saldo acumulado
+    - grafico_barras: entradas x saídas por dia
+    - acoes: próximos vencimentos e atrasados
+    """
+    from datetime import datetime as dt, timedelta
+    
+    hoje = dt.now().date()
+    data_fim = hoje + timedelta(days=dias)
+    hoje_str = hoje.strftime("%Y-%m-%d")
+    data_fim_str = data_fim.strftime("%Y-%m-%d")
+    
+    # ========== BUSCAR SALDO ATUAL (CONFIGURAÇÃO DA EMPRESA) ==========
+    # O saldo atual vem da configuração da empresa ou é calculado
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0, "saldo_inicial": 1})
+    saldo_inicial = company.get("saldo_inicial", 0) if company else 0
+    
+    # Calcular saldo atual baseado em lançamentos realizados até hoje
+    pipeline_saldo_atual = [
+        {"$match": {
+            "company_id": company_id,
+            "status": "realizado",
+            "cancelled": {"$ne": True},
+            "date": {"$lte": hoje_str}
+        }},
+        {"$group": {
+            "_id": "$type",
+            "total": {"$sum": "$amount"}
+        }}
+    ]
+    
+    result_saldo = await db.transactions.aggregate(pipeline_saldo_atual).to_list(None)
+    receitas_realizadas = 0
+    despesas_realizadas = 0
+    
+    for r in result_saldo:
+        if r['_id'] == 'receita':
+            receitas_realizadas = r['total']
+        elif r['_id'] in ['despesa', 'custo']:
+            despesas_realizadas += r['total']
+    
+    saldo_atual = saldo_inicial + receitas_realizadas - despesas_realizadas
+    
+    # ========== BUSCAR CONTAS A PAGAR/RECEBER ==========
+    # Todas as contas no período
+    
+    # Função para determinar se a conta deve ser incluída baseado no modo
+    def conta_no_modo(conta, modo_filtro, hoje_date):
+        status = conta.get("status", "PENDENTE")
+        data_venc_str = conta.get("data_vencimento", "")
+        
+        if modo_filtro == "realizado":
+            return status in ["PAGO", "RECEBIDO"]
+        elif modo_filtro == "em_aberto":
+            return status in ["PENDENTE", "ATRASADO", "PARCIAL"]
+        else:  # projetado
+            if status in ["PAGO", "RECEBIDO"]:
+                # Já realizado, incluir
+                return True
+            else:
+                # Pendente/Atrasado, incluir para projeção
+                return True
+        return False
+    
+    # Buscar contas a RECEBER
+    contas_receber = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "RECEBER",
+        "$or": [
+            {"data_vencimento": {"$gte": hoje_str, "$lte": data_fim_str}},
+            {"status": "ATRASADO"},
+            {"$and": [
+                {"data_vencimento": {"$lt": hoje_str}},
+                {"status": {"$in": ["PENDENTE", "PARCIAL"]}}
+            ]}
+        ]
+    }, {"_id": 0}).to_list(1000)
+    
+    # Buscar contas a PAGAR
+    contas_pagar = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "PAGAR",
+        "$or": [
+            {"data_vencimento": {"$gte": hoje_str, "$lte": data_fim_str}},
+            {"status": "ATRASADO"},
+            {"$and": [
+                {"data_vencimento": {"$lt": hoje_str}},
+                {"status": {"$in": ["PENDENTE", "PARCIAL"]}}
+            ]}
+        ]
+    }, {"_id": 0}).to_list(1000)
+    
+    # ========== CALCULAR CARDS ==========
+    hoje_plus_7 = (hoje + timedelta(days=7)).strftime("%Y-%m-%d")
+    hoje_plus_30 = (hoje + timedelta(days=30)).strftime("%Y-%m-%d")
+    
+    a_receber_7d = 0
+    a_receber_30d = 0
+    a_pagar_7d = 0
+    a_pagar_30d = 0
+    atrasados_receber = 0
+    atrasados_pagar = 0
+    
+    for c in contas_receber:
+        if c.get("status") in ["PAGO", "RECEBIDO"]:
+            continue
+        valor = c.get("valor", 0)
+        data_venc = c.get("data_vencimento", "")
+        
+        if data_venc < hoje_str:
+            atrasados_receber += valor
+        elif data_venc <= hoje_plus_7:
+            a_receber_7d += valor
+            a_receber_30d += valor
+        elif data_venc <= hoje_plus_30:
+            a_receber_30d += valor
+    
+    for c in contas_pagar:
+        if c.get("status") in ["PAGO", "RECEBIDO"]:
+            continue
+        valor = c.get("valor", 0)
+        data_venc = c.get("data_vencimento", "")
+        
+        if data_venc < hoje_str:
+            atrasados_pagar += valor
+        elif data_venc <= hoje_plus_7:
+            a_pagar_7d += valor
+            a_pagar_30d += valor
+        elif data_venc <= hoje_plus_30:
+            a_pagar_30d += valor
+    
+    # ========== GERAR SÉRIE DIÁRIA DO SALDO ==========
+    # Agrupar por dia
+    entradas_por_dia = {}
+    saidas_por_dia = {}
+    
+    for c in contas_receber:
+        if modo == "realizado" and c.get("status") not in ["PAGO", "RECEBIDO"]:
+            continue
+        if modo == "em_aberto" and c.get("status") in ["PAGO", "RECEBIDO"]:
+            continue
+            
+        # Para projetado: usar data_pagamento se já realizado, senão data_vencimento
+        if c.get("status") in ["PAGO", "RECEBIDO"] and c.get("data_pagamento"):
+            data_ref = c.get("data_pagamento", c.get("data_vencimento", ""))[:10]
+        else:
+            data_ref = c.get("data_vencimento", "")[:10]
+        
+        # Para atrasados não pagos, considerar como "hoje" no modo projetado
+        if modo == "projetado" and data_ref < hoje_str and c.get("status") not in ["PAGO", "RECEBIDO"]:
+            data_ref = hoje_str
+        
+        if data_ref:
+            entradas_por_dia[data_ref] = entradas_por_dia.get(data_ref, 0) + c.get("valor", 0)
+    
+    for c in contas_pagar:
+        if modo == "realizado" and c.get("status") not in ["PAGO", "RECEBIDO"]:
+            continue
+        if modo == "em_aberto" and c.get("status") in ["PAGO", "RECEBIDO"]:
+            continue
+            
+        if c.get("status") in ["PAGO", "RECEBIDO"] and c.get("data_pagamento"):
+            data_ref = c.get("data_pagamento", c.get("data_vencimento", ""))[:10]
+        else:
+            data_ref = c.get("data_vencimento", "")[:10]
+        
+        if modo == "projetado" and data_ref < hoje_str and c.get("status") not in ["PAGO", "RECEBIDO"]:
+            data_ref = hoje_str
+        
+        if data_ref:
+            saidas_por_dia[data_ref] = saidas_por_dia.get(data_ref, 0) + c.get("valor", 0)
+    
+    # Gerar série diária
+    grafico_saldo = []
+    grafico_barras = []
+    saldo_acumulado = saldo_atual
+    menor_saldo = saldo_atual
+    dia_menor_saldo = hoje_str
+    dias_negativos = []
+    
+    for i in range(dias + 1):
+        dia = hoje + timedelta(days=i)
+        dia_str = dia.strftime("%Y-%m-%d")
+        dia_label = dia.strftime("%d/%m")
+        
+        entradas_dia = entradas_por_dia.get(dia_str, 0)
+        saidas_dia = saidas_por_dia.get(dia_str, 0)
+        
+        # No primeiro dia (hoje), o saldo já é o atual
+        if i > 0:
+            saldo_acumulado = saldo_acumulado + entradas_dia - saidas_dia
+        
+        # Rastrear menor saldo e dias negativos
+        if saldo_acumulado < menor_saldo:
+            menor_saldo = saldo_acumulado
+            dia_menor_saldo = dia_str
+        
+        if saldo_acumulado < 0:
+            dias_negativos.append(dia_str)
+        
+        grafico_saldo.append({
+            "dia": dia_label,
+            "data": dia_str,
+            "saldo": round(saldo_acumulado, 2),
+            "entradas": round(entradas_dia, 2),
+            "saidas": round(saidas_dia, 2),
+            "negativo": saldo_acumulado < 0
+        })
+        
+        grafico_barras.append({
+            "dia": dia_label,
+            "data": dia_str,
+            "entradas": round(entradas_dia, 2),
+            "saidas": round(saidas_dia, 2)
+        })
+    
+    saldo_projetado_final = grafico_saldo[-1]["saldo"] if grafico_saldo else saldo_atual
+    
+    # ========== LISTA DE AÇÕES ==========
+    # Top 5 a pagar próximos 7 dias
+    proximos_pagar = sorted(
+        [c for c in contas_pagar if c.get("status") not in ["PAGO", "RECEBIDO"] and c.get("data_vencimento", "") >= hoje_str and c.get("data_vencimento", "") <= hoje_plus_7],
+        key=lambda x: x.get("data_vencimento", "")
+    )[:5]
+    
+    # Top 5 a receber próximos 7 dias
+    proximos_receber = sorted(
+        [c for c in contas_receber if c.get("status") not in ["PAGO", "RECEBIDO"] and c.get("data_vencimento", "") >= hoje_str and c.get("data_vencimento", "") <= hoje_plus_7],
+        key=lambda x: x.get("data_vencimento", "")
+    )[:5]
+    
+    # Atrasados (a pagar e receber)
+    lista_atrasados_pagar = sorted(
+        [c for c in contas_pagar if c.get("status") not in ["PAGO", "RECEBIDO"] and c.get("data_vencimento", "") < hoje_str],
+        key=lambda x: x.get("data_vencimento", "")
+    )[:5]
+    
+    lista_atrasados_receber = sorted(
+        [c for c in contas_receber if c.get("status") not in ["PAGO", "RECEBIDO"] and c.get("data_vencimento", "") < hoje_str],
+        key=lambda x: x.get("data_vencimento", "")
+    )[:5]
+    
+    # Formatar para o frontend
+    def formatar_conta(c):
+        return {
+            "id": c.get("id"),
+            "tipo": c.get("tipo"),
+            "descricao": c.get("descricao", ""),
+            "categoria": c.get("categoria", ""),
+            "valor": c.get("valor", 0),
+            "data_vencimento": c.get("data_vencimento", ""),
+            "status": c.get("status", "PENDENTE"),
+            "dias_atraso": (hoje - dt.strptime(c.get("data_vencimento", hoje_str), "%Y-%m-%d").date()).days if c.get("data_vencimento", "") < hoje_str else 0
+        }
+    
+    return {
+        "cards": {
+            "saldo_atual": round(saldo_atual, 2),
+            "a_receber_7d": round(a_receber_7d, 2),
+            "a_receber_30d": round(a_receber_30d, 2),
+            "a_pagar_7d": round(a_pagar_7d, 2),
+            "a_pagar_30d": round(a_pagar_30d, 2),
+            "saldo_projetado_30d": round(saldo_projetado_final, 2),
+            "menor_saldo_30d": round(menor_saldo, 2),
+            "dia_menor_saldo": dia_menor_saldo,
+            "atrasados_receber": round(atrasados_receber, 2),
+            "atrasados_pagar": round(atrasados_pagar, 2),
+            "tem_risco_negativo": menor_saldo < 0,
+            "dias_negativos": len(dias_negativos)
+        },
+        "grafico_saldo": grafico_saldo,
+        "grafico_barras": grafico_barras,
+        "acoes": {
+            "proximos_pagar": [formatar_conta(c) for c in proximos_pagar],
+            "proximos_receber": [formatar_conta(c) for c in proximos_receber],
+            "atrasados_pagar": [formatar_conta(c) for c in lista_atrasados_pagar],
+            "atrasados_receber": [formatar_conta(c) for c in lista_atrasados_receber]
+        },
+        "periodo": {
+            "inicio": hoje_str,
+            "fim": data_fim_str,
+            "dias": dias,
+            "modo": modo
+        }
+    }
+
+
+@api_router.patch("/companies/{company_id}/saldo-inicial")
+async def update_saldo_inicial(company_id: str, saldo_data: dict):
+    """Atualiza o saldo inicial da empresa para cálculo do fluxo de caixa"""
+    saldo_inicial = saldo_data.get("saldo_inicial", 0)
+    
+    result = await db.companies.update_one(
+        {"id": company_id},
+        {"$set": {"saldo_inicial": saldo_inicial}}
+    )
+    
+    if result.modified_count == 0:
+        # Pode ser que não mudou ou empresa não existe
+        company = await db.companies.find_one({"id": company_id})
+        if not company:
+            raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    
+    return {"message": "Saldo inicial atualizado com sucesso!", "saldo_inicial": saldo_inicial}
+
+
 @api_router.get("/contas/pagar-por-categoria")
 async def get_contas_pagar_por_categoria(company_id: str, mes: Optional[str] = None):
     """Agrupa contas a pagar por categoria"""
