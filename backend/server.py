@@ -7547,6 +7547,439 @@ async def export_excel(company_id: str, month: str):
     )
 
 
+# ========== ROTAS: RELATÓRIOS ==========
+
+def get_periodo_datas(periodo: str):
+    """Retorna datas de início e fim baseado no período"""
+    from datetime import datetime, timedelta
+    hoje = datetime.now()
+    
+    if periodo == 'mes':
+        inicio = hoje.replace(day=1)
+        if hoje.month == 12:
+            fim = hoje.replace(year=hoje.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            fim = hoje.replace(month=hoje.month + 1, day=1) - timedelta(days=1)
+    elif periodo == 'trimestre':
+        trimestre = (hoje.month - 1) // 3
+        inicio = hoje.replace(month=trimestre * 3 + 1, day=1)
+        if trimestre == 3:
+            fim = hoje.replace(year=hoje.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            fim = hoje.replace(month=(trimestre + 1) * 3 + 1, day=1) - timedelta(days=1)
+    elif periodo == 'ano':
+        inicio = hoje.replace(month=1, day=1)
+        fim = hoje.replace(month=12, day=31)
+    else:
+        inicio = hoje.replace(day=1)
+        fim = hoje
+    
+    return inicio.strftime('%Y-%m-%d'), fim.strftime('%Y-%m-%d')
+
+
+@api_router.get("/relatorios/contas-pagar/{company_id}")
+async def relatorio_contas_pagar(
+    company_id: str,
+    periodo: str = 'mes',
+    status: Optional[str] = None
+):
+    """Relatório de Contas a Pagar por Período"""
+    from datetime import datetime, timedelta
+    
+    inicio, fim = get_periodo_datas(periodo)
+    hoje = datetime.now().strftime('%Y-%m-%d')
+    
+    # Filtro base
+    filtro = {
+        "company_id": company_id,
+        "tipo": "PAGAR"
+    }
+    
+    # Filtro de período
+    if periodo != 'todos':
+        filtro["data_vencimento"] = {"$gte": inicio, "$lte": fim}
+    
+    # Buscar todas as contas
+    contas = await db.contas.find(filtro, {"_id": 0}).to_list(1000)
+    
+    # Processar status e filtrar
+    contas_processadas = []
+    for conta in contas:
+        venc = conta.get('data_vencimento', '')
+        status_atual = conta.get('status', 'PENDENTE')
+        
+        # Determinar status real
+        if status_atual in ['PAGO', 'CANCELADO']:
+            conta['status'] = status_atual
+        elif venc < hoje:
+            conta['status'] = 'ATRASADO'
+        else:
+            conta['status'] = 'PENDENTE'
+        
+        # Filtrar por status se especificado
+        if status and conta['status'] != status:
+            continue
+            
+        contas_processadas.append(conta)
+    
+    # Calcular KPIs
+    total_pendente = sum(c['valor'] for c in contas_processadas if c['status'] == 'PENDENTE')
+    total_pago = sum(c['valor'] for c in contas_processadas if c['status'] == 'PAGO')
+    total_atrasado = sum(c['valor'] for c in contas_processadas if c['status'] == 'ATRASADO')
+    qtd_pendente = len([c for c in contas_processadas if c['status'] == 'PENDENTE'])
+    qtd_pago = len([c for c in contas_processadas if c['status'] == 'PAGO'])
+    qtd_atrasado = len([c for c in contas_processadas if c['status'] == 'ATRASADO'])
+    
+    # Próximo vencimento
+    pendentes_ordenadas = sorted(
+        [c for c in contas_processadas if c['status'] == 'PENDENTE'],
+        key=lambda x: x.get('data_vencimento', '')
+    )
+    proximo = pendentes_ordenadas[0] if pendentes_ordenadas else None
+    
+    # Dados para gráfico (agrupado por semana/mês)
+    from collections import defaultdict
+    grafico_data = defaultdict(lambda: {'pendente': 0, 'pago': 0, 'atrasado': 0})
+    for conta in contas_processadas:
+        mes = conta.get('data_vencimento', '')[:7]  # YYYY-MM
+        if conta['status'] == 'PENDENTE':
+            grafico_data[mes]['pendente'] += conta['valor']
+        elif conta['status'] == 'PAGO':
+            grafico_data[mes]['pago'] += conta['valor']
+        elif conta['status'] == 'ATRASADO':
+            grafico_data[mes]['atrasado'] += conta['valor']
+    
+    grafico = [
+        {'periodo': k, **v}
+        for k, v in sorted(grafico_data.items())
+    ]
+    
+    return {
+        "kpis": {
+            "total_pendente": total_pendente,
+            "total_pago": total_pago,
+            "total_atrasado": total_atrasado,
+            "qtd_pendente": qtd_pendente,
+            "qtd_pago": qtd_pago,
+            "qtd_atrasado": qtd_atrasado,
+            "proximo_vencimento": proximo.get('data_vencimento') if proximo else None,
+            "valor_proximo": proximo.get('valor') if proximo else None,
+        },
+        "grafico": grafico,
+        "contas": sorted(contas_processadas, key=lambda x: x.get('data_vencimento', ''))
+    }
+
+
+@api_router.get("/relatorios/contas-receber/{company_id}")
+async def relatorio_contas_receber(
+    company_id: str,
+    periodo: str = 'mes',
+    status: Optional[str] = None
+):
+    """Relatório de Contas a Receber por Período"""
+    from datetime import datetime
+    
+    inicio, fim = get_periodo_datas(periodo)
+    hoje = datetime.now().strftime('%Y-%m-%d')
+    
+    # Filtro base
+    filtro = {
+        "company_id": company_id,
+        "tipo": "RECEBER"
+    }
+    
+    # Filtro de período
+    if periodo != 'todos':
+        filtro["data_vencimento"] = {"$gte": inicio, "$lte": fim}
+    
+    # Buscar todas as contas
+    contas = await db.contas.find(filtro, {"_id": 0}).to_list(1000)
+    
+    # Processar status e filtrar
+    contas_processadas = []
+    for conta in contas:
+        venc = conta.get('data_vencimento', '')
+        status_atual = conta.get('status', 'PENDENTE')
+        
+        # Determinar status real
+        if status_atual in ['RECEBIDO', 'PAGO', 'CANCELADO']:
+            conta['status'] = status_atual
+        elif venc < hoje:
+            conta['status'] = 'ATRASADO'
+        else:
+            conta['status'] = 'PENDENTE'
+        
+        # Filtrar por status se especificado
+        if status:
+            if status == 'RECEBIDO' and conta['status'] not in ['RECEBIDO', 'PAGO']:
+                continue
+            elif status != 'RECEBIDO' and conta['status'] != status:
+                continue
+            
+        contas_processadas.append(conta)
+    
+    # Calcular KPIs
+    total_pendente = sum(c['valor'] for c in contas_processadas if c['status'] == 'PENDENTE')
+    total_recebido = sum(c['valor'] for c in contas_processadas if c['status'] in ['RECEBIDO', 'PAGO'])
+    total_atrasado = sum(c['valor'] for c in contas_processadas if c['status'] == 'ATRASADO')
+    qtd_pendente = len([c for c in contas_processadas if c['status'] == 'PENDENTE'])
+    qtd_recebido = len([c for c in contas_processadas if c['status'] in ['RECEBIDO', 'PAGO']])
+    qtd_atrasado = len([c for c in contas_processadas if c['status'] == 'ATRASADO'])
+    
+    # Próximo recebimento
+    pendentes_ordenadas = sorted(
+        [c for c in contas_processadas if c['status'] == 'PENDENTE'],
+        key=lambda x: x.get('data_vencimento', '')
+    )
+    proximo = pendentes_ordenadas[0] if pendentes_ordenadas else None
+    
+    # Dados para gráfico
+    from collections import defaultdict
+    grafico_data = defaultdict(lambda: {'pendente': 0, 'recebido': 0, 'atrasado': 0})
+    for conta in contas_processadas:
+        mes = conta.get('data_vencimento', '')[:7]
+        if conta['status'] == 'PENDENTE':
+            grafico_data[mes]['pendente'] += conta['valor']
+        elif conta['status'] in ['RECEBIDO', 'PAGO']:
+            grafico_data[mes]['recebido'] += conta['valor']
+        elif conta['status'] == 'ATRASADO':
+            grafico_data[mes]['atrasado'] += conta['valor']
+    
+    grafico = [
+        {'periodo': k, **v}
+        for k, v in sorted(grafico_data.items())
+    ]
+    
+    return {
+        "kpis": {
+            "total_pendente": total_pendente,
+            "total_recebido": total_recebido,
+            "total_atrasado": total_atrasado,
+            "qtd_pendente": qtd_pendente,
+            "qtd_recebido": qtd_recebido,
+            "qtd_atrasado": qtd_atrasado,
+            "proximo_recebimento": proximo.get('data_vencimento') if proximo else None,
+            "valor_proximo": proximo.get('valor') if proximo else None,
+        },
+        "grafico": grafico,
+        "contas": sorted(contas_processadas, key=lambda x: x.get('data_vencimento', ''))
+    }
+
+
+@api_router.get("/relatorios/aging-pagar/{company_id}")
+async def relatorio_aging_pagar(company_id: str):
+    """Relatório de Aging (Envelhecimento) de Contas a Pagar"""
+    from datetime import datetime, timedelta
+    
+    hoje = datetime.now()
+    hoje_str = hoje.strftime('%Y-%m-%d')
+    
+    # Buscar contas em aberto
+    contas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "PAGAR",
+        "status": {"$nin": ["PAGO", "CANCELADO"]}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Definir faixas
+    faixas_config = [
+        ("Vence Hoje", 0, 0),
+        ("1-7 dias", 1, 7),
+        ("8-15 dias", 8, 15),
+        ("16-30 dias", 16, 30),
+        ("31-60 dias", 31, 60),
+        ("60+ dias", 61, 9999),
+    ]
+    
+    faixas_atraso_config = [
+        ("Atrasado 1-7", -7, -1),
+        ("Atrasado 8-15", -15, -8),
+        ("Atrasado 16-30", -30, -16),
+        ("Atrasado 31-60", -60, -31),
+        ("Atrasado 60+", -9999, -61),
+    ]
+    
+    # Classificar contas nas faixas
+    faixas_result = {f[0]: {'valor': 0, 'contas': []} for f in faixas_config + faixas_atraso_config}
+    
+    total = 0
+    a_vencer = 0
+    atrasado = 0
+    maior_atraso = 0
+    
+    for conta in contas:
+        venc_str = conta.get('data_vencimento', '')
+        if not venc_str:
+            continue
+            
+        venc = datetime.strptime(venc_str, '%Y-%m-%d')
+        dias = (venc - hoje).days
+        conta['dias_atraso'] = -dias if dias < 0 else 0
+        
+        total += conta['valor']
+        
+        if dias >= 0:
+            a_vencer += conta['valor']
+            # Classificar em faixas a vencer
+            for nome, min_d, max_d in faixas_config:
+                if min_d <= dias <= max_d:
+                    faixas_result[nome]['valor'] += conta['valor']
+                    faixas_result[nome]['contas'].append(conta)
+                    break
+        else:
+            atrasado += conta['valor']
+            if -dias > maior_atraso:
+                maior_atraso = -dias
+            # Classificar em faixas de atraso
+            for nome, min_d, max_d in faixas_atraso_config:
+                if min_d <= dias <= max_d:
+                    faixas_result[nome]['valor'] += conta['valor']
+                    faixas_result[nome]['contas'].append(conta)
+                    break
+    
+    # Formatar para resposta
+    faixas = []
+    detalhes = []
+    for nome, _, _ in faixas_config + faixas_atraso_config:
+        if faixas_result[nome]['valor'] > 0:
+            faixas.append({
+                'faixa': nome,
+                'valor': faixas_result[nome]['valor'],
+                'quantidade': len(faixas_result[nome]['contas'])
+            })
+            detalhes.append({
+                'faixa': nome,
+                'total': faixas_result[nome]['valor'],
+                'contas': sorted(faixas_result[nome]['contas'], key=lambda x: x.get('data_vencimento', ''))
+            })
+    
+    return {
+        "resumo": {
+            "total": total,
+            "quantidade": len(contas),
+            "a_vencer": a_vencer,
+            "atrasado": atrasado,
+            "maior_atraso": maior_atraso
+        },
+        "faixas": faixas,
+        "detalhes": detalhes
+    }
+
+
+@api_router.get("/relatorios/fluxo-projetado/{company_id}")
+async def relatorio_fluxo_projetado(company_id: str, dias: int = 30):
+    """Relatório de Fluxo de Caixa Projetado"""
+    from datetime import datetime, timedelta
+    
+    hoje = datetime.now()
+    hoje_str = hoje.strftime('%Y-%m-%d')
+    fim = (hoje + timedelta(days=dias)).strftime('%Y-%m-%d')
+    
+    # Buscar saldo atual (da empresa ou calcular)
+    empresa = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    saldo_atual = empresa.get('saldo_bancario', 0) if empresa else 0
+    
+    # Buscar contas a receber pendentes
+    entradas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "RECEBER",
+        "status": {"$nin": ["RECEBIDO", "PAGO", "CANCELADO"]},
+        "data_vencimento": {"$lte": fim}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Buscar contas a pagar pendentes
+    saidas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "PAGAR",
+        "status": {"$nin": ["PAGO", "CANCELADO"]},
+        "data_vencimento": {"$lte": fim}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Processar status (atrasado ou não)
+    for conta in entradas + saidas:
+        venc = conta.get('data_vencimento', '')
+        if venc < hoje_str:
+            conta['status'] = 'ATRASADO'
+        else:
+            conta['status'] = 'PENDENTE'
+    
+    # Separar atrasados
+    atrasados = []
+    for conta in entradas:
+        if conta['status'] == 'ATRASADO':
+            atrasados.append({
+                **conta,
+                'tipo': 'RECEBER',
+                'entidade': conta.get('cliente', '-'),
+                'dias_atraso': (hoje - datetime.strptime(conta['data_vencimento'], '%Y-%m-%d')).days
+            })
+    for conta in saidas:
+        if conta['status'] == 'ATRASADO':
+            atrasados.append({
+                **conta,
+                'tipo': 'PAGAR',
+                'entidade': conta.get('fornecedor', '-'),
+                'dias_atraso': (hoje - datetime.strptime(conta['data_vencimento'], '%Y-%m-%d')).days
+            })
+    
+    # Gerar projeção dia a dia
+    from collections import defaultdict
+    movimentos = defaultdict(lambda: {'entradas': 0, 'saidas': 0})
+    
+    for conta in entradas:
+        if conta['status'] != 'ATRASADO':
+            movimentos[conta['data_vencimento']]['entradas'] += conta['valor']
+    
+    for conta in saidas:
+        if conta['status'] != 'ATRASADO':
+            movimentos[conta['data_vencimento']]['saidas'] += conta['valor']
+    
+    # Criar array de projeção
+    projecao = []
+    saldo = saldo_atual
+    
+    # Adicionar atrasados ao saldo inicial (como pendência)
+    for a in atrasados:
+        if a['tipo'] == 'RECEBER':
+            # Não soma porque ainda não recebeu
+            pass
+        else:
+            # Não subtrai porque ainda não pagou
+            pass
+    
+    data_atual = hoje
+    for i in range(dias + 1):
+        data_str = data_atual.strftime('%Y-%m-%d')
+        mov = movimentos.get(data_str, {'entradas': 0, 'saidas': 0})
+        saldo = saldo + mov['entradas'] - mov['saidas']
+        projecao.append({
+            'data': data_str,
+            'entradas': mov['entradas'],
+            'saidas': mov['saidas'],
+            'saldo': saldo
+        })
+        data_atual += timedelta(days=1)
+    
+    # Calcular totais
+    total_entradas = sum(c['valor'] for c in entradas if c['status'] != 'ATRASADO')
+    total_saidas = sum(c['valor'] for c in saidas if c['status'] != 'ATRASADO')
+    
+    return {
+        "resumo": {
+            "saldo_atual": saldo_atual,
+            "total_entradas": total_entradas,
+            "total_saidas": total_saidas,
+            "saldo_final": saldo,
+            "qtd_entradas": len([e for e in entradas if e['status'] != 'ATRASADO']),
+            "qtd_saidas": len([s for s in saidas if s['status'] != 'ATRASADO'])
+        },
+        "projecao": projecao,
+        "entradas": sorted(entradas, key=lambda x: x.get('data_vencimento', '')),
+        "saidas": sorted(saidas, key=lambda x: x.get('data_vencimento', '')),
+        "atrasados": sorted(atrasados, key=lambda x: x.get('dias_atraso', 0), reverse=True)
+    }
+
+
 # ========== ROTAS: FUNCIONÁRIOS ==========
 
 # Categorias padrão do sistema
