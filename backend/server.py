@@ -9140,6 +9140,169 @@ async def relatorio_top_indicadores(company_id: str):
     }
 
 
+@api_router.get("/relatorios/alertas/{company_id}")
+async def relatorio_alertas(company_id: str):
+    """Relatório de Alertas Inteligentes - Riscos e oportunidades identificados"""
+    from datetime import datetime, timedelta
+    
+    hoje = datetime.now()
+    hoje_str = hoje.strftime('%Y-%m-%d')
+    
+    alertas = []
+    
+    # 1. Verificar contas a pagar vencendo em 7 dias
+    data_7dias = (hoje + timedelta(days=7)).strftime('%Y-%m-%d')
+    contas_vencer = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "PAGAR",
+        "status": {"$in": ["PENDENTE"]},
+        "data_vencimento": {"$gte": hoje_str, "$lte": data_7dias}
+    }, {"_id": 0}).to_list(100)
+    
+    if contas_vencer:
+        total_vencer = sum(c.get('valor', 0) for c in contas_vencer)
+        alertas.append({
+            "id": len(alertas) + 1,
+            "tipo": "vencimento",
+            "severity": "alto" if total_vencer > 10000 else "medio",
+            "titulo": f"{len(contas_vencer)} contas vencem nos próximos 7 dias",
+            "descricao": f"Total de R$ {total_vencer:,.2f} em contas a pagar vencendo em breve.",
+            "valor": total_vencer,
+            "acao": "Verificar fluxo de caixa"
+        })
+    
+    # 2. Verificar inadimplência
+    contas_atrasadas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "RECEBER",
+        "status": {"$in": ["PENDENTE", "ATRASADO"]},
+        "data_vencimento": {"$lt": hoje_str}
+    }, {"_id": 0}).to_list(100)
+    
+    if contas_atrasadas:
+        total_atrasado = sum(c.get('valor', 0) for c in contas_atrasadas)
+        dias_max = 0
+        for c in contas_atrasadas:
+            try:
+                dv = datetime.strptime(c.get('data_vencimento', hoje_str), '%Y-%m-%d')
+                dias = (hoje - dv).days
+                dias_max = max(dias_max, dias)
+            except:
+                pass
+        
+        severity = "critico" if dias_max > 60 or total_atrasado > 50000 else "alto" if dias_max > 30 else "medio"
+        alertas.append({
+            "id": len(alertas) + 1,
+            "tipo": "inadimplencia",
+            "severity": severity,
+            "titulo": f"{len(contas_atrasadas)} títulos em atraso",
+            "descricao": f"Total de R$ {total_atrasado:,.2f} em inadimplência. Maior atraso: {dias_max} dias.",
+            "valor": total_atrasado,
+            "acao": "Acionar cobrança"
+        })
+    
+    # 3. Verificar orçamentos pendentes há muito tempo
+    data_30dias = (hoje - timedelta(days=30)).strftime('%Y-%m-%d')
+    orcamentos_antigos = await db.orcamentos.find({
+        "company_id": company_id,
+        "status": {"$in": ["rascunho", "enviado", "Rascunho", "Enviado"]},
+        "created_at": {"$lt": data_30dias}
+    }, {"_id": 0}).to_list(100)
+    
+    if orcamentos_antigos:
+        total_orc = sum(o.get('valor_total', 0) or o.get('total', 0) or 0 for o in orcamentos_antigos)
+        alertas.append({
+            "id": len(alertas) + 1,
+            "tipo": "orcamento",
+            "severity": "medio",
+            "titulo": f"{len(orcamentos_antigos)} orçamentos parados há mais de 30 dias",
+            "descricao": f"Potencial de R$ {total_orc:,.2f} aguardando fechamento.",
+            "valor": total_orc,
+            "acao": "Fazer follow-up com clientes"
+        })
+    
+    # 4. Verificar fluxo de caixa negativo
+    receitas_mes = await db.transactions.find({
+        "company_id": company_id,
+        "type": "receita",
+        "date": {"$gte": hoje.replace(day=1).strftime('%Y-%m-%d')}
+    }, {"_id": 0}).to_list(1000)
+    
+    despesas_mes = await db.transactions.find({
+        "company_id": company_id,
+        "type": {"$in": ["despesa", "custo"]},
+        "date": {"$gte": hoje.replace(day=1).strftime('%Y-%m-%d')}
+    }, {"_id": 0}).to_list(1000)
+    
+    total_receitas = sum(r.get('amount', 0) for r in receitas_mes)
+    total_despesas = sum(d.get('amount', 0) for d in despesas_mes)
+    saldo = total_receitas - total_despesas
+    
+    if saldo < 0:
+        alertas.append({
+            "id": len(alertas) + 1,
+            "tipo": "fluxo",
+            "severity": "critico",
+            "titulo": "Fluxo de caixa negativo no mês",
+            "descricao": f"Despesas superam receitas em R$ {abs(saldo):,.2f}.",
+            "valor": saldo,
+            "acao": "Revisar despesas e acelerar recebimentos"
+        })
+    
+    # 5. Oportunidade: Clientes sem compra recente
+    clientes = await db.clientes.find({"empresa_id": company_id}, {"_id": 0}).to_list(500)
+    orcamentos = await db.orcamentos.find({"company_id": company_id}, {"_id": 0}).to_list(5000)
+    
+    clientes_com_compra = set()
+    for o in orcamentos:
+        if o.get('created_at', '')[:7] == hoje.strftime('%Y-%m'):
+            clientes_com_compra.add(o.get('cliente_id'))
+    
+    clientes_inativos = len(clientes) - len(clientes_com_compra)
+    if clientes_inativos > 0 and len(clientes) > 0:
+        alertas.append({
+            "id": len(alertas) + 1,
+            "tipo": "oportunidade",
+            "severity": "baixo",
+            "titulo": f"{clientes_inativos} clientes sem compra este mês",
+            "descricao": "Oportunidade de reativação de clientes inativos.",
+            "valor": clientes_inativos,
+            "acao": "Enviar campanha de reativação"
+        })
+    
+    # 6. Verificar margem baixa
+    if total_receitas > 0:
+        margem = ((total_receitas - total_despesas) / total_receitas) * 100
+        if margem < 20:
+            alertas.append({
+                "id": len(alertas) + 1,
+                "tipo": "margem",
+                "severity": "alto" if margem < 10 else "medio",
+                "titulo": f"Margem de lucro baixa: {margem:.1f}%",
+                "descricao": "A margem está abaixo do ideal (20%). Revisar precificação.",
+                "valor": margem,
+                "acao": "Revisar custos e preços"
+            })
+    
+    # Ordenar por severidade
+    ordem_severity = {'critico': 0, 'alto': 1, 'medio': 2, 'baixo': 3}
+    alertas.sort(key=lambda x: ordem_severity.get(x['severity'], 4))
+    
+    # Contar por severidade
+    resumo = {
+        'criticos': len([a for a in alertas if a['severity'] == 'critico']),
+        'altos': len([a for a in alertas if a['severity'] == 'alto']),
+        'medios': len([a for a in alertas if a['severity'] == 'medio']),
+        'baixos': len([a for a in alertas if a['severity'] == 'baixo']),
+        'total': len(alertas)
+    }
+    
+    return {
+        "resumo": resumo,
+        "alertas": alertas
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
