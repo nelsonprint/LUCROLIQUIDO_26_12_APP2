@@ -35,6 +35,7 @@ export const Sidebar = ({ user, onLogout, onNavigate }) => {
     { path: '/relatorios', icon: BarChart3, label: 'Relatórios' },
     { path: '/categorias', icon: BookOpen, label: 'Categorias' },
     { path: '/clientes', icon: Users, label: 'Clientes' },
+    { path: '/fornecedores', icon: Truck, label: 'Fornecedores' },
     { path: '/funcionarios', icon: UserCheck, label: 'Funcionários' },
     { path: '/empresa', icon: Shield, label: 'Empresa' },
     { path: '/meta-mensal', icon: Target, label: 'Meta Mensal' },
