@@ -8642,6 +8642,79 @@ async def relatorio_servicos_materiais(company_id: str, periodo: str = 'mes'):
     }
 
 
+@api_router.get("/relatorios/clientes-cadastro/{company_id}")
+async def relatorio_clientes_cadastro(company_id: str, status: str = None):
+    """Relatório de Cadastro de Clientes - Lista completa com filtros"""
+    from datetime import datetime
+    
+    hoje = datetime.now()
+    
+    # Buscar clientes
+    query = {"empresa_id": company_id}
+    if status:
+        query["status"] = status
+    
+    clientes = await db.clientes.find(query, {"_id": 0}).to_list(5000)
+    
+    # Buscar orçamentos para calcular valores por cliente
+    orcamentos = await db.orcamentos.find({"company_id": company_id}, {"_id": 0}).to_list(10000)
+    
+    # Mapear valores por cliente
+    valores_cliente = {}
+    for orc in orcamentos:
+        cliente_id = orc.get('cliente_id')
+        if cliente_id:
+            if cliente_id not in valores_cliente:
+                valores_cliente[cliente_id] = {'total': 0, 'quantidade': 0}
+            valores_cliente[cliente_id]['total'] += orc.get('valor_total', 0) or orc.get('total', 0) or 0
+            valores_cliente[cliente_id]['quantidade'] += 1
+    
+    # Enriquecer dados dos clientes
+    clientes_enriquecidos = []
+    total_valor = 0
+    ativos = 0
+    inativos = 0
+    
+    for cliente in clientes:
+        cliente_id = cliente.get('id')
+        valores = valores_cliente.get(cliente_id, {'total': 0, 'quantidade': 0})
+        
+        cliente_data = {
+            'id': cliente_id,
+            'nome': cliente.get('nome', '-'),
+            'email': cliente.get('email', '-'),
+            'telefone': cliente.get('telefone', '-'),
+            'cidade': cliente.get('cidade', '-'),
+            'uf': cliente.get('uf', '-'),
+            'status': cliente.get('status', 'Ativo'),
+            'created_at': cliente.get('created_at', '-'),
+            'valor_total': valores['total'],
+            'qtd_orcamentos': valores['quantidade']
+        }
+        
+        clientes_enriquecidos.append(cliente_data)
+        total_valor += valores['total']
+        
+        if cliente.get('status', 'Ativo') == 'Ativo':
+            ativos += 1
+        else:
+            inativos += 1
+    
+    # Ordenar por valor total
+    clientes_enriquecidos.sort(key=lambda x: x['valor_total'], reverse=True)
+    
+    return {
+        "resumo": {
+            "total_clientes": len(clientes),
+            "ativos": ativos,
+            "inativos": inativos,
+            "valor_total": total_valor,
+            "ticket_medio": total_valor / len(clientes) if clientes else 0
+        },
+        "clientes": clientes_enriquecidos
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
