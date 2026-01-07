@@ -8548,6 +8548,169 @@ async def excluir_funcionario(funcionario_id: str):
     return {"message": "Funcionário excluído"}
 
 
+# ========== ENDPOINTS: FORNECEDORES ==========
+
+@api_router.get("/fornecedores/{empresa_id}")
+async def listar_fornecedores(empresa_id: str, status: Optional[str] = None):
+    """Listar todos os fornecedores de uma empresa"""
+    query = {"empresa_id": empresa_id}
+    if status:
+        query["status"] = status
+    
+    fornecedores = await db.fornecedores.find(query, {"_id": 0}).sort("nome", 1).to_list(1000)
+    return fornecedores
+
+
+@api_router.get("/fornecedores/{empresa_id}/{fornecedor_id}")
+async def obter_fornecedor(empresa_id: str, fornecedor_id: str):
+    """Obter um fornecedor específico"""
+    fornecedor = await db.fornecedores.find_one(
+        {"id": fornecedor_id, "empresa_id": empresa_id}, 
+        {"_id": 0}
+    )
+    if not fornecedor:
+        raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+    return fornecedor
+
+
+@api_router.post("/fornecedores")
+async def criar_fornecedor(fornecedor_data: FornecedorCreate):
+    """Criar novo fornecedor"""
+    fornecedor = Fornecedor(**fornecedor_data.model_dump())
+    
+    doc = fornecedor.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    
+    await db.fornecedores.insert_one(doc)
+    
+    return {"message": "Fornecedor criado com sucesso!", "id": fornecedor.id}
+
+
+@api_router.put("/fornecedores/{fornecedor_id}")
+async def atualizar_fornecedor(fornecedor_id: str, fornecedor_data: FornecedorCreate):
+    """Atualizar fornecedor existente"""
+    update_data = fornecedor_data.model_dump()
+    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.fornecedores.update_one(
+        {"id": fornecedor_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+    
+    return {"message": "Fornecedor atualizado com sucesso!"}
+
+
+@api_router.patch("/fornecedores/{fornecedor_id}/status")
+async def atualizar_status_fornecedor(fornecedor_id: str, status: str = Body(..., embed=True)):
+    """Atualizar status do fornecedor"""
+    result = await db.fornecedores.update_one(
+        {"id": fornecedor_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+    
+    return {"message": "Status atualizado"}
+
+
+@api_router.delete("/fornecedores/{fornecedor_id}")
+async def excluir_fornecedor(fornecedor_id: str):
+    """Excluir fornecedor"""
+    result = await db.fornecedores.delete_one({"id": fornecedor_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+    
+    return {"message": "Fornecedor excluído"}
+
+
+# ========== ENDPOINT: RELATÓRIO RANKING DE FORNECEDORES ==========
+
+@api_router.get("/relatorios/fornecedores-ranking/{company_id}")
+async def relatorio_fornecedores_ranking(company_id: str, periodo: str = "ano"):
+    """Relatório de ranking de fornecedores por valor pago"""
+    from datetime import datetime as dt
+    
+    # Calcular período
+    hoje = dt.now()
+    if periodo == "mes":
+        data_inicio = hoje.replace(day=1).strftime("%Y-%m-%d")
+    elif periodo == "trimestre":
+        mes_inicio = ((hoje.month - 1) // 3) * 3 + 1
+        data_inicio = hoje.replace(month=mes_inicio, day=1).strftime("%Y-%m-%d")
+    else:  # ano
+        data_inicio = hoje.replace(month=1, day=1).strftime("%Y-%m-%d")
+    
+    data_fim = hoje.strftime("%Y-%m-%d")
+    
+    # Buscar contas a pagar com fornecedor
+    contas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "PAGAR",
+        "fornecedor_id": {"$exists": True, "$ne": None}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Agrupar por fornecedor
+    fornecedores_dict = {}
+    for conta in contas:
+        forn_id = conta.get("fornecedor_id")
+        if not forn_id:
+            continue
+            
+        if forn_id not in fornecedores_dict:
+            fornecedores_dict[forn_id] = {
+                "fornecedor_id": forn_id,
+                "nome": conta.get("fornecedor_nome", "Desconhecido"),
+                "total_pago": 0,
+                "total_pendente": 0,
+                "quantidade": 0
+            }
+        
+        fornecedores_dict[forn_id]["quantidade"] += 1
+        
+        # Verificar se a conta está no período
+        data_venc = conta.get("data_vencimento", "")
+        if data_inicio <= data_venc <= data_fim:
+            if conta.get("status") == "PAGO":
+                fornecedores_dict[forn_id]["total_pago"] += conta.get("valor", 0)
+            elif conta.get("status") in ["PENDENTE", "ATRASADO"]:
+                fornecedores_dict[forn_id]["total_pendente"] += conta.get("valor", 0)
+    
+    # Converter para lista e ordenar por total pago
+    fornecedores_list = list(fornecedores_dict.values())
+    fornecedores_list.sort(key=lambda x: x["total_pago"], reverse=True)
+    
+    # Adicionar posição
+    for i, f in enumerate(fornecedores_list, 1):
+        f["posicao"] = i
+    
+    # Calcular resumo
+    total_pago = sum(f["total_pago"] for f in fornecedores_list)
+    total_fornecedores = len(fornecedores_list)
+    top1 = fornecedores_list[0] if fornecedores_list else None
+    
+    return {
+        "resumo": {
+            "total_pago": total_pago,
+            "total_fornecedores": total_fornecedores,
+            "top1_nome": top1["nome"] if top1 else "-",
+            "top1_valor": top1["total_pago"] if top1 else 0,
+            "ticket_medio": total_pago / total_fornecedores if total_fornecedores > 0 else 0
+        },
+        "fornecedores": fornecedores_list,
+        "periodo": {
+            "tipo": periodo,
+            "inicio": data_inicio,
+            "fim": data_fim
+        }
+    }
+
+
 # ========== ROTAS: SUPERVISOR / CRONOGRAMA ==========
 
 @api_router.post("/supervisor/login")
