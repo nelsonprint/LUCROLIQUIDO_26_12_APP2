@@ -98,7 +98,7 @@ relatorios_module:
 
   - task: "Relatório - Fluxo de Caixa Projetado"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/pages/relatorios/RelFluxoProjetado.jsx"
     priority: "critical"
     needs_retesting: false
@@ -117,6 +117,9 @@ relatorios_module:
       - working: false
         agent: "testing"
         comment: "Same authentication/routing issue prevents frontend testing. Backend API working correctly."
+      - working: true
+        agent: "testing"
+        comment: "✅ NAVIGATION VERIFIED: Route /relatorios/fluxo-projetado now works correctly. Page loads without redirecting to dashboard. Navigation issue resolved."
 
   - task: "Backend - Endpoints de Relatórios"
     implemented: true
