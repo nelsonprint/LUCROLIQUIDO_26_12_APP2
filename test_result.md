@@ -161,7 +161,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Módulo de Relatórios - Fase 1 e 2"
+    - "Authentication/Session Management Fix for Reports Module"
+    - "Frontend routing issue preventing access to /relatorios"
+  stuck_tasks:
+    - "Central de Relatórios - Página Principal"
+    - "All individual report pages (authentication dependency)"
   test_priority: "critical_first"
 
 agent_communication:
