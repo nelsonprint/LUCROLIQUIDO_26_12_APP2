@@ -24,10 +24,10 @@ relatorios_module:
 
   - task: "Relatório - Contas a Pagar por Período"
     implemented: true
-    working: needs_testing
+    working: false
     file: "/app/frontend/src/pages/relatorios/RelContasPagar.jsx"
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     backend_endpoint: "GET /api/relatorios/contas-pagar/{company_id}"
     features:
       - "KPIs: Total pendente, pago, atrasado, próximo vencimento"
@@ -39,6 +39,9 @@ relatorios_module:
       - working: true
         agent: "main"
         comment: "Backend testado via curl. KPIs retornando corretamente."
+      - working: false
+        agent: "testing"
+        comment: "Backend API confirmed working (returns KPIs, chart data, and account details). Frontend page cannot be accessed due to authentication/routing issue. User redirected to landing page when accessing /relatorios/pagar-periodo."
 
   - task: "Relatório - Contas a Receber por Período"
     implemented: true
