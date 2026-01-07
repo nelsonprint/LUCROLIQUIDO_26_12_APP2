@@ -148,6 +148,21 @@ function App() {
           <Route path="/relatorios/fluxo-projetado" element={<RelFluxoProjetado user={user} onLogout={handleLogout} />} />
           <Route path="/relatorios/despesas-categoria" element={<RelDespesasCategoria user={user} onLogout={handleLogout} />} />
           <Route path="/relatorios/clientes-ranking" element={<RelClientesRanking user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/fornecedores-ranking" element={<RelFornecedoresRanking user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/inadimplencia" element={<RelInadimplencia user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/fluxo-realizado" element={<RelFluxoRealizado user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/dre-gerencial" element={<RelDREGerencial user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/dfc-completo" element={<RelDFCCompleto user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/funil-orcamentos" element={<RelFunilOrcamentos user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/orcamentos-periodo" element={<RelOrcamentosPeriodo user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/servicos-materiais" element={<RelServicosMateriais user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/clientes-cadastro" element={<RelClientesCadastro user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/clientes-recorrencia" element={<RelClientesRecorrencia user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/clientes-inadimplencia" element={<RelClientesInadimplencia user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/top-indicadores" element={<RelTopIndicadores user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/alertas" element={<RelAlertas user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/comparativo" element={<RelComparativo user={user} onLogout={handleLogout} />} />
+          <Route path="/relatorios/pareto" element={<RelPareto user={user} onLogout={handleLogout} />} />
           <Route path="/config-orcamento" element={<ConfiguracaoOrcamento user={user} onLogout={handleLogout} />} />
           <Route path="/assinatura" element={<Assinatura user={user} onLogout={handleLogout} />} />
           <Route 
