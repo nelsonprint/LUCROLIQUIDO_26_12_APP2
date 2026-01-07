@@ -5563,6 +5563,44 @@ async def update_status_conta_receber(conta_id: str, status_data: ContaStatusUpd
 
 # ===== RESUMOS E CONSULTAS =====
 
+@api_router.get("/contas/resumo")
+async def get_resumo_contas(company_id: str):
+    """Resumo de contas com alertas para dashboard do proprietário"""
+    from datetime import datetime, timedelta
+    
+    hoje = datetime.now().strftime("%Y-%m-%d")
+    proximos_7d = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
+    
+    # Contas a pagar atrasadas
+    atrasados_pagar = await db.contas.count_documents({
+        "company_id": company_id,
+        "tipo": "PAGAR",
+        "status": {"$nin": ["PAGO", "CANCELADO"]},
+        "data_vencimento": {"$lt": hoje}
+    })
+    
+    # Contas a receber atrasadas
+    atrasados_receber = await db.contas.count_documents({
+        "company_id": company_id,
+        "tipo": "RECEBER",
+        "status": {"$nin": ["RECEBIDO", "PAGO", "CANCELADO"]},
+        "data_vencimento": {"$lt": hoje}
+    })
+    
+    # Contas vencendo nos próximos 7 dias
+    vencendo_7d = await db.contas.count_documents({
+        "company_id": company_id,
+        "status": {"$nin": ["PAGO", "RECEBIDO", "CANCELADO"]},
+        "data_vencimento": {"$gte": hoje, "$lte": proximos_7d}
+    })
+    
+    return {
+        "atrasados_pagar": atrasados_pagar,
+        "atrasados_receber": atrasados_receber,
+        "vencendo_7d": vencendo_7d
+    }
+
+
 @api_router.get("/contas/resumo-mensal")
 async def get_resumo_mensal(company_id: str, mes: str):
     """Resumo mensal de contas a pagar e receber"""
