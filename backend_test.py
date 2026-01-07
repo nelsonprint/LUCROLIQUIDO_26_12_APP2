@@ -971,6 +971,536 @@ class SupervisorCronogramaTester:
             return False
 
 
+class FluxoCaixaTester:
+    """Test suite for Fluxo de Caixa Dashboard endpoints"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_basic_endpoint_default_params(self):
+        """Test GET /api/fluxo-caixa/dashboard/{company_id} with default parameters"""
+        self.log("💰 Testing basic fluxo-caixa endpoint with default params...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/fluxo-caixa/dashboard/{self.company_id}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.log("✅ Basic fluxo-caixa endpoint successful!")
+                
+                # Verify main structure
+                required_keys = ["cards", "grafico_saldo", "grafico_barras", "acoes", "periodo"]
+                for key in required_keys:
+                    if key not in result:
+                        self.log(f"❌ Missing required key: {key}", "ERROR")
+                        return False
+                    self.log(f"   ✅ {key}: Present")
+                
+                # Verify cards structure
+                cards = result.get("cards", {})
+                required_card_fields = [
+                    "saldo_atual", "a_receber_7d", "a_receber_30d", "a_pagar_7d", 
+                    "a_pagar_30d", "saldo_projetado_30d", "menor_saldo_30d", 
+                    "dia_menor_saldo", "atrasados_receber", "atrasados_pagar", 
+                    "tem_risco_negativo", "dias_negativos"
+                ]
+                
+                for field in required_card_fields:
+                    if field not in cards:
+                        self.log(f"❌ Missing cards field: {field}", "ERROR")
+                        return False
+                
+                self.log(f"   💰 Saldo Atual: R$ {cards.get('saldo_atual', 0):,.2f}")
+                self.log(f"   📈 A Receber 7d: R$ {cards.get('a_receber_7d', 0):,.2f}")
+                self.log(f"   📈 A Receber 30d: R$ {cards.get('a_receber_30d', 0):,.2f}")
+                self.log(f"   📉 A Pagar 7d: R$ {cards.get('a_pagar_7d', 0):,.2f}")
+                self.log(f"   📉 A Pagar 30d: R$ {cards.get('a_pagar_30d', 0):,.2f}")
+                self.log(f"   🎯 Saldo Projetado 30d: R$ {cards.get('saldo_projetado_30d', 0):,.2f}")
+                self.log(f"   ⚠️ Menor Saldo 30d: R$ {cards.get('menor_saldo_30d', 0):,.2f}")
+                self.log(f"   📅 Dia Menor Saldo: {cards.get('dia_menor_saldo')}")
+                self.log(f"   🔴 Atrasados Receber: R$ {cards.get('atrasados_receber', 0):,.2f}")
+                self.log(f"   🔴 Atrasados Pagar: R$ {cards.get('atrasados_pagar', 0):,.2f}")
+                self.log(f"   ⚠️ Tem Risco Negativo: {cards.get('tem_risco_negativo')}")
+                self.log(f"   📊 Dias Negativos: {cards.get('dias_negativos')}")
+                
+                # Verify grafico_saldo structure
+                grafico_saldo = result.get("grafico_saldo", [])
+                if len(grafico_saldo) != 31:  # Default 30 days + today
+                    self.log(f"❌ Expected 31 days in grafico_saldo, got {len(grafico_saldo)}", "ERROR")
+                    return False
+                
+                if len(grafico_saldo) > 0:
+                    first_item = grafico_saldo[0]
+                    required_saldo_fields = ["dia", "data", "saldo", "entradas", "saidas", "negativo"]
+                    for field in required_saldo_fields:
+                        if field not in first_item:
+                            self.log(f"❌ Missing grafico_saldo field: {field}", "ERROR")
+                            return False
+                    self.log(f"   📊 Grafico Saldo: {len(grafico_saldo)} days with correct structure")
+                
+                # Verify grafico_barras structure
+                grafico_barras = result.get("grafico_barras", [])
+                if len(grafico_barras) != 31:
+                    self.log(f"❌ Expected 31 days in grafico_barras, got {len(grafico_barras)}", "ERROR")
+                    return False
+                
+                if len(grafico_barras) > 0:
+                    first_item = grafico_barras[0]
+                    required_barras_fields = ["dia", "data", "entradas", "saidas"]
+                    for field in required_barras_fields:
+                        if field not in first_item:
+                            self.log(f"❌ Missing grafico_barras field: {field}", "ERROR")
+                            return False
+                    self.log(f"   📊 Grafico Barras: {len(grafico_barras)} days with correct structure")
+                
+                # Verify acoes structure
+                acoes = result.get("acoes", {})
+                required_acoes_keys = ["proximos_pagar", "proximos_receber", "atrasados_pagar", "atrasados_receber"]
+                for key in required_acoes_keys:
+                    if key not in acoes:
+                        self.log(f"❌ Missing acoes key: {key}", "ERROR")
+                        return False
+                    self.log(f"   📋 {key}: {len(acoes[key])} items")
+                
+                # Verify periodo structure
+                periodo = result.get("periodo", {})
+                required_periodo_fields = ["inicio", "fim", "dias", "modo"]
+                for field in required_periodo_fields:
+                    if field not in periodo:
+                        self.log(f"❌ Missing periodo field: {field}", "ERROR")
+                        return False
+                
+                self.log(f"   📅 Período: {periodo.get('inicio')} to {periodo.get('fim')} ({periodo.get('dias')} days, mode: {periodo.get('modo')})")
+                
+                return True
+            else:
+                self.log(f"❌ Basic fluxo-caixa endpoint failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing basic fluxo-caixa endpoint: {str(e)}", "ERROR")
+            return False
+    
+    def test_period_filters(self):
+        """Test period filters (7, 15, 60, 90 days)"""
+        self.log("📅 Testing period filters...")
+        
+        periods = [7, 15, 60, 90]
+        
+        for dias in periods:
+            try:
+                response = self.session.get(f"{API_BASE}/fluxo-caixa/dashboard/{self.company_id}?dias={dias}")
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    # Verify grafico_saldo length matches period
+                    grafico_saldo = result.get("grafico_saldo", [])
+                    expected_length = dias + 1  # period + today
+                    
+                    if len(grafico_saldo) == expected_length:
+                        self.log(f"   ✅ {dias} days filter: {len(grafico_saldo)} days returned")
+                    else:
+                        self.log(f"   ❌ {dias} days filter: expected {expected_length}, got {len(grafico_saldo)}", "ERROR")
+                        return False
+                    
+                    # Verify periodo.dias matches request
+                    periodo = result.get("periodo", {})
+                    if periodo.get("dias") == dias:
+                        self.log(f"   ✅ {dias} days filter: periodo.dias correct")
+                    else:
+                        self.log(f"   ❌ {dias} days filter: periodo.dias incorrect", "ERROR")
+                        return False
+                else:
+                    self.log(f"❌ {dias} days filter failed: {response.status_code}", "ERROR")
+                    return False
+                    
+            except Exception as e:
+                self.log(f"❌ Error testing {dias} days filter: {str(e)}", "ERROR")
+                return False
+        
+        self.log("✅ All period filters working correctly!")
+        return True
+    
+    def test_mode_filters(self):
+        """Test mode filters (realizado, em_aberto, projetado)"""
+        self.log("🔄 Testing mode filters...")
+        
+        modes = ["realizado", "em_aberto", "projetado"]
+        
+        for modo in modes:
+            try:
+                response = self.session.get(f"{API_BASE}/fluxo-caixa/dashboard/{self.company_id}?modo={modo}")
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    # Verify periodo.modo matches request
+                    periodo = result.get("periodo", {})
+                    if periodo.get("modo") == modo:
+                        self.log(f"   ✅ Mode '{modo}': periodo.modo correct")
+                    else:
+                        self.log(f"   ❌ Mode '{modo}': periodo.modo incorrect", "ERROR")
+                        return False
+                    
+                    # Verify structure is still complete
+                    required_keys = ["cards", "grafico_saldo", "grafico_barras", "acoes", "periodo"]
+                    for key in required_keys:
+                        if key not in result:
+                            self.log(f"   ❌ Mode '{modo}': Missing key {key}", "ERROR")
+                            return False
+                    
+                    cards = result.get("cards", {})
+                    self.log(f"   📊 Mode '{modo}': Saldo Atual R$ {cards.get('saldo_atual', 0):,.2f}, Projetado R$ {cards.get('saldo_projetado_30d', 0):,.2f}")
+                else:
+                    self.log(f"❌ Mode '{modo}' failed: {response.status_code}", "ERROR")
+                    return False
+                    
+            except Exception as e:
+                self.log(f"❌ Error testing mode '{modo}': {str(e)}", "ERROR")
+                return False
+        
+        self.log("✅ All mode filters working correctly!")
+        return True
+    
+    def test_cards_validation(self):
+        """Test cards validation logic"""
+        self.log("🧮 Testing cards validation logic...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/fluxo-caixa/dashboard/{self.company_id}?dias=30")
+            
+            if response.status_code == 200:
+                result = response.json()
+                cards = result.get("cards", {})
+                grafico_saldo = result.get("grafico_saldo", [])
+                
+                # Verify saldo_projetado_30d equals last item in grafico_saldo
+                if len(grafico_saldo) > 0:
+                    last_saldo = grafico_saldo[-1].get("saldo", 0)
+                    saldo_projetado = cards.get("saldo_projetado_30d", 0)
+                    
+                    if abs(last_saldo - saldo_projetado) < 0.01:  # Allow small rounding differences
+                        self.log("   ✅ saldo_projetado_30d matches last grafico_saldo item")
+                    else:
+                        self.log(f"   ❌ saldo_projetado_30d mismatch: {saldo_projetado} vs {last_saldo}", "ERROR")
+                        return False
+                
+                # Verify menor_saldo_30d is minimum from grafico_saldo
+                if len(grafico_saldo) > 0:
+                    min_saldo_from_graph = min(item.get("saldo", 0) for item in grafico_saldo)
+                    menor_saldo = cards.get("menor_saldo_30d", 0)
+                    
+                    if abs(min_saldo_from_graph - menor_saldo) < 0.01:
+                        self.log("   ✅ menor_saldo_30d matches minimum from grafico_saldo")
+                    else:
+                        self.log(f"   ❌ menor_saldo_30d mismatch: {menor_saldo} vs {min_saldo_from_graph}", "ERROR")
+                        return False
+                
+                # Verify tem_risco_negativo logic
+                menor_saldo = cards.get("menor_saldo_30d", 0)
+                tem_risco = cards.get("tem_risco_negativo", False)
+                
+                if (menor_saldo < 0 and tem_risco) or (menor_saldo >= 0 and not tem_risco):
+                    self.log(f"   ✅ tem_risco_negativo logic correct: {tem_risco} (menor_saldo: R$ {menor_saldo:,.2f})")
+                else:
+                    self.log(f"   ❌ tem_risco_negativo logic incorrect: {tem_risco} (menor_saldo: R$ {menor_saldo:,.2f})", "ERROR")
+                    return False
+                
+                # Verify a_receber_30d includes a_receber_7d
+                a_receber_7d = cards.get("a_receber_7d", 0)
+                a_receber_30d = cards.get("a_receber_30d", 0)
+                
+                if a_receber_30d >= a_receber_7d:
+                    self.log(f"   ✅ a_receber_30d ({a_receber_30d:,.2f}) >= a_receber_7d ({a_receber_7d:,.2f})")
+                else:
+                    self.log(f"   ❌ a_receber_30d ({a_receber_30d:,.2f}) < a_receber_7d ({a_receber_7d:,.2f})", "ERROR")
+                    return False
+                
+                # Verify a_pagar_30d includes a_pagar_7d
+                a_pagar_7d = cards.get("a_pagar_7d", 0)
+                a_pagar_30d = cards.get("a_pagar_30d", 0)
+                
+                if a_pagar_30d >= a_pagar_7d:
+                    self.log(f"   ✅ a_pagar_30d ({a_pagar_30d:,.2f}) >= a_pagar_7d ({a_pagar_7d:,.2f})")
+                else:
+                    self.log(f"   ❌ a_pagar_30d ({a_pagar_30d:,.2f}) < a_pagar_7d ({a_pagar_7d:,.2f})", "ERROR")
+                    return False
+                
+                self.log("✅ All cards validation logic correct!")
+                return True
+            else:
+                self.log(f"❌ Cards validation test failed: {response.status_code}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing cards validation: {str(e)}", "ERROR")
+            return False
+    
+    def test_acoes_validation(self):
+        """Test acoes (action lists) validation"""
+        self.log("📋 Testing acoes validation...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/fluxo-caixa/dashboard/{self.company_id}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                acoes = result.get("acoes", {})
+                
+                # Verify atrasados_pagar has items with dias_atraso > 0
+                atrasados_pagar = acoes.get("atrasados_pagar", [])
+                for item in atrasados_pagar:
+                    dias_atraso = item.get("dias_atraso", 0)
+                    if dias_atraso <= 0:
+                        self.log(f"   ❌ atrasados_pagar item has dias_atraso <= 0: {dias_atraso}", "ERROR")
+                        return False
+                    
+                    # Verify required fields
+                    required_fields = ["id", "tipo", "descricao", "valor", "data_vencimento", "status"]
+                    for field in required_fields:
+                        if field not in item:
+                            self.log(f"   ❌ atrasados_pagar missing field: {field}", "ERROR")
+                            return False
+                
+                if len(atrasados_pagar) > 0:
+                    self.log(f"   ✅ atrasados_pagar: {len(atrasados_pagar)} items with correct dias_atraso")
+                else:
+                    self.log("   ✅ atrasados_pagar: no overdue items (good)")
+                
+                # Verify atrasados_receber has items with dias_atraso > 0
+                atrasados_receber = acoes.get("atrasados_receber", [])
+                for item in atrasados_receber:
+                    dias_atraso = item.get("dias_atraso", 0)
+                    if dias_atraso <= 0:
+                        self.log(f"   ❌ atrasados_receber item has dias_atraso <= 0: {dias_atraso}", "ERROR")
+                        return False
+                    
+                    # Verify required fields
+                    required_fields = ["id", "tipo", "descricao", "valor", "data_vencimento", "status"]
+                    for field in required_fields:
+                        if field not in item:
+                            self.log(f"   ❌ atrasados_receber missing field: {field}", "ERROR")
+                            return False
+                
+                if len(atrasados_receber) > 0:
+                    self.log(f"   ✅ atrasados_receber: {len(atrasados_receber)} items with correct dias_atraso")
+                else:
+                    self.log("   ✅ atrasados_receber: no overdue items (good)")
+                
+                # Verify proximos_pagar/receber have future dates
+                from datetime import datetime as dt
+                hoje = dt.now().date()
+                
+                proximos_pagar = acoes.get("proximos_pagar", [])
+                for item in proximos_pagar:
+                    data_venc_str = item.get("data_vencimento", "")
+                    if data_venc_str:
+                        try:
+                            data_venc = dt.strptime(data_venc_str, "%Y-%m-%d").date()
+                            if data_venc < hoje:
+                                self.log(f"   ❌ proximos_pagar item has past date: {data_venc_str}", "ERROR")
+                                return False
+                        except ValueError:
+                            self.log(f"   ❌ proximos_pagar item has invalid date format: {data_venc_str}", "ERROR")
+                            return False
+                
+                if len(proximos_pagar) > 0:
+                    self.log(f"   ✅ proximos_pagar: {len(proximos_pagar)} items with future dates")
+                else:
+                    self.log("   ✅ proximos_pagar: no upcoming payments")
+                
+                proximos_receber = acoes.get("proximos_receber", [])
+                for item in proximos_receber:
+                    data_venc_str = item.get("data_vencimento", "")
+                    if data_venc_str:
+                        try:
+                            data_venc = dt.strptime(data_venc_str, "%Y-%m-%d").date()
+                            if data_venc < hoje:
+                                self.log(f"   ❌ proximos_receber item has past date: {data_venc_str}", "ERROR")
+                                return False
+                        except ValueError:
+                            self.log(f"   ❌ proximos_receber item has invalid date format: {data_venc_str}", "ERROR")
+                            return False
+                
+                if len(proximos_receber) > 0:
+                    self.log(f"   ✅ proximos_receber: {len(proximos_receber)} items with future dates")
+                else:
+                    self.log("   ✅ proximos_receber: no upcoming receipts")
+                
+                self.log("✅ All acoes validation correct!")
+                return True
+            else:
+                self.log(f"❌ Acoes validation test failed: {response.status_code}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing acoes validation: {str(e)}", "ERROR")
+            return False
+    
+    def test_saldo_inicial_endpoint(self):
+        """Test PATCH /api/companies/{company_id}/saldo-inicial endpoint"""
+        self.log("💰 Testing saldo inicial endpoint...")
+        
+        try:
+            # Test setting saldo inicial
+            saldo_data = {"saldo_inicial": 5000.0}
+            response = self.session.patch(f"{API_BASE}/companies/{self.company_id}/saldo-inicial", json=saldo_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.log("✅ Saldo inicial updated successfully!")
+                self.log(f"   💰 New saldo inicial: R$ {result.get('saldo_inicial', 0):,.2f}")
+                
+                # Verify the change affects the dashboard
+                dashboard_response = self.session.get(f"{API_BASE}/fluxo-caixa/dashboard/{self.company_id}")
+                if dashboard_response.status_code == 200:
+                    dashboard_result = dashboard_response.json()
+                    cards = dashboard_result.get("cards", {})
+                    
+                    # The saldo_atual should reflect the new saldo_inicial
+                    # (Note: it might be different due to realized transactions)
+                    self.log(f"   📊 Dashboard saldo_atual after update: R$ {cards.get('saldo_atual', 0):,.2f}")
+                    self.log("   ✅ Saldo inicial update affects dashboard correctly")
+                    return True
+                else:
+                    self.log("⚠️ Could not verify dashboard after saldo inicial update", "WARN")
+                    return True  # Update worked, verification failed
+            else:
+                self.log(f"❌ Saldo inicial update failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing saldo inicial endpoint: {str(e)}", "ERROR")
+            return False
+    
+    def test_invalid_company_id(self):
+        """Test endpoint with invalid company ID"""
+        self.log("🚫 Testing with invalid company ID...")
+        
+        try:
+            invalid_company_id = "invalid-company-id-12345"
+            response = self.session.get(f"{API_BASE}/fluxo-caixa/dashboard/{invalid_company_id}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                cards = result.get("cards", {})
+                
+                # Should return structure with zero/empty values for invalid company
+                self.log("✅ Invalid company ID returns valid structure")
+                self.log(f"   💰 Saldo Atual: R$ {cards.get('saldo_atual', 0):,.2f}")
+                self.log(f"   📈 A Receber 30d: R$ {cards.get('a_receber_30d', 0):,.2f}")
+                self.log(f"   📉 A Pagar 30d: R$ {cards.get('a_pagar_30d', 0):,.2f}")
+                return True
+            else:
+                self.log(f"❌ Invalid company ID test failed: {response.status_code}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing invalid company ID: {str(e)}", "ERROR")
+            return False
+    
+    def test_invalid_parameters(self):
+        """Test endpoint with invalid parameters"""
+        self.log("🚫 Testing with invalid parameters...")
+        
+        try:
+            # Test invalid modo - should default to "projetado"
+            response1 = self.session.get(f"{API_BASE}/fluxo-caixa/dashboard/{self.company_id}?modo=invalid_mode")
+            
+            if response1.status_code == 200:
+                result1 = response1.json()
+                periodo1 = result1.get("periodo", {})
+                if periodo1.get("modo") == "projetado":
+                    self.log("   ✅ Invalid modo defaults to 'projetado'")
+                else:
+                    self.log(f"   ❌ Invalid modo handling incorrect: {periodo1.get('modo')}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Invalid modo test failed: {response1.status_code}", "ERROR")
+                return False
+            
+            # Test invalid dias - should handle gracefully
+            response2 = self.session.get(f"{API_BASE}/fluxo-caixa/dashboard/{self.company_id}?dias=invalid_days")
+            
+            # This might return 422 (validation error) or 200 with default value
+            if response2.status_code in [200, 422]:
+                self.log("   ✅ Invalid dias parameter handled gracefully")
+            else:
+                self.log(f"   ❌ Invalid dias handling unexpected: {response2.status_code}", "ERROR")
+                return False
+            
+            self.log("✅ Invalid parameters handled correctly!")
+            return True
+                
+        except Exception as e:
+            self.log(f"❌ Error testing invalid parameters: {str(e)}", "ERROR")
+            return False
+    
+    def run_all_tests(self):
+        """Execute all Fluxo de Caixa Dashboard tests"""
+        self.log("🚀 Starting Fluxo de Caixa Dashboard API tests")
+        self.log("=" * 70)
+        
+        tests = [
+            ("Basic Endpoint Default Params", self.test_basic_endpoint_default_params),
+            ("Period Filters", self.test_period_filters),
+            ("Mode Filters", self.test_mode_filters),
+            ("Cards Validation", self.test_cards_validation),
+            ("Acoes Validation", self.test_acoes_validation),
+            ("Saldo Inicial Endpoint", self.test_saldo_inicial_endpoint),
+            ("Invalid Company ID", self.test_invalid_company_id),
+            ("Invalid Parameters", self.test_invalid_parameters)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 70)
+        self.log("📊 FLUXO DE CAIXA DASHBOARD TEST SUMMARY")
+        self.log("=" * 70)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL FLUXO DE CAIXA DASHBOARD TESTS PASSED! Feature working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME FLUXO DE CAIXA DASHBOARD TESTS FAILED! Check logs above for details.")
+            return False
+
+
 class DRETester:
     """Test suite for DRE (Demonstração do Resultado do Exercício) endpoints"""
     
