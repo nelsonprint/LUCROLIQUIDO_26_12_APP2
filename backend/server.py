@@ -7095,8 +7095,9 @@ async def admin_users(user_id: str):
     await verify_admin(user_id)
     
     # Usar aggregation pipeline para evitar N+1 queries
+    # Excluir administradores da lista (apenas usuários que pagam assinatura)
     pipeline = [
-        {"$match": {"role": "user"}},
+        {"$match": {"role": {"$ne": "admin"}}},
         {"$project": {"_id": 0, "password": 0}},
         {"$lookup": {
             "from": "subscriptions",
