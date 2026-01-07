@@ -8164,7 +8164,9 @@ async def relatorio_fluxo_realizado(company_id: str, periodo: str = 'mes'):
         "resumo": {
             "total_entradas": total_entradas,
             "total_saidas": total_saidas,
+            "saldo_liquido": saldo_periodo,
             "saldo_periodo": saldo_periodo,
+            "media_diaria": (total_entradas - total_saidas) / dias_periodo if dias_periodo > 0 else 0,
             "media_entradas": media_entradas,
             "media_saidas": media_saidas,
             "qtd_entradas": len(entradas_detalhe),
