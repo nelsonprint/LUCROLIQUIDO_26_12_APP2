@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Target, Calculator, CreditCard, Shield, LogOut, BookOpen, Receipt, ChevronDown, ChevronRight, Package, Settings, Users, Layers, FolderTree, UserCheck, Banknote } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Calculator, CreditCard, Shield, LogOut, BookOpen, Receipt, ChevronDown, ChevronRight, Package, Settings, Users, Layers, FolderTree, UserCheck, Banknote, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificacoesPanel from '@/components/NotificacoesPanel';
 
@@ -32,6 +32,7 @@ export const Sidebar = ({ user, onLogout, onNavigate }) => {
       ]
     },
     { path: '/dfc', icon: Banknote, label: 'DFC' },
+    { path: '/relatorios', icon: BarChart3, label: 'Relatórios' },
     { path: '/categorias', icon: BookOpen, label: 'Categorias' },
     { path: '/clientes', icon: Users, label: 'Clientes' },
     { path: '/funcionarios', icon: UserCheck, label: 'Funcionários' },
