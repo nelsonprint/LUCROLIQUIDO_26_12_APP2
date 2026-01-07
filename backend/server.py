@@ -8851,6 +8851,108 @@ async def relatorio_clientes_recorrencia(company_id: str):
     }
 
 
+@api_router.get("/relatorios/clientes-inadimplencia/{company_id}")
+async def relatorio_clientes_inadimplencia(company_id: str):
+    """Relatório de Inadimplência por Cliente - Ranking e histórico de atrasos"""
+    from datetime import datetime
+    from collections import defaultdict
+    
+    hoje = datetime.now()
+    hoje_str = hoje.strftime('%Y-%m-%d')
+    
+    # Buscar clientes
+    clientes = await db.clientes.find({"empresa_id": company_id}, {"_id": 0}).to_list(5000)
+    clientes_dict = {c.get('id'): c.get('nome', 'Cliente') for c in clientes}
+    
+    # Buscar contas a receber atrasadas
+    contas_atrasadas = await db.contas.find({
+        "company_id": company_id,
+        "tipo": "RECEBER",
+        "status": {"$in": ["PENDENTE", "ATRASADO"]},
+        "data_vencimento": {"$lt": hoje_str}
+    }, {"_id": 0}).to_list(5000)
+    
+    # Agrupar por cliente
+    inadimplencia_cliente = defaultdict(lambda: {
+        'cliente_id': '',
+        'cliente': 'Não identificado',
+        'valor_atrasado': 0,
+        'quantidade': 0,
+        'maior_atraso': 0,
+        'titulos': []
+    })
+    
+    for conta in contas_atrasadas:
+        cliente_id = conta.get('cliente_id', 'sem_cliente')
+        cliente_nome = clientes_dict.get(cliente_id, conta.get('descricao', 'Não identificado'))
+        
+        # Calcular dias de atraso
+        try:
+            data_venc = datetime.strptime(conta.get('data_vencimento', hoje_str), '%Y-%m-%d')
+            dias_atraso = (hoje - data_venc).days
+        except:
+            dias_atraso = 0
+        
+        inadimplencia_cliente[cliente_id]['cliente_id'] = cliente_id
+        inadimplencia_cliente[cliente_id]['cliente'] = cliente_nome
+        inadimplencia_cliente[cliente_id]['valor_atrasado'] += conta.get('valor', 0)
+        inadimplencia_cliente[cliente_id]['quantidade'] += 1
+        inadimplencia_cliente[cliente_id]['maior_atraso'] = max(
+            inadimplencia_cliente[cliente_id]['maior_atraso'], 
+            dias_atraso
+        )
+        inadimplencia_cliente[cliente_id]['titulos'].append({
+            'id': conta.get('id'),
+            'descricao': conta.get('descricao', '-'),
+            'valor': conta.get('valor', 0),
+            'vencimento': conta.get('data_vencimento', ''),
+            'dias_atraso': dias_atraso
+        })
+    
+    # Converter para lista e ordenar por valor
+    clientes_list = list(inadimplencia_cliente.values())
+    clientes_list.sort(key=lambda x: x['valor_atrasado'], reverse=True)
+    
+    # Classificar por faixa de risco
+    for cliente in clientes_list:
+        maior_atraso = cliente['maior_atraso']
+        if maior_atraso > 90:
+            cliente['risco'] = 'Crítico'
+            cliente['risco_cor'] = '#ef4444'
+        elif maior_atraso > 60:
+            cliente['risco'] = 'Alto'
+            cliente['risco_cor'] = '#f97316'
+        elif maior_atraso > 30:
+            cliente['risco'] = 'Médio'
+            cliente['risco_cor'] = '#eab308'
+        else:
+            cliente['risco'] = 'Baixo'
+            cliente['risco_cor'] = '#22c55e'
+    
+    # Calcular resumo
+    total_inadimplencia = sum(c['valor_atrasado'] for c in clientes_list)
+    total_clientes = len(clientes_list)
+    total_titulos = sum(c['quantidade'] for c in clientes_list)
+    
+    # Contar por risco
+    riscos = {'Crítico': 0, 'Alto': 0, 'Médio': 0, 'Baixo': 0}
+    for c in clientes_list:
+        riscos[c.get('risco', 'Baixo')] += 1
+    
+    return {
+        "resumo": {
+            "total_inadimplencia": total_inadimplencia,
+            "total_clientes": total_clientes,
+            "total_titulos": total_titulos,
+            "risco_critico": riscos['Crítico'],
+            "risco_alto": riscos['Alto'],
+            "risco_medio": riscos['Médio'],
+            "risco_baixo": riscos['Baixo']
+        },
+        "clientes": clientes_list
+    }
+
+
 @api_router.get("/relatorios/aging-receber/{company_id}")
 async def relatorio_aging_receber(company_id: str):
     """Relatório de Aging (Envelhecimento) de Contas a Receber"""
