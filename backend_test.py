@@ -6119,6 +6119,61 @@ class PDFCapaTester:
             return False
 
 
+def main_fluxo_caixa_tests():
+    """Main function for Fluxo de Caixa Dashboard testing"""
+    print("🚀 Starting Fluxo de Caixa Dashboard API Tests")
+    print("=" * 70)
+    
+    # Initialize session and login
+    session = requests.Session()
+    
+    # Login with admin credentials
+    login_data = {
+        "email": "admin@lucroliquido.com",
+        "password": "admin123"
+    }
+    
+    try:
+        response = session.post(f"{API_BASE}/auth/login", json=login_data)
+        if response.status_code != 200:
+            print(f"❌ Login failed: {response.status_code} - {response.text}")
+            return False
+        
+        user_data = response.json()
+        company_id = "cf901b3e-0eca-429c-9b8e-d723b31ecbd4"  # From review request
+        
+        print(f"✅ Login successful! User ID: {user_data['user_id']}")
+        print(f"🏢 Company ID: {company_id}")
+        
+        # Run Fluxo de Caixa tests
+        print("\n" + "=" * 70)
+        fluxo_tester = FluxoCaixaTester(session, user_data, company_id)
+        fluxo_success = fluxo_tester.run_all_tests()
+        
+        # Final summary
+        print("\n" + "=" * 70)
+        print("🎯 FINAL FLUXO DE CAIXA TEST SUMMARY")
+        print("=" * 70)
+        
+        if fluxo_success:
+            print("🎉 ALL FLUXO DE CAIXA DASHBOARD TESTS PASSED!")
+            print("✅ GET /api/fluxo-caixa/dashboard/{company_id} working correctly")
+            print("✅ Period filters (7, 15, 30, 60, 90 days) working")
+            print("✅ Mode filters (projetado, realizado, em_aberto) working")
+            print("✅ Cards calculations and validation logic correct")
+            print("✅ Acoes (action lists) validation working")
+            print("✅ PATCH /api/companies/{company_id}/saldo-inicial working")
+            return True
+        else:
+            print("⚠️ SOME FLUXO DE CAIXA TESTS FAILED!")
+            print("❌ Fluxo de Caixa functionality may not be working correctly")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error in Fluxo de Caixa tests: {str(e)}")
+        return False
+
+
 def main_dre_tests():
     """Main function for DRE testing"""
     print("🚀 Starting DRE (Demonstração do Resultado do Exercício) API Tests")
@@ -6173,5 +6228,5 @@ def main_dre_tests():
 
 
 if __name__ == "__main__":
-    # Run the DRE tests
-    main_dre_tests()
+    # Run the Fluxo de Caixa Dashboard tests
+    main_fluxo_caixa_tests()
