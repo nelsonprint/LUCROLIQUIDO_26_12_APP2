@@ -75,7 +75,7 @@ relatorios_module:
 
   - task: "Relatório - Aging Contas a Pagar"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/pages/relatorios/RelAgingPagar.jsx"
     priority: "high"
     needs_retesting: false
@@ -92,6 +92,9 @@ relatorios_module:
       - working: false
         agent: "testing"
         comment: "Same authentication/routing issue prevents frontend testing. Backend API working correctly."
+      - working: true
+        agent: "testing"
+        comment: "✅ NAVIGATION VERIFIED: Route /relatorios/pagar-aging now works correctly. Page loads without redirecting to dashboard. Navigation issue resolved."
 
   - task: "Relatório - Fluxo de Caixa Projetado"
     implemented: true
