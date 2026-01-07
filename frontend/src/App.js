@@ -34,6 +34,13 @@ import AdminPanel from './pages/AdminPanel';
 import Funcionarios from './pages/Funcionarios';
 import DFCRelatorio from './pages/DFCRelatorio';
 
+// Relatórios
+import Relatorios from './pages/Relatorios';
+import RelContasPagar from './pages/relatorios/RelContasPagar';
+import RelContasReceber from './pages/relatorios/RelContasReceber';
+import RelAgingPagar from './pages/relatorios/RelAgingPagar';
+import RelFluxoProjetado from './pages/relatorios/RelFluxoProjetado';
+
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
 
