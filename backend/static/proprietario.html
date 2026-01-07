@@ -457,7 +457,7 @@ async function loadHome() {
     const month = getCurrentMonth();
     
     // Fetch all data in parallel
-    const [metricsRes, dreRes, dfcRes, contasRes] = await Promise.all([
+    const [metricsRes, dfcRes, dreRes, contasRes] = await Promise.all([
       fetch(`${API_BASE}/metrics/${currentCompany.id}/${month}`),
       fetch(`${API_BASE}/dfc/resumo-mensal/${currentCompany.id}?mes=${month}`),
       fetch(`${API_BASE}/dashboard/dre/${currentCompany.id}?meses=1`),
