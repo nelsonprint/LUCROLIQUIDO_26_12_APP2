@@ -148,6 +148,8 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Implementação inicial do módulo de Relatórios (Fases 1 e 2) concluída. Backend testado via curl - todos endpoints OK. Frontend precisa de testes de UI."
+  - agent: "testing"
+    message: "TESTING COMPLETED - Reports module tested with mixed results. Backend APIs working correctly, but frontend has authentication/routing issues preventing full UI testing. See detailed findings below."
 
 credentials:
   email: "admin@lucroliquido.com"
