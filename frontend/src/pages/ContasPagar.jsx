@@ -504,6 +504,35 @@ const ContasPagar = ({ user, onLogout }) => {
               </div>
 
               <div>
+                <Label>Fornecedor</Label>
+                <Select
+                  value={formData.fornecedor_id}
+                  onValueChange={(value) => {
+                    const forn = fornecedores.find(f => f.id === value);
+                    setFormData({ 
+                      ...formData, 
+                      fornecedor_id: value,
+                      fornecedor_nome: forn?.nome || ''
+                    });
+                  }}
+                >
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue placeholder="Selecione (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhum</SelectItem>
+                    {fornecedores.map((forn) => (
+                      <SelectItem key={forn.id} value={forn.id}>
+                        {forn.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label>Valor *</Label>
                 <Input
                   required
@@ -515,6 +544,26 @@ const ContasPagar = ({ user, onLogout }) => {
                   placeholder="0.00"
                   className="bg-zinc-800 border-zinc-700"
                 />
+              </div>
+
+              <div>
+                <Label>Forma de Pagamento *</Label>
+                <Select
+                  required
+                  value={formData.forma_pagamento}
+                  onValueChange={(value) => setFormData({ ...formData, forma_pagamento: value })}
+                >
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PIX">PIX</SelectItem>
+                    <SelectItem value="Boleto">Boleto</SelectItem>
+                    <SelectItem value="Cartão">Cartão</SelectItem>
+                    <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                    <SelectItem value="Transferência">Transferência</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
