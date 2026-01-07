@@ -8363,17 +8363,28 @@ async def relatorio_funil_orcamentos(company_id: str, periodo: str = 'mes'):
     funil_data = []
     quantidade_anterior = total_orcamentos
     
-    for status in status_order:
+    for i, status in enumerate(status_order):
         dados = funil[status]
         taxa = (dados['quantidade'] / quantidade_anterior * 100) if quantidade_anterior > 0 else 0
+        percentual = (dados['quantidade'] / total_orcamentos * 100) if total_orcamentos > 0 else 0
         
-        funil_data.append({
+        funil_item = {
             'status': status,
             'label': status_labels.get(status, status),
             'quantidade': dados['quantidade'],
             'valor': dados['valor'],
-            'taxa': round(taxa, 1)
-        })
+            'taxa': round(taxa, 1),
+            'percentual': round(percentual, 1)
+        }
+        
+        # Calcular taxa para próximo estágio
+        if i < len(status_order) - 1 and status != 'recusado':
+            prox_status = status_order[i + 1] if status_order[i + 1] != 'recusado' else None
+            if prox_status and dados['quantidade'] > 0:
+                prox_qtd = funil[prox_status]['quantidade']
+                funil_item['taxa_proxima'] = round((prox_qtd / dados['quantidade']) * 100, 1)
+        
+        funil_data.append(funil_item)
         
         # Para o próximo nível (exceto recusado)
         if status != 'recusado' and dados['quantidade'] > 0:
