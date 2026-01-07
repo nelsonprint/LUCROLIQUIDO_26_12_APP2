@@ -497,8 +497,8 @@ const Empresa = ({ user, onLogout }) => {
 
                 <div className="mt-4 p-4 bg-zinc-800/50 rounded-lg">
                   <p className="text-xs text-zinc-500">
-                    <strong>Dica:</strong> No iPhone, abra o link no Safari e toque em "Compartilhar" → "Adicionar à Tela de Início". 
-                    No Android, abra no Chrome e toque nos 3 pontos → "Instalar app" ou "Adicionar à Tela inicial".
+                    <strong>Dica:</strong> No iPhone, abra o link no Safari e toque em &quot;Compartilhar&quot; → &quot;Adicionar à Tela de Início&quot;. 
+                    No Android, abra no Chrome e toque nos 3 pontos → &quot;Instalar app&quot; ou &quot;Adicionar à Tela inicial&quot;.
                   </p>
                 </div>
               </CardContent>
