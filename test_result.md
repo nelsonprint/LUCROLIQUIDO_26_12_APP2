@@ -258,6 +258,62 @@ fornecedores_module:
         agent: "testing"
         comment: "✅ BACKEND INTEGRATION VERIFIED: All supplier API endpoints working correctly. Supplier creation, listing, and integration with Contas a Pagar confirmed through UI testing. Backend successfully stores and retrieves supplier data."
 
+passo_a_passo_module:
+  - task: "Passo a Passo - Training Videos Feature"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/PassoAPasso.jsx"
+    priority: "high"
+    needs_retesting: true
+    features:
+      - "Fixed blue button in bottom-left corner with play icon"
+      - "Accordion panel with video list"
+      - "Floating draggable video player"
+      - "YouTube video embedding support"
+      - "Admin video management interface"
+      - "Video CRUD operations (Create, Read, Update, Delete)"
+      - "Video status toggle (Active/Inactive)"
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Feature identified for testing. Components and backend endpoints exist."
+
+  - task: "Admin Videos Management Page"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/AdminVideos.jsx"
+    priority: "high"
+    needs_retesting: true
+    features:
+      - "Video listing with summary cards"
+      - "Create new video form"
+      - "Edit existing videos"
+      - "Delete videos with confirmation"
+      - "Toggle video active/inactive status"
+      - "YouTube thumbnail display"
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Admin interface identified for testing. Route exists at /admin/videos."
+
+  - task: "Backend - Video API Endpoints"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    priority: "high"
+    needs_retesting: true
+    endpoints:
+      - "GET /api/videos-passo-a-passo (public videos)"
+      - "GET /api/admin/videos-passo-a-passo (all videos)"
+      - "POST /api/admin/videos-passo-a-passo (create)"
+      - "PUT /api/admin/videos-passo-a-passo/{id} (update)"
+      - "PATCH /api/admin/videos-passo-a-passo/{id}/toggle (status)"
+      - "DELETE /api/admin/videos-passo-a-passo/{id} (delete)"
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Backend endpoints identified for testing."
+
 agent_communication:
   - agent: "main"
     message: "Implementação inicial do módulo de Relatórios (Fases 1 e 2) concluída. Backend testado via curl - todos endpoints OK. Frontend precisa de testes de UI."
@@ -269,6 +325,8 @@ agent_communication:
     message: "BUG FIX VERIFICATION COMPLETED ✅ - Comprehensive testing of all 15 report routes shows the navigation bug has been successfully fixed. All reports now navigate correctly to their respective URLs without redirecting to dashboard. Login functionality works properly. Report pages load correctly showing 'Erro ao carregar dados' messages which are expected for unimplemented backend endpoints. The main routing issue identified in previous testing has been completely resolved."
   - agent: "testing"
     message: "FORNECEDORES MODULE TESTING COMPLETED ✅ - Comprehensive testing of the new Suppliers module shows excellent functionality. All core features working: supplier registration, listing, search, contact buttons, status management. Integration with Contas a Pagar confirmed. Minor issues with edit button selectors and React runtime errors don't affect core functionality. Module is production-ready."
+  - agent: "testing"
+    message: "STARTING PASSO A PASSO TESTING - Testing the training videos feature as requested. Will test login, Passo a Passo button, accordion functionality, floating video player, and admin video management interface."
 
 credentials:
   email: "admin@lucroliquido.com"
