@@ -216,11 +216,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Passo a Passo - Training Videos Feature"
-    - "Admin Videos Management Page"
-    - "Backend - Video API Endpoints"
+    - "Passo a Passo testing completed successfully"
   stuck_tasks: []
-  test_priority: "high_first"
+  test_priority: "completed"
 
 fornecedores_module:
   - task: "Fornecedores (Suppliers) Module - Complete CRUD functionality"
