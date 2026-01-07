@@ -8387,12 +8387,15 @@ async def relatorio_funil_orcamentos(company_id: str, periodo: str = 'mes'):
     
     return {
         "resumo": {
+            "total": total_orcamentos,
             "total_orcamentos": total_orcamentos,
             "valor_total": valor_total,
             "taxa_conversao": round(taxa_conversao, 1),
             "ticket_medio": ticket_medio,
             "aprovados": aprovados,
-            "valor_aprovado": valor_aprovado
+            "valor_aprovado": valor_aprovado,
+            "perdidos": funil['recusado']['quantidade'],
+            "valor_perdido": funil['recusado']['valor']
         },
         "funil": funil_data,
         "periodo": {
