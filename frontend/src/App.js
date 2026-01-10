@@ -36,6 +36,8 @@ import AdminVideos from './pages/AdminVideos';
 import Funcionarios from './pages/Funcionarios';
 import Fornecedores from './pages/Fornecedores';
 import DFCRelatorio from './pages/DFCRelatorio';
+import CustosFixosRecorrentes from './pages/CustosFixosRecorrentes';
+import CustosVariaveis from './pages/CustosVariaveis';
 
 // Relatórios
 import Relatorios from './pages/Relatorios';
