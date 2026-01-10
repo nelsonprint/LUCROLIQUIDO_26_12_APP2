@@ -131,6 +131,8 @@ function App() {
           <Route path="/lancamentos" element={<Lancamentos user={user} onLogout={handleLogout} />} />
           <Route path="/contas-pagar" element={<ContasPagar user={user} onLogout={handleLogout} />} />
           <Route path="/contas-receber" element={<ContasReceber user={user} onLogout={handleLogout} />} />
+          <Route path="/custos-fixos" element={<CustosFixosRecorrentes user={user} onLogout={handleLogout} />} />
+          <Route path="/custos-variaveis" element={<CustosVariaveis user={user} onLogout={handleLogout} />} />
           <Route path="/categorias" element={<CategoriasPersonalizadas user={user} onLogout={handleLogout} />} />
           <Route path="/empresa" element={<Empresa user={user} onLogout={handleLogout} />} />
           <Route path="/meta-mensal" element={<MetaMensal user={user} onLogout={handleLogout} />} />
