@@ -310,8 +310,8 @@ async function compressImageToBlob(file, { maxSide = 1280, quality = 0.75, mime 
   }
 }
 
-/* ===== Captura de Foto com Câmera (estrutura idêntica ao app do vendedor) ===== */
-async function capturePhoto(box, img, hint, onSuccess) {
+/* ===== Captura de Foto - CÓPIA EXATA DO VENDEDOR ===== */
+async function capturePhoto(onSuccess) {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
     const video = document.createElement('video');
@@ -324,16 +324,14 @@ async function capturePhoto(box, img, hint, onSuccess) {
     video.style.cssText = 'flex:1;object-fit:cover';
     
     const controls = document.createElement('div');
-    controls.style.cssText = 'padding:20px;display:flex;gap:10px;justify-content:center;background:rgba(0,0,0,0.8)';
+    controls.style.cssText = 'padding:20px;display:flex;gap:10px;justify-content:center';
     
     const btnCapture = document.createElement('button');
     btnCapture.className = 'btn btn-primary';
-    btnCapture.style.cssText = 'padding:16px 32px;font-size:1.1rem';
     btnCapture.textContent = '📸 Capturar';
     
     const btnCancel = document.createElement('button');
     btnCancel.className = 'btn';
-    btnCancel.style.cssText = 'padding:16px 32px;font-size:1.1rem';
     btnCancel.textContent = 'Cancelar';
     
     controls.appendChild(btnCapture);
@@ -344,34 +342,25 @@ async function capturePhoto(box, img, hint, onSuccess) {
     
     await video.play();
     
-    btnCancel.onclick = () => { 
-      stream.getTracks().forEach(t => t.stop()); 
-      modal.remove(); 
-      hint.innerHTML = '📷<br>Toque para tirar foto';
-    };
+    btnCancel.onclick = () => { stream.getTracks().forEach(t => t.stop()); modal.remove(); };
     
-    btnCapture.onclick = async () => {
+    btnCapture.onclick = () => {
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
       
-      // Converter para blob
-      const blob = await new Promise((res) => {
-        canvas.toBlob((b) => res(b), 'image/jpeg', 0.8);
-      });
-      
       stream.getTracks().forEach(t => t.stop());
       modal.remove();
       
-      if (blob && onSuccess) {
-        onSuccess(blob);
-      }
+      // Converter para blob e chamar callback
+      canvas.toBlob((blob) => {
+        if (blob && onSuccess) onSuccess(blob);
+      }, 'image/jpeg', 0.8);
     };
   } catch (e) {
     console.error('Erro câmera:', e);
     toast('Erro ao acessar câmera');
-    hint.innerHTML = '📷<br>Toque para tirar foto';
   }
 }
 
