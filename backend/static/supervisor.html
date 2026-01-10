@@ -687,30 +687,23 @@ function createMediaElement(etapa, stageIdx, item, mediaIdx) {
     hint.style.display = 'block';
   }
   
-  // Captura de foto usando câmera (igual ao app do vendedor)
+  // Captura de foto usando câmera (estrutura idêntica ao app do vendedor)
   photoBox.onclick = () => {
     hint.innerHTML = '📷<br>Abrindo câmera...';
     
-    capturePhotoWithCamera(
-      // onCapture - quando a foto for capturada
-      async (blob) => {
-        hint.innerHTML = '⏳<br>Processando...';
-        try {
-          await putBlob(item.id, 'image', blob);
-          item.hasImage = true;
-          setImgFromBlob(blob);
-          toast('Foto salva!');
-        } catch (err) {
-          console.error(err);
-          alert('Falha ao salvar a foto. Tente novamente.');
-          hint.innerHTML = '📷<br>Toque para tirar foto';
-        }
-      },
-      // onCancel - quando cancelar
-      () => {
+    capturePhoto(photoBox, img, hint, async (blob) => {
+      hint.innerHTML = '⏳<br>Processando...';
+      try {
+        await putBlob(item.id, 'image', blob);
+        item.hasImage = true;
+        setImgFromBlob(blob);
+        toast('Foto salva!');
+      } catch (err) {
+        console.error(err);
+        alert('Falha ao salvar a foto. Tente novamente.');
         hint.innerHTML = '📷<br>Toque para tirar foto';
       }
-    );
+    });
   };
   
   // Load existing image from IndexedDB
