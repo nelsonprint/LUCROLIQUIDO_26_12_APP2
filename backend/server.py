@@ -89,6 +89,8 @@ class CompanyCreate(BaseModel):
     contato_principal: Optional[str] = None
     # URL do App (para links de vendedor/supervisor)
     app_url: Optional[str] = None
+    # Slug único para URLs dos apps (vendedor/supervisor)
+    slug: Optional[str] = None
 
 class Company(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -118,6 +120,8 @@ class Company(BaseModel):
     contato_principal: Optional[str] = None
     # URL do App (para links de vendedor/supervisor)
     app_url: Optional[str] = None
+    # Slug único para URLs dos apps (vendedor/supervisor)
+    slug: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
