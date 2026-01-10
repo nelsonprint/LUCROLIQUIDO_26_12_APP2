@@ -574,6 +574,115 @@ const CustosFixosRecorrentes = ({ user, onLogout }) => {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Dialog de Importação do Plano de Contas */}
+        <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+          <DialogContent className="glass border-white/10 max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-2">
+                <FolderTree className="text-emerald-400" size={24} />
+                Importar do Plano de Contas
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Selecione as categorias do Plano de Contas para importar como Custos Fixos.
+                Os valores serão importados como R$ 0,00 - você precisará preenchê-los.
+              </DialogDescription>
+            </DialogHeader>
+
+            {importPreview && (
+              <div className="flex-1 overflow-auto space-y-4">
+                {/* Categorias Disponíveis */}
+                {importPreview.disponiveis.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-400">
+                        {importPreview.total_disponiveis} categoria(s) disponível(is) para importação
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleSelectAllImport}
+                        className="text-emerald-400 hover:text-emerald-300"
+                      >
+                        {selectedForImport.length === importPreview.disponiveis.length 
+                          ? 'Desmarcar todos' 
+                          : 'Selecionar todos'}
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                      {importPreview.disponiveis.map((cat) => (
+                        <div
+                          key={cat.id}
+                          onClick={() => handleToggleImportItem(cat.id)}
+                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                            selectedForImport.includes(cat.id)
+                              ? 'bg-emerald-500/20 border-emerald-500/50'
+                              : 'bg-white/5 border-white/10 hover:bg-white/10'
+                          }`}
+                        >
+                          <Checkbox
+                            checked={selectedForImport.includes(cat.id)}
+                            onCheckedChange={() => handleToggleImportItem(cat.id)}
+                          />
+                          <div className="flex-1">
+                            <p className="text-white font-medium">{cat.name}</p>
+                            <p className="text-xs text-gray-500">{cat.description}</p>
+                          </div>
+                          <Badge className={
+                            cat.group === 'FIXA' 
+                              ? 'bg-purple-500/20 text-purple-400 border-purple-500/50'
+                              : 'bg-orange-500/20 text-orange-400 border-orange-500/50'
+                          }>
+                            {cat.group === 'FIXA' ? 'Fixa' : 'Variável Indireta'}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <FolderTree className="mx-auto mb-2 opacity-50" size={32} />
+                    <p>Todas as categorias já foram importadas!</p>
+                  </div>
+                )}
+
+                {/* Já Importadas */}
+                {importPreview.ja_importadas.length > 0 && (
+                  <div className="space-y-2 pt-4 border-t border-white/10">
+                    <p className="text-sm text-gray-500">
+                      {importPreview.total_ja_importadas} categoria(s) já importada(s):
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {importPreview.ja_importadas.map((cat) => (
+                        <Badge key={cat.id} variant="outline" className="text-gray-500 border-white/20">
+                          {cat.name} ✓
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <DialogFooter className="pt-4 border-t border-white/10">
+              <Button
+                variant="outline"
+                onClick={() => setShowImportDialog(false)}
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleConfirmImport}
+                disabled={importando || selectedForImport.length === 0}
+                className="bg-gradient-to-r from-emerald-600 to-cyan-600"
+              >
+                {importando ? 'Importando...' : `Importar ${selectedForImport.length} Selecionado(s)`}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
