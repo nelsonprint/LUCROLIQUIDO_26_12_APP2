@@ -971,6 +971,543 @@ class SupervisorCronogramaTester:
             return False
 
 
+class GPSFinanceiroTester:
+    """Test suite for GPS Financeiro (Break-even por Margem de Contribuição) module"""
+    
+    def __init__(self, session, user_data, company_id):
+        self.session = session
+        self.user_data = user_data
+        self.company_id = company_id
+        self.test_results = {}
+        self.created_custos_fixos = []
+        self.created_custos_variaveis = []
+        
+    def log(self, message, level="INFO"):
+        """Log with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+    
+    def test_list_custos_fixos_empty(self):
+        """Test GET /api/custos-fixos/{empresa_id} - List fixed costs (initially empty)"""
+        self.log("📋 Testing list custos fixos (initially empty)...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/custos-fixos/{self.company_id}")
+            
+            if response.status_code == 200:
+                custos = response.json()
+                self.log(f"✅ Retrieved {len(custos)} custos fixos")
+                return True
+            else:
+                self.log(f"❌ Failed to list custos fixos: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error listing custos fixos: {str(e)}", "ERROR")
+            return False
+    
+    def test_create_custos_fixos(self):
+        """Test POST /api/custos-fixos - Create fixed costs as per test requirements"""
+        self.log("➕ Testing create custos fixos...")
+        
+        # Test data as specified in the review request
+        custos_fixos_data = [
+            {
+                "empresa_id": self.company_id,
+                "descricao": "Aluguel",
+                "categoria": "Estrutura",
+                "valor": 5000.00,
+                "tipo_recorrencia": "mensal",
+                "dia_vencimento": 10
+            },
+            {
+                "empresa_id": self.company_id,
+                "descricao": "Salários",
+                "categoria": "Pessoas",
+                "valor": 15000.00,
+                "tipo_recorrencia": "mensal",
+                "dia_vencimento": 5
+            },
+            {
+                "empresa_id": self.company_id,
+                "descricao": "Software",
+                "categoria": "Ferramentas/Softwares",
+                "valor": 500.00,
+                "tipo_recorrencia": "mensal",
+                "dia_vencimento": 15
+            }
+        ]
+        
+        try:
+            for custo_data in custos_fixos_data:
+                response = self.session.post(f"{API_BASE}/custos-fixos", json=custo_data)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    custo_id = result.get('id')
+                    self.created_custos_fixos.append(custo_id)
+                    self.log(f"✅ Created custo fixo: {custo_data['descricao']} - R$ {custo_data['valor']:,.2f}")
+                else:
+                    self.log(f"❌ Failed to create custo fixo {custo_data['descricao']}: {response.status_code} - {response.text}", "ERROR")
+                    return False
+            
+            # Verify total created
+            if len(self.created_custos_fixos) == 3:
+                self.log("✅ All 3 custos fixos created successfully!")
+                return True
+            else:
+                self.log(f"❌ Expected 3 custos fixos, created {len(self.created_custos_fixos)}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating custos fixos: {str(e)}", "ERROR")
+            return False
+    
+    def test_list_custos_fixos_populated(self):
+        """Test GET /api/custos-fixos/{empresa_id} - List fixed costs after creation"""
+        self.log("📋 Testing list custos fixos after creation...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/custos-fixos/{self.company_id}")
+            
+            if response.status_code == 200:
+                custos = response.json()
+                self.log(f"✅ Retrieved {len(custos)} custos fixos")
+                
+                # Verify our created custos are in the list
+                found_custos = []
+                expected_descriptions = ["Aluguel", "Salários", "Software"]
+                
+                for custo in custos:
+                    if custo.get('descricao') in expected_descriptions:
+                        found_custos.append(custo.get('descricao'))
+                        self.log(f"   💰 {custo.get('descricao')}: R$ {custo.get('valor'):,.2f} ({custo.get('categoria')})")
+                
+                if len(found_custos) >= 3:
+                    self.log("✅ All expected custos fixos found in list!")
+                    return True
+                else:
+                    self.log(f"❌ Expected 3 custos fixos, found {len(found_custos)}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to list custos fixos: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error listing custos fixos: {str(e)}", "ERROR")
+            return False
+    
+    def test_update_custo_fixo(self):
+        """Test PUT /api/custos-fixos/{custo_id} - Update fixed cost"""
+        self.log("✏️ Testing update custo fixo...")
+        
+        if not self.created_custos_fixos:
+            self.log("❌ No custos fixos available for update", "ERROR")
+            return False
+        
+        custo_id = self.created_custos_fixos[0]  # Update first one (Aluguel)
+        
+        update_data = {
+            "empresa_id": self.company_id,
+            "descricao": "Aluguel Atualizado",
+            "categoria": "Estrutura",
+            "valor": 5500.00,  # Updated value
+            "tipo_recorrencia": "mensal",
+            "dia_vencimento": 10
+        }
+        
+        try:
+            response = self.session.put(f"{API_BASE}/custos-fixos/{custo_id}", json=update_data)
+            
+            if response.status_code == 200:
+                self.log("✅ Custo fixo updated successfully!")
+                
+                # Verify update by getting the specific custo
+                verify_response = self.session.get(f"{API_BASE}/custos-fixos/{self.company_id}/{custo_id}")
+                if verify_response.status_code == 200:
+                    custo = verify_response.json()
+                    
+                    if (custo.get('descricao') == "Aluguel Atualizado" and 
+                        custo.get('valor') == 5500.00):
+                        self.log("✅ Update verified successfully!")
+                        return True
+                    else:
+                        self.log("❌ Update not reflected in data", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify update", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to update custo fixo: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error updating custo fixo: {str(e)}", "ERROR")
+            return False
+    
+    def test_create_custos_variaveis(self):
+        """Test POST /api/custos-variaveis - Create variable costs as per test requirements"""
+        self.log("➕ Testing create custos variáveis...")
+        
+        # Test data as specified in the review request
+        custos_variaveis_data = [
+            {
+                "empresa_id": self.company_id,
+                "descricao": "Comissão de Vendas",
+                "percentual": 5.0
+            },
+            {
+                "empresa_id": self.company_id,
+                "descricao": "Impostos sobre Venda",
+                "percentual": 6.0
+            },
+            {
+                "empresa_id": self.company_id,
+                "descricao": "Taxas de Cartão",
+                "percentual": 2.0
+            }
+        ]
+        
+        try:
+            for custo_data in custos_variaveis_data:
+                response = self.session.post(f"{API_BASE}/custos-variaveis", json=custo_data)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    custo_id = result.get('id')
+                    self.created_custos_variaveis.append(custo_id)
+                    self.log(f"✅ Created custo variável: {custo_data['descricao']} - {custo_data['percentual']}%")
+                else:
+                    self.log(f"❌ Failed to create custo variável {custo_data['descricao']}: {response.status_code} - {response.text}", "ERROR")
+                    return False
+            
+            # Verify total created
+            if len(self.created_custos_variaveis) == 3:
+                self.log("✅ All 3 custos variáveis created successfully!")
+                return True
+            else:
+                self.log(f"❌ Expected 3 custos variáveis, created {len(self.created_custos_variaveis)}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating custos variáveis: {str(e)}", "ERROR")
+            return False
+    
+    def test_list_custos_variaveis(self):
+        """Test GET /api/custos-variaveis/{empresa_id} - List variable costs"""
+        self.log("📋 Testing list custos variáveis...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/custos-variaveis/{self.company_id}")
+            
+            if response.status_code == 200:
+                custos = response.json()
+                self.log(f"✅ Retrieved {len(custos)} custos variáveis")
+                
+                # Verify our created custos are in the list
+                found_custos = []
+                expected_descriptions = ["Comissão de Vendas", "Impostos sobre Venda", "Taxas de Cartão"]
+                total_percentual = 0
+                
+                for custo in custos:
+                    if custo.get('descricao') in expected_descriptions:
+                        found_custos.append(custo.get('descricao'))
+                        total_percentual += custo.get('percentual', 0)
+                        self.log(f"   📊 {custo.get('descricao')}: {custo.get('percentual')}%")
+                
+                if len(found_custos) >= 3:
+                    self.log(f"✅ All expected custos variáveis found! Total: {total_percentual}%")
+                    return True
+                else:
+                    self.log(f"❌ Expected 3 custos variáveis, found {len(found_custos)}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to list custos variáveis: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error listing custos variáveis: {str(e)}", "ERROR")
+            return False
+    
+    def test_gps_financeiro_calculation(self):
+        """Test GET /api/gps-financeiro/{empresa_id} - Calculate GPS Financeiro data"""
+        self.log("🧮 Testing GPS Financeiro calculation...")
+        
+        try:
+            response = self.session.get(f"{API_BASE}/gps-financeiro/{self.company_id}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.log("✅ GPS Financeiro calculation successful!")
+                
+                # Verify main structure
+                required_keys = [
+                    "custos_fixos", "custos_variaveis", "margem_contribuicao", 
+                    "breakeven_faturamento", "breakeven_diario", "receita_realizada",
+                    "percentual_breakeven_coberto", "status_breakeven", "grafico"
+                ]
+                
+                for key in required_keys:
+                    if key not in result:
+                        self.log(f"❌ Missing required key: {key}", "ERROR")
+                        return False
+                
+                # Verify calculations based on test data
+                custos_fixos = result.get("custos_fixos", {})
+                custos_variaveis = result.get("custos_variaveis", {})
+                
+                total_custos_fixos = custos_fixos.get("total", 0)
+                total_percentual_variavel = custos_variaveis.get("total_percentual", 0)
+                margem_contribuicao = result.get("margem_contribuicao", 0)
+                breakeven_faturamento = result.get("breakeven_faturamento", 0)
+                
+                self.log(f"   💰 Total Custos Fixos: R$ {total_custos_fixos:,.2f}")
+                self.log(f"   📊 Total Custos Variáveis: {total_percentual_variavel}%")
+                self.log(f"   📈 Margem de Contribuição: {margem_contribuicao}%")
+                self.log(f"   🎯 Break-even: R$ {breakeven_faturamento:,.2f}")
+                
+                # Verify expected values based on test data
+                # Expected: Custos Fixos = 5000 + 15000 + 500 = 20500
+                # Expected: Custos Variáveis = 5% + 6% + 2% = 13%
+                # Expected: Margem Contribuição = 100% - 13% = 87%
+                # Expected: Break-even = 20500 / 0.87 = 23563.22 (approximately)
+                
+                expected_custos_fixos = 20500.00
+                expected_percentual_variavel = 13.0
+                expected_margem_contribuicao = 87.0
+                expected_breakeven = 23563.22
+                
+                # Allow small tolerance for rounding
+                tolerance = 1.0
+                
+                checks = [
+                    (abs(total_custos_fixos - expected_custos_fixos) < tolerance, 
+                     f"Custos Fixos: expected {expected_custos_fixos}, got {total_custos_fixos}"),
+                    (abs(total_percentual_variavel - expected_percentual_variavel) < tolerance,
+                     f"Custos Variáveis: expected {expected_percentual_variavel}%, got {total_percentual_variavel}%"),
+                    (abs(margem_contribuicao - expected_margem_contribuicao) < tolerance,
+                     f"Margem Contribuição: expected {expected_margem_contribuicao}%, got {margem_contribuicao}%"),
+                    (abs(breakeven_faturamento - expected_breakeven) < 10.0,  # Allow larger tolerance for break-even
+                     f"Break-even: expected ~{expected_breakeven}, got {breakeven_faturamento}")
+                ]
+                
+                all_correct = True
+                for check, description in checks:
+                    if check:
+                        self.log(f"   ✅ {description}")
+                    else:
+                        self.log(f"   ❌ {description}", "ERROR")
+                        all_correct = False
+                
+                # Verify formula: BE = Custos Fixos / Margem Contribuição
+                calculated_breakeven = total_custos_fixos / (margem_contribuicao / 100)
+                if abs(breakeven_faturamento - calculated_breakeven) < 1.0:
+                    self.log("   ✅ Break-even formula verified: BE = Custos Fixos / Margem Contribuição")
+                else:
+                    self.log(f"   ❌ Break-even formula incorrect: {breakeven_faturamento} vs {calculated_breakeven}", "ERROR")
+                    all_correct = False
+                
+                # Verify grafico structure
+                grafico = result.get("grafico", [])
+                if len(grafico) > 0:
+                    first_item = grafico[0]
+                    required_grafico_fields = ["dia", "breakeven_acumulado", "receita_acumulada", "meta_dia"]
+                    for field in required_grafico_fields:
+                        if field not in first_item:
+                            self.log(f"   ❌ Missing grafico field: {field}", "ERROR")
+                            all_correct = False
+                    
+                    if all_correct:
+                        self.log(f"   📊 Gráfico: {len(grafico)} days with correct structure")
+                
+                if all_correct:
+                    self.log("✅ All GPS Financeiro calculations verified correctly!")
+                    return True
+                else:
+                    self.log("❌ Some GPS Financeiro calculations are incorrect", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed GPS Financeiro calculation: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing GPS Financeiro calculation: {str(e)}", "ERROR")
+            return False
+    
+    def test_gerar_contas_pagar(self):
+        """Test POST /api/gps-financeiro/gerar-contas-pagar/{empresa_id} - Generate accounts payable"""
+        self.log("📄 Testing generate contas a pagar from custos fixos...")
+        
+        try:
+            response = self.session.post(f"{API_BASE}/gps-financeiro/gerar-contas-pagar/{self.company_id}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.log("✅ Contas a pagar generation successful!")
+                
+                # Verify response structure
+                if "contas_geradas" in result and "total_gerado" in result:
+                    contas_geradas = result.get("contas_geradas", 0)
+                    total_gerado = result.get("total_gerado", 0)
+                    
+                    self.log(f"   📄 Contas geradas: {contas_geradas}")
+                    self.log(f"   💰 Total gerado: R$ {total_gerado:,.2f}")
+                    
+                    # Should generate 3 accounts (one for each custo fixo)
+                    if contas_geradas >= 3:
+                        self.log("✅ Expected number of contas generated!")
+                        
+                        # Verify total matches custos fixos total
+                        expected_total = 20500.00  # 5000 + 15000 + 500
+                        if abs(total_gerado - expected_total) < 1.0:
+                            self.log("✅ Total generated matches custos fixos total!")
+                            return True
+                        else:
+                            self.log(f"❌ Total mismatch: expected {expected_total}, got {total_gerado}", "ERROR")
+                            return False
+                    else:
+                        self.log(f"❌ Expected at least 3 contas, generated {contas_geradas}", "ERROR")
+                        return False
+                else:
+                    self.log("❌ Missing expected fields in response", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to generate contas a pagar: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error testing generate contas a pagar: {str(e)}", "ERROR")
+            return False
+    
+    def test_delete_custo_fixo(self):
+        """Test DELETE /api/custos-fixos/{custo_id} - Delete fixed cost"""
+        self.log("🗑️ Testing delete custo fixo...")
+        
+        if not self.created_custos_fixos:
+            self.log("❌ No custos fixos available for deletion", "ERROR")
+            return False
+        
+        custo_id = self.created_custos_fixos[-1]  # Delete last one
+        
+        try:
+            response = self.session.delete(f"{API_BASE}/custos-fixos/{custo_id}")
+            
+            if response.status_code == 200:
+                self.log("✅ Custo fixo deleted successfully!")
+                
+                # Verify deletion by trying to get the specific custo
+                verify_response = self.session.get(f"{API_BASE}/custos-fixos/{self.company_id}/{custo_id}")
+                if verify_response.status_code == 404:
+                    self.log("✅ Deletion verified - custo fixo not found!")
+                    return True
+                else:
+                    self.log("❌ Custo fixo still exists after deletion", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Failed to delete custo fixo: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error deleting custo fixo: {str(e)}", "ERROR")
+            return False
+    
+    def test_delete_custo_variavel(self):
+        """Test DELETE /api/custos-variaveis/{custo_id} - Delete variable cost"""
+        self.log("🗑️ Testing delete custo variável...")
+        
+        if not self.created_custos_variaveis:
+            self.log("❌ No custos variáveis available for deletion", "ERROR")
+            return False
+        
+        custo_id = self.created_custos_variaveis[-1]  # Delete last one
+        
+        try:
+            response = self.session.delete(f"{API_BASE}/custos-variaveis/{custo_id}")
+            
+            if response.status_code == 200:
+                self.log("✅ Custo variável deleted successfully!")
+                
+                # Verify deletion by listing custos variáveis
+                verify_response = self.session.get(f"{API_BASE}/custos-variaveis/{self.company_id}")
+                if verify_response.status_code == 200:
+                    custos = verify_response.json()
+                    deleted_found = any(c.get('id') == custo_id for c in custos)
+                    
+                    if not deleted_found:
+                        self.log("✅ Deletion verified - custo variável not in list!")
+                        return True
+                    else:
+                        self.log("❌ Custo variável still exists after deletion", "ERROR")
+                        return False
+                else:
+                    self.log("⚠️ Could not verify deletion", "WARN")
+                    return True
+            else:
+                self.log(f"❌ Failed to delete custo variável: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error deleting custo variável: {str(e)}", "ERROR")
+            return False
+    
+    def run_all_tests(self):
+        """Execute all GPS Financeiro tests"""
+        self.log("🚀 Starting GPS Financeiro Module API tests")
+        self.log("=" * 70)
+        
+        tests = [
+            ("List Custos Fixos (Empty)", self.test_list_custos_fixos_empty),
+            ("Create Custos Fixos", self.test_create_custos_fixos),
+            ("List Custos Fixos (Populated)", self.test_list_custos_fixos_populated),
+            ("Update Custo Fixo", self.test_update_custo_fixo),
+            ("Create Custos Variáveis", self.test_create_custos_variaveis),
+            ("List Custos Variáveis", self.test_list_custos_variaveis),
+            ("GPS Financeiro Calculation", self.test_gps_financeiro_calculation),
+            ("Generate Contas a Pagar", self.test_gerar_contas_pagar),
+            ("Delete Custo Fixo", self.test_delete_custo_fixo),
+            ("Delete Custo Variável", self.test_delete_custo_variavel)
+        ]
+        
+        results = {}
+        
+        for test_name, test_func in tests:
+            self.log(f"\n📋 Executing test: {test_name}")
+            try:
+                result = test_func()
+                results[test_name] = result
+                self.test_results[test_name] = result
+                
+                if not result:
+                    self.log(f"❌ Test '{test_name}' failed - continuing with other tests", "ERROR")
+            except Exception as e:
+                self.log(f"❌ Unexpected error in test '{test_name}': {str(e)}", "ERROR")
+                results[test_name] = False
+                self.test_results[test_name] = False
+        
+        # Test summary
+        self.log("\n" + "=" * 70)
+        self.log("📊 GPS FINANCEIRO MODULE TEST SUMMARY")
+        self.log("=" * 70)
+        
+        passed = 0
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            self.log(f"{test_name}: {status}")
+            if result:
+                passed += 1
+        
+        self.log(f"\n🎯 Final Result: {passed}/{total} tests passed")
+        
+        if passed == total:
+            self.log("🎉 ALL GPS FINANCEIRO TESTS PASSED! Module working correctly.")
+            return True
+        else:
+            self.log("⚠️ SOME GPS FINANCEIRO TESTS FAILED! Check logs above for details.")
+            return False
+
+
 class FluxoCaixaTester:
     """Test suite for Fluxo de Caixa Dashboard endpoints"""
     
