@@ -310,6 +310,105 @@ async function compressImageToBlob(file, { maxSide = 1280, quality = 0.75, mime 
   }
 }
 
+/* ===== Captura de Foto com Câmera (igual ao app do vendedor) ===== */
+async function capturePhotoWithCamera(onCapture, onCancel) {
+  try {
+    // Solicitar acesso à câmera traseira
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+    });
+    
+    // Criar modal fullscreen
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column';
+    
+    // Elemento de vídeo para preview
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.playsInline = true;
+    video.srcObject = stream;
+    video.style.cssText = 'flex:1;object-fit:cover';
+    
+    // Barra de controles
+    const controls = document.createElement('div');
+    controls.style.cssText = 'padding:20px;display:flex;gap:16px;justify-content:center;align-items:center;background:rgba(0,0,0,0.8)';
+    
+    // Botão de captura (grande, circular)
+    const btnCapture = document.createElement('button');
+    btnCapture.style.cssText = 'width:70px;height:70px;border-radius:50%;border:4px solid #fff;background:var(--neon);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.5rem';
+    btnCapture.innerHTML = '📸';
+    
+    // Botão de cancelar
+    const btnCancel = document.createElement('button');
+    btnCancel.style.cssText = 'padding:12px 24px;border-radius:10px;border:1px solid #fff;background:transparent;color:#fff;font-size:1rem;cursor:pointer';
+    btnCancel.textContent = 'Cancelar';
+    
+    // Botão de alternar câmera
+    const btnFlip = document.createElement('button');
+    btnFlip.style.cssText = 'padding:12px 24px;border-radius:10px;border:1px solid #fff;background:transparent;color:#fff;font-size:1rem;cursor:pointer';
+    btnFlip.textContent = '🔄';
+    
+    controls.appendChild(btnFlip);
+    controls.appendChild(btnCapture);
+    controls.appendChild(btnCancel);
+    modal.appendChild(video);
+    modal.appendChild(controls);
+    document.body.appendChild(modal);
+    
+    await video.play();
+    
+    let currentFacingMode = 'environment';
+    
+    // Alternar entre câmera frontal e traseira
+    btnFlip.onclick = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+      try {
+        const newStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: currentFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } } 
+        });
+        video.srcObject = newStream;
+        await video.play();
+      } catch (e) {
+        toast('Erro ao alternar câmera');
+      }
+    };
+    
+    // Cancelar
+    btnCancel.onclick = () => {
+      const currentStream = video.srcObject;
+      if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+      modal.remove();
+      if (onCancel) onCancel();
+    };
+    
+    // Capturar foto
+    btnCapture.onclick = async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      
+      // Converter para blob comprimido
+      const blob = await new Promise((res) => {
+        canvas.toBlob((b) => res(b), 'image/jpeg', 0.8);
+      });
+      
+      // Parar stream e remover modal
+      const currentStream = video.srcObject;
+      if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+      modal.remove();
+      
+      if (onCapture && blob) onCapture(blob);
+    };
+    
+  } catch (e) {
+    console.error('Erro ao acessar câmera:', e);
+    toast('Erro ao acessar câmera. Verifique as permissões.');
+    if (onCancel) onCancel();
+  }
+}
+
 /* ===== PWA Install ===== */
 // Capturar o evento de instalação quando disponível
 window.addEventListener('beforeinstallprompt', e => {
