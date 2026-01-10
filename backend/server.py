@@ -1386,6 +1386,15 @@ async def update_company(company_id: str, company_data: CompanyCreate):
     update_doc = company_data.model_dump()
     update_doc['updated_at'] = datetime.now(timezone.utc).isoformat()
     
+    # Validar slug único se fornecido
+    if update_doc.get('slug'):
+        existing = await db.companies.find_one({
+            "slug": update_doc['slug'],
+            "id": {"$ne": company_id}
+        })
+        if existing:
+            raise HTTPException(status_code=400, detail="Este slug já está em uso por outra empresa")
+    
     result = await db.companies.update_one(
         {"id": company_id},
         {"$set": update_doc}
@@ -1394,7 +1403,10 @@ async def update_company(company_id: str, company_data: CompanyCreate):
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Empresa não encontrada")
     
-    return {"message": "Empresa atualizada com sucesso!"}
+    # Atualizar localStorage do frontend (retornar dados atualizados)
+    updated_company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    
+    return {"message": "Empresa atualizada com sucesso!", "company": updated_company}
 
 # ========== ROTAS DE LANÇAMENTOS ==========
 
