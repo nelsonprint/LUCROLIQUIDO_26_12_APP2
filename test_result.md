@@ -264,7 +264,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Passo a Passo testing completed successfully"
+    - "GPS Financeiro testing completed successfully"
   stuck_tasks: []
   test_priority: "completed"
 
