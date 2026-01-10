@@ -420,19 +420,6 @@ const Empresa = ({ user, onLogout }) => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <Label>URL do App (Domínio para links de vendedor/supervisor)</Label>
-                  <Input
-                    value={formData.app_url}
-                    onChange={(e) => setFormData({ ...formData, app_url: e.target.value })}
-                    placeholder="https://seudominio.com"
-                    className="bg-zinc-800 border-zinc-700"
-                  />
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Ex: https://lucroliquido.com — Usado nos links enviados via WhatsApp
-                  </p>
-                </div>
-
-                <div className="md:col-span-2">
                   <Label>Nome do Contato Principal</Label>
                   <Input
                     value={formData.contato_principal}
@@ -444,7 +431,107 @@ const Empresa = ({ user, onLogout }) => {
               </CardContent>
             </Card>
 
-            {/* Card 4: App do Proprietário */}
+            {/* Card 4: Links dos Apps (Multi-tenant) */}
+            <Card className="bg-zinc-900 border-zinc-800 border-l-4 border-l-purple-500">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <ExternalLink className="w-5 h-5 mr-2" />
+                  Links dos Apps (Vendedor / Supervisor)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>URL Base do Sistema</Label>
+                    <Input
+                      value={formData.app_url}
+                      onChange={(e) => setFormData({ ...formData, app_url: e.target.value })}
+                      placeholder="https://lucroliquido.com"
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Domínio onde o sistema está hospedado
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Slug da Empresa (URL única)</Label>
+                    <Input
+                      value={formData.slug}
+                      onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                      placeholder="minha-empresa"
+                      className="bg-zinc-800 border-zinc-700 font-mono"
+                    />
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Apenas letras minúsculas, números e hífens
+                    </p>
+                  </div>
+                </div>
+
+                {formData.slug && formData.app_url && (
+                  <div className="mt-4 p-4 bg-zinc-800 rounded-lg border border-zinc-700">
+                    <p className="text-sm text-zinc-400 mb-3">Links gerados automaticamente:</p>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
+                        <div>
+                          <p className="text-xs text-purple-400 font-semibold mb-1">📱 App do Vendedor</p>
+                          <p className="text-sm text-white font-mono break-all">
+                            {formData.app_url}/api/app/{formData.slug}/vendedor
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="ml-2 border-purple-500 text-purple-400 hover:bg-purple-500/10"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${formData.app_url}/api/app/${formData.slug}/vendedor`);
+                            toast.success('Link copiado!');
+                          }}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
+                        <div>
+                          <p className="text-xs text-cyan-400 font-semibold mb-1">🔧 App do Supervisor</p>
+                          <p className="text-sm text-white font-mono break-all">
+                            {formData.app_url}/api/app/{formData.slug}/supervisor
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="ml-2 border-cyan-500 text-cyan-400 hover:bg-cyan-500/10"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${formData.app_url}/api/app/${formData.slug}/supervisor`);
+                            toast.success('Link copiado!');
+                          }}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <p className="text-xs text-zinc-500 mt-3">
+                      💡 Envie estes links para seus vendedores e supervisores acessarem os apps
+                    </p>
+                  </div>
+                )}
+
+                {(!formData.slug || !formData.app_url) && (
+                  <div className="p-4 bg-zinc-800 rounded-lg border border-zinc-700 text-center">
+                    <p className="text-sm text-zinc-400">
+                      Preencha a URL Base e o Slug para gerar os links dos apps
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Card 5: App do Proprietário */}
             <Card className="bg-zinc-900 border-zinc-800 border-l-4 border-l-indigo-500">
               <CardHeader>
                 <CardTitle className="flex items-center">
