@@ -11722,6 +11722,7 @@ async def vendedor_login(credentials: dict = Body(...)):
     """Login do vendedor"""
     login_email = credentials.get("login_email")
     login_senha = credentials.get("login_senha")
+    empresa_slug = credentials.get("empresa_slug")  # Opcional - validação extra
     
     if not login_email or not login_senha:
         raise HTTPException(status_code=400, detail="Email e senha são obrigatórios")
@@ -11744,6 +11745,11 @@ async def vendedor_login(credentials: dict = Body(...)):
     
     # Buscar empresa
     empresa = await db.companies.find_one({"id": funcionario["empresa_id"]}, {"_id": 0})
+    
+    # Se slug foi fornecido, validar que o funcionário pertence a essa empresa
+    if empresa_slug and empresa:
+        if empresa.get("slug") != empresa_slug:
+            raise HTTPException(status_code=403, detail="Você não pertence a esta empresa")
     
     return {
         "vendedor": funcionario,
