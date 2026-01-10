@@ -6761,6 +6761,49 @@ def main_dre_tests():
         return False
 
 
+def main_gps_financeiro_tests():
+    """Main function to run GPS Financeiro tests"""
+    print("🚀 Starting GPS Financeiro (Break-even por Margem de Contribuição) API Tests")
+    print("=" * 80)
+    
+    # Login and get company
+    session = requests.Session()
+    
+    # Login with test credentials
+    login_data = {"email": "admin@lucroliquido.com", "password": "admin123"}
+    login_response = session.post(f"{API_BASE}/auth/login", json=login_data)
+    
+    if login_response.status_code != 200:
+        print(f"❌ Login failed: {login_response.status_code}")
+        return False
+    
+    user_data = login_response.json()
+    print(f"✅ Login successful: {user_data['name']}")
+    
+    # Get companies
+    companies_response = session.get(f"{API_BASE}/companies/{user_data['user_id']}")
+    if companies_response.status_code != 200 or not companies_response.json():
+        print("❌ No companies found")
+        return False
+    
+    company_id = companies_response.json()[0]['id']
+    print(f"✅ Using company: {company_id}")
+    
+    # Run GPS Financeiro tests
+    gps_tester = GPSFinanceiroTester(session, user_data, company_id)
+    success = gps_tester.run_all_tests()
+    
+    print("\n" + "=" * 80)
+    if success:
+        print("🎉 ALL GPS FINANCEIRO TESTS COMPLETED SUCCESSFULLY!")
+        print("📊 Break-even calculation formula verified: BE = Custos Fixos ÷ Margem de Contribuição")
+        print("📈 Margem de Contribuição formula verified: MC = 100% - % Custos Variáveis")
+    else:
+        print("⚠️ SOME GPS FINANCEIRO TESTS FAILED - Check logs above")
+    
+    return success
+
+
 if __name__ == "__main__":
-    # Run the Fluxo de Caixa Dashboard tests
-    main_fluxo_caixa_tests()
+    # Run the GPS Financeiro tests as requested
+    main_gps_financeiro_tests()
