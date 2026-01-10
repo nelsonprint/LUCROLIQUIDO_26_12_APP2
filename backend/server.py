@@ -11126,8 +11126,15 @@ async def gerar_contas_pagar_recorrentes(empresa_id: str, mes: Optional[str] = N
 # ========== ROTAS: SUPERVISOR / CRONOGRAMA ==========
 
 @api_router.post("/supervisor/login")
-async def supervisor_login(login_email: str = Body(...), login_senha: str = Body(...)):
+async def supervisor_login(credentials: dict = Body(...)):
     """Login do supervisor"""
+    login_email = credentials.get("login_email")
+    login_senha = credentials.get("login_senha")
+    empresa_slug = credentials.get("empresa_slug")  # Opcional - validação extra
+    
+    if not login_email or not login_senha:
+        raise HTTPException(status_code=400, detail="Email e senha são obrigatórios")
+    
     funcionario = await db.funcionarios.find_one({
         "login_email": login_email,
         "login_senha": login_senha,
@@ -11142,6 +11149,11 @@ async def supervisor_login(login_email: str = Body(...), login_senha: str = Body
     if not empresa:
         empresa = await db.empresas.find_one({"id": funcionario["empresa_id"]}, {"_id": 0})
     
+    # Se slug foi fornecido, validar que o funcionário pertence a essa empresa
+    if empresa_slug and empresa:
+        if empresa.get("slug") != empresa_slug:
+            raise HTTPException(status_code=403, detail="Você não pertence a esta empresa")
+    
     return {
         "success": True,
         "supervisor": {
@@ -11153,6 +11165,7 @@ async def supervisor_login(login_email: str = Body(...), login_senha: str = Body
         "empresa": {
             "id": empresa.get("id") if empresa else funcionario["empresa_id"],
             "nome": empresa.get("razao_social") or empresa.get("name") if empresa else "Empresa",
+            "slug": empresa.get("slug") if empresa else None,
             "logo_url": empresa.get("logo_url") if empresa else None
         }
     }
