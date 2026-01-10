@@ -838,6 +838,70 @@ class Fornecedor(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+# ========== MODELS: GPS FINANCEIRO (BREAK-EVEN) ==========
+
+# Categorias padrão para custos fixos recorrentes
+CATEGORIAS_CUSTO_FIXO = [
+    "Pessoas",
+    "Estrutura", 
+    "Ferramentas/Softwares",
+    "Impostos fixos",
+    "Financeiro",
+    "Veículos",
+    "Marketing fixo",
+    "Outros"
+]
+
+class CustoFixoRecorrenteCreate(BaseModel):
+    """Modelo para criação de custo fixo recorrente"""
+    empresa_id: str
+    descricao: str
+    categoria: str  # Pessoas, Estrutura, Ferramentas/Softwares, etc.
+    valor: float
+    tipo_recorrencia: str = "mensal"  # mensal, anual, parcelado
+    dia_vencimento: int = 10  # Dia do mês para vencimento (1-31)
+    centro_custo: Optional[str] = None
+    num_parcelas: Optional[int] = None  # Apenas se tipo_recorrencia = parcelado
+    parcela_atual: Optional[int] = None  # Controle de parcelas
+
+
+class CustoFixoRecorrente(BaseModel):
+    """Modelo completo de custo fixo recorrente"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    empresa_id: str
+    descricao: str
+    categoria: str
+    valor: float
+    tipo_recorrencia: str = "mensal"
+    dia_vencimento: int = 10
+    centro_custo: Optional[str] = None
+    num_parcelas: Optional[int] = None
+    parcela_atual: Optional[int] = None
+    status: str = "ativo"  # ativo, inativo
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CustoVariavelCreate(BaseModel):
+    """Modelo para criação de custo variável (% sobre faturamento)"""
+    empresa_id: str
+    descricao: str
+    percentual: float  # Ex: 5.0 para 5%
+
+
+class CustoVariavel(BaseModel):
+    """Modelo completo de custo variável"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    empresa_id: str
+    descricao: str
+    percentual: float
+    status: str = "ativo"  # ativo, inativo
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 # ========== MODELS: CRONOGRAMA DE OBRA (SUPERVISOR) ==========
 
 class CronogramaEtapaMedia(BaseModel):
