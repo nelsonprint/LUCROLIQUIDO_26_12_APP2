@@ -676,12 +676,9 @@ function createMediaElement(etapa, stageIdx, item, mediaIdx) {
     hint.style.display = 'block';
   }
   
-  // Captura de foto usando câmera (estrutura idêntica ao app do vendedor)
+  // Captura de foto - IGUAL AO VENDEDOR
   photoBox.onclick = () => {
-    hint.innerHTML = '📷<br>Abrindo câmera...';
-    
-    capturePhoto(photoBox, img, hint, async (blob) => {
-      hint.innerHTML = '⏳<br>Processando...';
+    capturePhoto(async (blob) => {
       try {
         await putBlob(item.id, 'image', blob);
         item.hasImage = true;
@@ -689,8 +686,7 @@ function createMediaElement(etapa, stageIdx, item, mediaIdx) {
         toast('Foto salva!');
       } catch (err) {
         console.error(err);
-        alert('Falha ao salvar a foto. Tente novamente.');
-        hint.innerHTML = '📷<br>Toque para tirar foto';
+        toast('Falha ao salvar a foto');
       }
     });
   };
