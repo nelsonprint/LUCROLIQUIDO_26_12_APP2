@@ -1108,6 +1108,15 @@ async def login(credentials: UserLogin):
 async def create_company(company_data: CompanyCreate):
     """Criar nova empresa vinculada ao usuário"""
     try:
+        # Gerar slug único se não fornecido
+        if not company_data.slug:
+            company_data.slug = await generate_unique_slug(company_data.name, db)
+        else:
+            # Validar se slug fornecido já existe
+            existing = await db.companies.find_one({"slug": company_data.slug})
+            if existing:
+                raise HTTPException(status_code=400, detail="Este slug já está em uso")
+        
         # Criar empresa
         company = Company(**company_data.model_dump())
         
