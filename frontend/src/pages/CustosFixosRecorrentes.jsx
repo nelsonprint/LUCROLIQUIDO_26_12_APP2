@@ -245,6 +245,14 @@ const CustosFixosRecorrentes = ({ user, onLogout }) => {
           </div>
           <div className="flex gap-3">
             <Button
+              onClick={handleOpenImport}
+              variant="outline"
+              className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
+            >
+              <FolderTree className="mr-2" size={18} />
+              Importar do Plano de Contas
+            </Button>
+            <Button
               onClick={handleGerarContas}
               disabled={gerando}
               variant="outline"
