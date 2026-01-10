@@ -3,15 +3,16 @@ import { Sidebar } from '@/components/Sidebar';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { axiosInstance } from '../App';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Power, RefreshCw, Building2, DollarSign, Calendar, TrendingUp } from 'lucide-react';
+import { Plus, Edit, Trash2, Power, RefreshCw, Building2, DollarSign, Calendar, TrendingUp, Download, FolderTree } from 'lucide-react';
 
 const CATEGORIAS = [
   'Pessoas',
@@ -27,9 +28,13 @@ const CATEGORIAS = [
 const CustosFixosRecorrentes = ({ user, onLogout }) => {
   const [custos, setCustos] = useState([]);
   const [showDialog, setShowDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [editingCusto, setEditingCusto] = useState(null);
   const [loading, setLoading] = useState(false);
   const [gerando, setGerando] = useState(false);
+  const [importando, setImportando] = useState(false);
+  const [importPreview, setImportPreview] = useState(null);
+  const [selectedForImport, setSelectedForImport] = useState([]);
 
   const [formData, setFormData] = useState({
     descricao: '',
