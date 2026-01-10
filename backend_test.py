@@ -1474,7 +1474,7 @@ class GPSFinanceiroTester:
         self.log("=" * 70)
         
         tests = [
-            ("List Custos Fixos (Empty)", self.test_list_custos_fixos_empty),
+            ("Cleanup Existing Data", self.test_cleanup_existing_data),
             ("Create Custos Fixos", self.test_create_custos_fixos),
             ("List Custos Fixos (Populated)", self.test_list_custos_fixos_populated),
             ("Update Custo Fixo", self.test_update_custo_fixo),
