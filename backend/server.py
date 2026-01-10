@@ -11603,6 +11603,75 @@ async def serve_cliente_manifest():
 
 # ========== ENDPOINTS: APP DO VENDEDOR ==========
 
+# ===== ROTAS COM SLUG (Multi-tenant) =====
+
+@api_router.get("/app/{slug}/vendedor")
+async def serve_vendedor_app_by_slug(slug: str):
+    """Servir página PWA do vendedor com validação de empresa"""
+    # Verificar se empresa existe
+    empresa = await db.companies.find_one({"slug": slug}, {"_id": 0})
+    if not empresa:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    
+    file_path = static_dir / "vendedor.html"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+    
+    # Ler o HTML e injetar o slug da empresa
+    async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
+        html_content = await f.read()
+    
+    # Injetar script com dados da empresa no início do body
+    empresa_script = f'''<script>
+    window.EMPRESA_SLUG = "{slug}";
+    window.EMPRESA_ID = "{empresa.get('id', '')}";
+    window.EMPRESA_NOME = "{empresa.get('name', '')}";
+    </script>'''
+    
+    html_content = html_content.replace('<body>', f'<body>\n{empresa_script}')
+    
+    return HTMLResponse(content=html_content, media_type="text/html")
+
+
+@api_router.get("/app/{slug}/supervisor")
+async def serve_supervisor_app_by_slug(slug: str):
+    """Servir página PWA do supervisor com validação de empresa"""
+    # Verificar se empresa existe
+    empresa = await db.companies.find_one({"slug": slug}, {"_id": 0})
+    if not empresa:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    
+    file_path = static_dir / "supervisor.html"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+    
+    # Ler o HTML e injetar o slug da empresa
+    async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
+        html_content = await f.read()
+    
+    # Injetar script com dados da empresa no início do body
+    empresa_script = f'''<script>
+    window.EMPRESA_SLUG = "{slug}";
+    window.EMPRESA_ID = "{empresa.get('id', '')}";
+    window.EMPRESA_NOME = "{empresa.get('name', '')}";
+    </script>'''
+    
+    html_content = html_content.replace('<body>', f'<body>\n{empresa_script}')
+    
+    return HTMLResponse(content=html_content, media_type="text/html")
+
+
+@api_router.get("/app/{slug}/info")
+async def get_empresa_info_by_slug(slug: str):
+    """Retornar informações básicas da empresa pelo slug"""
+    empresa = await db.companies.find_one({"slug": slug}, {"_id": 0, "id": 1, "name": 1, "nome_fantasia": 1, "slug": 1})
+    if not empresa:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    return empresa
+
+
+# ===== ROTAS GENÉRICAS (mantidas para compatibilidade) =====
+
 @api_router.get("/vendedor/app")
 async def serve_vendedor_app():
     """Servir página PWA do vendedor"""
