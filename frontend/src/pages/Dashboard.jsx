@@ -234,6 +234,11 @@ const Dashboard = ({ user, onLogout }) => {
           )}
         </div>
 
+        {/* GPS Financeiro - Primeiro elemento do Dashboard */}
+        {selectedCompany && (
+          <GPSFinanceiro companyId={selectedCompany.id} />
+        )}
+
         {/* Termômetro de Meta */}
         {goal && goal.goal_amount > 0 && metrics && (
           <Card className="glass border-white/10 mb-6" data-testid="goal-thermometer-card">
