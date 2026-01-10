@@ -12126,7 +12126,7 @@ async def gerar_link_vendedor(funcionario_id: str):
     if not funcionario.get("login_email") or not funcionario.get("login_senha"):
         raise HTTPException(status_code=400, detail="Configure o login do vendedor primeiro")
     
-    # Buscar a empresa para obter o app_url personalizado
+    # Buscar a empresa para obter o app_url e slug
     empresa = await db.companies.find_one({"id": funcionario.get("empresa_id")}, {"_id": 0})
     
     # Usar app_url da empresa se disponível, senão usar variável de ambiente
@@ -12135,12 +12135,19 @@ async def gerar_link_vendedor(funcionario_id: str):
     else:
         base_url = os.environ.get("BACKEND_URL", os.environ.get("REACT_APP_BACKEND_URL", ""))
     
-    vendedor_url = f"{base_url}/api/vendedor/app"
+    # Usar URL com slug se disponível, senão usar URL genérica
+    if empresa and empresa.get("slug"):
+        vendedor_url = f"{base_url}/api/app/{empresa['slug']}/vendedor"
+    else:
+        vendedor_url = f"{base_url}/api/vendedor/app"
     
     whatsapp_numero = funcionario.get("whatsapp", "")
     whatsapp_numero = ''.join(filter(str.isdigit, whatsapp_numero))
     
-    mensagem = f"""🛒 *App do Vendedor - Lucro Líquido*
+    # Nome da empresa para a mensagem
+    empresa_nome = empresa.get("nome_fantasia") or empresa.get("name") or "Lucro Líquido" if empresa else "Lucro Líquido"
+    
+    mensagem = f"""🛒 *App do Vendedor - {empresa_nome}*
 
 Olá {funcionario['nome_completo']}!
 
