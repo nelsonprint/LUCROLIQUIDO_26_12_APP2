@@ -10634,6 +10634,161 @@ async def excluir_custo_variavel(custo_id: str):
     return {"message": "Custo variável excluído"}
 
 
+# ========== ENDPOINT: IMPORTAR DO PLANO DE CONTAS ==========
+
+@api_router.get("/custos-fixos/importar/preview/{empresa_id}")
+async def preview_importacao_plano_contas(empresa_id: str):
+    """
+    Visualizar categorias do Plano de Contas disponíveis para importação.
+    Retorna categorias FIXA e VARIAVEL_INDIRETA que ainda não foram importadas.
+    """
+    # Buscar categorias do Plano de Contas (FIXA e VARIAVEL_INDIRETA)
+    categorias = await db.expense_categories.find({
+        "company_id": empresa_id,
+        "active": True,
+        "group": {"$in": ["FIXA", "VARIAVEL_INDIRETA"]}
+    }, {"_id": 0}).to_list(100)
+    
+    # Buscar custos fixos já existentes para evitar duplicação
+    custos_existentes = await db.custos_fixos_recorrentes.find(
+        {"empresa_id": empresa_id},
+        {"_id": 0, "descricao": 1, "plano_contas_id": 1}
+    ).to_list(100)
+    
+    # IDs já importados
+    ids_importados = {c.get("plano_contas_id") for c in custos_existentes if c.get("plano_contas_id")}
+    nomes_existentes = {c["descricao"].lower() for c in custos_existentes}
+    
+    # Filtrar categorias ainda não importadas
+    disponiveis = []
+    ja_importadas = []
+    
+    for cat in categorias:
+        item = {
+            "id": cat["id"],
+            "name": cat["name"],
+            "group": cat["group"],
+            "description": cat.get("description", "")
+        }
+        
+        if cat["id"] in ids_importados or cat["name"].lower() in nomes_existentes:
+            ja_importadas.append(item)
+        else:
+            disponiveis.append(item)
+    
+    # Mapear grupos do Plano de Contas para categorias do GPS Financeiro
+    mapeamento_categorias = {
+        "FIXA": {
+            "Aluguel": "Estrutura",
+            "Energia Elétrica": "Estrutura",
+            "Água": "Estrutura",
+            "Telefone/Internet": "Estrutura",
+            "Contador": "Outros",
+            "Salários Administrativos": "Pessoas",
+            "Software/Sistemas": "Ferramentas/Softwares",
+            "Marketing": "Marketing fixo",
+        },
+        "VARIAVEL_INDIRETA": {
+            "Combustível Administrativo": "Veículos",
+            "Material de Escritório": "Estrutura",
+            "Manutenção Equipamentos": "Ferramentas/Softwares",
+        }
+    }
+    
+    return {
+        "disponiveis": disponiveis,
+        "ja_importadas": ja_importadas,
+        "total_disponiveis": len(disponiveis),
+        "total_ja_importadas": len(ja_importadas),
+        "mapeamento_sugerido": mapeamento_categorias
+    }
+
+
+@api_router.post("/custos-fixos/importar/{empresa_id}")
+async def importar_do_plano_contas(empresa_id: str, categorias_ids: List[str] = Body(..., embed=True)):
+    """
+    Importar categorias selecionadas do Plano de Contas como Custos Fixos Recorrentes.
+    """
+    if not categorias_ids:
+        raise HTTPException(status_code=400, detail="Nenhuma categoria selecionada")
+    
+    # Buscar categorias selecionadas
+    categorias = await db.expense_categories.find({
+        "company_id": empresa_id,
+        "id": {"$in": categorias_ids},
+        "active": True
+    }, {"_id": 0}).to_list(100)
+    
+    if not categorias:
+        raise HTTPException(status_code=404, detail="Categorias não encontradas")
+    
+    # Mapeamento de grupos para categorias do GPS Financeiro
+    def mapear_categoria(nome: str, grupo: str) -> str:
+        mapeamento = {
+            "Aluguel": "Estrutura",
+            "Energia Elétrica": "Estrutura",
+            "Água": "Estrutura",
+            "Telefone/Internet": "Estrutura",
+            "Contador": "Outros",
+            "Salários Administrativos": "Pessoas",
+            "Software/Sistemas": "Ferramentas/Softwares",
+            "Marketing": "Marketing fixo",
+            "Combustível Administrativo": "Veículos",
+            "Material de Escritório": "Estrutura",
+            "Manutenção Equipamentos": "Ferramentas/Softwares",
+        }
+        return mapeamento.get(nome, "Outros" if grupo == "FIXA" else "Outros")
+    
+    custos_criados = []
+    custos_ignorados = []
+    
+    for cat in categorias:
+        # Verificar se já existe
+        existente = await db.custos_fixos_recorrentes.find_one({
+            "empresa_id": empresa_id,
+            "$or": [
+                {"plano_contas_id": cat["id"]},
+                {"descricao": cat["name"]}
+            ]
+        })
+        
+        if existente:
+            custos_ignorados.append(cat["name"])
+            continue
+        
+        # Criar custo fixo recorrente
+        custo = CustoFixoRecorrente(
+            empresa_id=empresa_id,
+            descricao=cat["name"],
+            categoria=mapear_categoria(cat["name"], cat.get("group", "FIXA")),
+            valor=0.0,  # Valor inicial zero - usuário deve preencher
+            tipo_recorrencia="mensal",
+            dia_vencimento=10,
+            centro_custo=None,
+            status="ativo"
+        )
+        
+        doc = custo.model_dump()
+        doc["plano_contas_id"] = cat["id"]  # Vínculo com o Plano de Contas
+        doc["created_at"] = doc["created_at"].isoformat()
+        doc["updated_at"] = doc["updated_at"].isoformat()
+        
+        await db.custos_fixos_recorrentes.insert_one(doc)
+        custos_criados.append({
+            "descricao": cat["name"],
+            "categoria": custo.categoria,
+            "id": custo.id
+        })
+    
+    return {
+        "criados": len(custos_criados),
+        "ignorados": len(custos_ignorados),
+        "detalhes_criados": custos_criados,
+        "detalhes_ignorados": custos_ignorados,
+        "mensagem": f"{len(custos_criados)} custo(s) importado(s). Preencha os valores!"
+    }
+
+
 # ========== ENDPOINT: GPS FINANCEIRO - DADOS COMPLETOS ==========
 
 @api_router.get("/gps-financeiro/{empresa_id}")
