@@ -1,5 +1,49 @@
-# Módulo de Relatórios e Fornecedores - Testing Status
-# Date: 2026-01-07
+# Módulo de Relatórios, Fornecedores e GPS Financeiro - Testing Status
+# Date: 2026-01-10
+
+gps_financeiro_module:
+  - task: "GPS Financeiro - Break-even por Margem de Contribuição"
+    implemented: true
+    working: pending_test
+    files:
+      - "/app/frontend/src/components/GPSFinanceiro.jsx"
+      - "/app/frontend/src/pages/CustosFixosRecorrentes.jsx"
+      - "/app/frontend/src/pages/CustosVariaveis.jsx"
+      - "/app/backend/server.py"
+    priority: "critical"
+    needs_retesting: true
+    features:
+      - "Tela de Custos Fixos Recorrentes com CRUD completo"
+      - "Tela de Custos Variáveis com CRUD completo"
+      - "Cálculo automático de Break-even por Margem de Contribuição"
+      - "Gráfico GPS Financeiro no Dashboard"
+      - "Indicadores: distância do break-even, média diária, necessário por dia"
+      - "Mensagens inteligentes contextuais"
+      - "Geração automática de Contas a Pagar a partir de custos fixos"
+    endpoints:
+      - "GET /api/custos-fixos/{empresa_id}"
+      - "POST /api/custos-fixos"
+      - "PUT /api/custos-fixos/{custo_id}"
+      - "PATCH /api/custos-fixos/{custo_id}/status"
+      - "DELETE /api/custos-fixos/{custo_id}"
+      - "GET /api/custos-variaveis/{empresa_id}"
+      - "POST /api/custos-variaveis"
+      - "PUT /api/custos-variaveis/{custo_id}"
+      - "PATCH /api/custos-variaveis/{custo_id}/status"
+      - "DELETE /api/custos-variaveis/{custo_id}"
+      - "GET /api/gps-financeiro/{empresa_id}"
+      - "POST /api/gps-financeiro/gerar-contas-pagar/{empresa_id}"
+    test_credentials:
+      - email: "admin@lucroliquido.com"
+      - password: "admin123"
+    test_steps:
+      - "1. Login como admin"
+      - "2. Navegar para Contas > Custos Fixos"
+      - "3. Criar custos fixos (ex: Aluguel R$ 5000, Salários R$ 15000)"
+      - "4. Navegar para Contas > Custos Variáveis"
+      - "5. Criar custos variáveis (ex: Comissão 5%, Impostos 6%)"
+      - "6. Voltar ao Dashboard e verificar GPS Financeiro"
+      - "7. Verificar cálculo: BE = Custos Fixos / Margem Contribuição"
 
 fornecedores_module:
   - task: "Fornecedores (Suppliers) Module - Complete CRUD functionality"
