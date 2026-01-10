@@ -10482,6 +10482,438 @@ async def relatorio_fornecedores_ranking(company_id: str, periodo: str = "ano"):
     }
 
 
+# ========== ENDPOINTS: GPS FINANCEIRO (BREAK-EVEN) ==========
+
+@api_router.get("/custos-fixos/{empresa_id}")
+async def listar_custos_fixos(empresa_id: str, status: Optional[str] = None):
+    """Listar custos fixos recorrentes de uma empresa"""
+    query = {"empresa_id": empresa_id}
+    if status:
+        query["status"] = status
+    
+    custos = await db.custos_fixos_recorrentes.find(query, {"_id": 0}).sort("categoria", 1).to_list(100)
+    return custos
+
+
+@api_router.get("/custos-fixos/{empresa_id}/{custo_id}")
+async def buscar_custo_fixo(empresa_id: str, custo_id: str):
+    """Buscar custo fixo específico"""
+    custo = await db.custos_fixos_recorrentes.find_one(
+        {"id": custo_id, "empresa_id": empresa_id}, 
+        {"_id": 0}
+    )
+    if not custo:
+        raise HTTPException(status_code=404, detail="Custo fixo não encontrado")
+    return custo
+
+
+@api_router.post("/custos-fixos")
+async def criar_custo_fixo(custo_data: CustoFixoRecorrenteCreate):
+    """Criar novo custo fixo recorrente"""
+    custo = CustoFixoRecorrente(**custo_data.model_dump())
+    doc = custo.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    doc["updated_at"] = doc["updated_at"].isoformat()
+    
+    await db.custos_fixos_recorrentes.insert_one(doc)
+    return {"id": custo.id, "message": "Custo fixo criado com sucesso"}
+
+
+@api_router.put("/custos-fixos/{custo_id}")
+async def atualizar_custo_fixo(custo_id: str, custo_data: CustoFixoRecorrenteCreate):
+    """Atualizar custo fixo recorrente"""
+    update_data = custo_data.model_dump()
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.custos_fixos_recorrentes.update_one(
+        {"id": custo_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Custo fixo não encontrado")
+    
+    return {"message": "Custo fixo atualizado"}
+
+
+@api_router.patch("/custos-fixos/{custo_id}/status")
+async def alternar_status_custo_fixo(custo_id: str, status: str = Body(..., embed=True)):
+    """Alternar status do custo fixo (ativo/inativo)"""
+    result = await db.custos_fixos_recorrentes.update_one(
+        {"id": custo_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Custo fixo não encontrado")
+    
+    return {"message": f"Status alterado para {status}"}
+
+
+@api_router.delete("/custos-fixos/{custo_id}")
+async def excluir_custo_fixo(custo_id: str):
+    """Excluir custo fixo recorrente"""
+    result = await db.custos_fixos_recorrentes.delete_one({"id": custo_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Custo fixo não encontrado")
+    
+    return {"message": "Custo fixo excluído"}
+
+
+@api_router.get("/custos-fixos-categorias")
+async def listar_categorias_custo_fixo():
+    """Listar categorias disponíveis para custos fixos"""
+    return CATEGORIAS_CUSTO_FIXO
+
+
+# ========== ENDPOINTS: CUSTOS VARIÁVEIS ==========
+
+@api_router.get("/custos-variaveis/{empresa_id}")
+async def listar_custos_variaveis(empresa_id: str, status: Optional[str] = None):
+    """Listar custos variáveis de uma empresa"""
+    query = {"empresa_id": empresa_id}
+    if status:
+        query["status"] = status
+    
+    custos = await db.custos_variaveis.find(query, {"_id": 0}).sort("descricao", 1).to_list(100)
+    return custos
+
+
+@api_router.post("/custos-variaveis")
+async def criar_custo_variavel(custo_data: CustoVariavelCreate):
+    """Criar novo custo variável"""
+    custo = CustoVariavel(**custo_data.model_dump())
+    doc = custo.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    doc["updated_at"] = doc["updated_at"].isoformat()
+    
+    await db.custos_variaveis.insert_one(doc)
+    return {"id": custo.id, "message": "Custo variável criado com sucesso"}
+
+
+@api_router.put("/custos-variaveis/{custo_id}")
+async def atualizar_custo_variavel(custo_id: str, custo_data: CustoVariavelCreate):
+    """Atualizar custo variável"""
+    update_data = custo_data.model_dump()
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.custos_variaveis.update_one(
+        {"id": custo_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Custo variável não encontrado")
+    
+    return {"message": "Custo variável atualizado"}
+
+
+@api_router.patch("/custos-variaveis/{custo_id}/status")
+async def alternar_status_custo_variavel(custo_id: str, status: str = Body(..., embed=True)):
+    """Alternar status do custo variável (ativo/inativo)"""
+    result = await db.custos_variaveis.update_one(
+        {"id": custo_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Custo variável não encontrado")
+    
+    return {"message": f"Status alterado para {status}"}
+
+
+@api_router.delete("/custos-variaveis/{custo_id}")
+async def excluir_custo_variavel(custo_id: str):
+    """Excluir custo variável"""
+    result = await db.custos_variaveis.delete_one({"id": custo_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Custo variável não encontrado")
+    
+    return {"message": "Custo variável excluído"}
+
+
+# ========== ENDPOINT: GPS FINANCEIRO - DADOS COMPLETOS ==========
+
+@api_router.get("/gps-financeiro/{empresa_id}")
+async def calcular_gps_financeiro(empresa_id: str, mes: Optional[str] = None):
+    """
+    Calcular dados do GPS Financeiro (Break-even por Margem de Contribuição)
+    
+    Fórmula: Break-even (R$) = Custos Fixos ÷ Margem de Contribuição (%)
+    Margem de Contribuição (%) = 100% - % Custos Variáveis
+    """
+    from calendar import monthrange
+    from datetime import datetime as dt
+    
+    # Definir mês de análise
+    if not mes:
+        mes = dt.now().strftime("%Y-%m")
+    
+    ano, mes_num = int(mes.split("-")[0]), int(mes.split("-")[1])
+    dias_no_mes = monthrange(ano, mes_num)[1]
+    dia_atual = dt.now().day if mes == dt.now().strftime("%Y-%m") else dias_no_mes
+    
+    # 1. Buscar custos fixos recorrentes ativos
+    custos_fixos = await db.custos_fixos_recorrentes.find(
+        {"empresa_id": empresa_id, "status": "ativo"},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Calcular total de custos fixos mensais
+    total_custos_fixos = 0
+    custos_fixos_detalhados = []
+    
+    for custo in custos_fixos:
+        valor_mensal = custo["valor"]
+        
+        # Ajustar valor se for anual (dividir por 12)
+        if custo["tipo_recorrencia"] == "anual":
+            valor_mensal = custo["valor"] / 12
+        
+        total_custos_fixos += valor_mensal
+        custos_fixos_detalhados.append({
+            "descricao": custo["descricao"],
+            "categoria": custo["categoria"],
+            "valor_mensal": round(valor_mensal, 2)
+        })
+    
+    # 2. Buscar custos variáveis ativos
+    custos_variaveis = await db.custos_variaveis.find(
+        {"empresa_id": empresa_id, "status": "ativo"},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Calcular total de custos variáveis (%)
+    total_percentual_variavel = sum(cv["percentual"] for cv in custos_variaveis)
+    margem_contribuicao = (100 - total_percentual_variavel) / 100  # Converter para decimal
+    
+    # Se margem for zero ou negativa, não é possível calcular break-even
+    if margem_contribuicao <= 0:
+        margem_contribuicao = 0.01  # Mínimo para evitar divisão por zero
+    
+    # 3. Calcular break-even
+    breakeven_faturamento = total_custos_fixos / margem_contribuicao if margem_contribuicao > 0 else 0
+    breakeven_diario = breakeven_faturamento / dias_no_mes
+    breakeven_acumulado_ate_hoje = breakeven_diario * dia_atual
+    
+    # 4. Buscar receita realizada (Contas a Receber PAGAS no mês)
+    receita_realizada = 0
+    contas_receber = await db.contas.find({
+        "company_id": empresa_id,
+        "tipo": "RECEBER",
+        "status": "PAGO",
+        "data_pagamento": {"$regex": f"^{mes}"}
+    }, {"_id": 0, "valor": 1, "data_pagamento": 1}).to_list(1000)
+    
+    receita_realizada = sum(c["valor"] for c in contas_receber)
+    
+    # Receita dia a dia para o gráfico
+    receita_por_dia = {}
+    for conta in contas_receber:
+        dia = int(conta["data_pagamento"].split("-")[2])
+        receita_por_dia[dia] = receita_por_dia.get(dia, 0) + conta["valor"]
+    
+    # 5. Buscar receita prevista (Orçamentos APROVADOS do mês + Contas a Receber PENDENTES)
+    receita_prevista = 0
+    
+    # Orçamentos aprovados
+    orcamentos_aprovados = await db.orcamentos.find({
+        "empresa_id": empresa_id,
+        "status": {"$in": ["APROVADO", "aprovado"]},
+        "created_at": {"$regex": f"^{mes}"}
+    }, {"_id": 0, "preco_praticado": 1}).to_list(100)
+    
+    receita_orcamentos = sum(orc.get("preco_praticado", 0) for orc in orcamentos_aprovados)
+    
+    # Contas a Receber pendentes
+    contas_pendentes = await db.contas.find({
+        "company_id": empresa_id,
+        "tipo": "RECEBER",
+        "status": "PENDENTE",
+        "data_vencimento": {"$regex": f"^{mes}"}
+    }, {"_id": 0, "valor": 1}).to_list(1000)
+    
+    receita_contas_pendentes = sum(c["valor"] for c in contas_pendentes)
+    
+    receita_prevista = receita_realizada + receita_contas_pendentes
+    
+    # 6. Calcular indicadores
+    percentual_breakeven_coberto = (receita_realizada / breakeven_faturamento * 100) if breakeven_faturamento > 0 else 0
+    distancia_breakeven = receita_realizada - breakeven_faturamento
+    
+    # Dias restantes no mês
+    dias_restantes = dias_no_mes - dia_atual
+    
+    # Receita diária necessária para atingir break-even
+    falta_para_breakeven = max(0, breakeven_faturamento - receita_realizada)
+    receita_diaria_necessaria = falta_para_breakeven / dias_restantes if dias_restantes > 0 else 0
+    
+    # Projeção: média diária atual * dias do mês
+    media_diaria_atual = receita_realizada / dia_atual if dia_atual > 0 else 0
+    projecao_mes = media_diaria_atual * dias_no_mes
+    atingira_breakeven = projecao_mes >= breakeven_faturamento
+    
+    # Dias estimados para atingir break-even (no ritmo atual)
+    dias_para_breakeven = None
+    if media_diaria_atual > 0 and falta_para_breakeven > 0:
+        dias_para_breakeven = int(falta_para_breakeven / media_diaria_atual)
+    
+    # Status do break-even
+    if receita_realizada >= breakeven_faturamento:
+        status_breakeven = "acima"
+    elif percentual_breakeven_coberto >= 90:
+        status_breakeven = "proximo"
+    else:
+        status_breakeven = "abaixo"
+    
+    # 7. Dados para o gráfico (acumulado dia a dia)
+    grafico_dados = []
+    receita_acumulada = 0
+    
+    for dia in range(1, dia_atual + 1):
+        receita_dia = receita_por_dia.get(dia, 0)
+        receita_acumulada += receita_dia
+        
+        grafico_dados.append({
+            "dia": dia,
+            "breakeven_acumulado": round(breakeven_diario * dia, 2),
+            "receita_acumulada": round(receita_acumulada, 2),
+            "meta_dia": round(breakeven_diario, 2)
+        })
+    
+    # Projeção para os dias restantes (opcional)
+    for dia in range(dia_atual + 1, dias_no_mes + 1):
+        grafico_dados.append({
+            "dia": dia,
+            "breakeven_acumulado": round(breakeven_diario * dia, 2),
+            "receita_acumulada": None,  # Ainda não realizado
+            "projecao_acumulada": round(receita_acumulada + media_diaria_atual * (dia - dia_atual), 2),
+            "meta_dia": round(breakeven_diario, 2)
+        })
+    
+    return {
+        "mes": mes,
+        "dias_no_mes": dias_no_mes,
+        "dia_atual": dia_atual,
+        "dias_restantes": dias_restantes,
+        
+        # Custos
+        "custos_fixos": {
+            "total": round(total_custos_fixos, 2),
+            "detalhes": custos_fixos_detalhados
+        },
+        "custos_variaveis": {
+            "total_percentual": round(total_percentual_variavel, 2),
+            "itens": [{"descricao": cv["descricao"], "percentual": cv["percentual"]} for cv in custos_variaveis]
+        },
+        
+        # Break-even
+        "margem_contribuicao": round(margem_contribuicao * 100, 2),
+        "breakeven_faturamento": round(breakeven_faturamento, 2),
+        "breakeven_diario": round(breakeven_diario, 2),
+        "breakeven_acumulado_ate_hoje": round(breakeven_acumulado_ate_hoje, 2),
+        
+        # Receitas
+        "receita_realizada": round(receita_realizada, 2),
+        "receita_prevista": round(receita_prevista, 2),
+        
+        # Indicadores
+        "percentual_breakeven_coberto": round(percentual_breakeven_coberto, 2),
+        "distancia_breakeven": round(distancia_breakeven, 2),
+        "receita_diaria_necessaria": round(receita_diaria_necessaria, 2),
+        "media_diaria_atual": round(media_diaria_atual, 2),
+        "projecao_mes": round(projecao_mes, 2),
+        "atingira_breakeven": atingira_breakeven,
+        "dias_para_breakeven": dias_para_breakeven,
+        "status_breakeven": status_breakeven,
+        
+        # Dados do gráfico
+        "grafico": grafico_dados
+    }
+
+
+@api_router.post("/gps-financeiro/gerar-contas-pagar/{empresa_id}")
+async def gerar_contas_pagar_recorrentes(empresa_id: str, mes: Optional[str] = None):
+    """
+    Gerar contas a pagar automaticamente a partir dos custos fixos recorrentes.
+    Usado no início de cada mês ou quando solicitado.
+    """
+    from datetime import datetime as dt
+    
+    # Definir mês de geração
+    if not mes:
+        mes = dt.now().strftime("%Y-%m")
+    
+    ano, mes_num = int(mes.split("-")[0]), int(mes.split("-")[1])
+    
+    # Buscar custos fixos recorrentes ativos
+    custos_fixos = await db.custos_fixos_recorrentes.find(
+        {"empresa_id": empresa_id, "status": "ativo"},
+        {"_id": 0}
+    ).to_list(100)
+    
+    contas_geradas = []
+    contas_existentes = 0
+    
+    for custo in custos_fixos:
+        # Verificar se já existe conta gerada para este custo neste mês
+        conta_existente = await db.contas.find_one({
+            "company_id": empresa_id,
+            "custo_fixo_id": custo["id"],
+            "data_vencimento": {"$regex": f"^{mes}"}
+        })
+        
+        if conta_existente:
+            contas_existentes += 1
+            continue
+        
+        # Calcular valor (se for anual, verificar mês específico ou dividir)
+        valor = custo["valor"]
+        if custo["tipo_recorrencia"] == "anual":
+            # Para anuais, gera apenas em um mês específico ou divide por 12
+            valor = custo["valor"] / 12  # Ou pode gerar apenas no mês de vencimento
+        
+        # Calcular data de vencimento
+        dia_vencimento = min(custo["dia_vencimento"], 28)  # Evitar problemas com meses curtos
+        data_vencimento = f"{mes}-{str(dia_vencimento).zfill(2)}"
+        
+        # Criar conta a pagar
+        conta = Conta(
+            company_id=empresa_id,
+            user_id="sistema",  # Gerado automaticamente
+            tipo="PAGAR",
+            descricao=f"{custo['descricao']} (Recorrente)",
+            categoria=custo["categoria"],
+            data_emissao=dt.now().strftime("%Y-%m-%d"),
+            data_vencimento=data_vencimento,
+            valor=valor,
+            forma_pagamento="PIX",
+            observacoes=f"Gerado automaticamente do custo fixo: {custo['descricao']}",
+            status="PENDENTE"
+        )
+        
+        doc = conta.model_dump()
+        doc["custo_fixo_id"] = custo["id"]  # Vínculo com o custo fixo original
+        doc["created_at"] = doc["created_at"].isoformat()
+        doc["updated_at"] = doc["updated_at"].isoformat()
+        
+        await db.contas.insert_one(doc)
+        contas_geradas.append({
+            "descricao": custo["descricao"],
+            "valor": valor,
+            "vencimento": data_vencimento
+        })
+    
+    return {
+        "mes": mes,
+        "contas_geradas": len(contas_geradas),
+        "contas_existentes": contas_existentes,
+        "detalhes": contas_geradas
+    }
+
+
 # ========== ROTAS: SUPERVISOR / CRONOGRAMA ==========
 
 @api_router.post("/supervisor/login")
