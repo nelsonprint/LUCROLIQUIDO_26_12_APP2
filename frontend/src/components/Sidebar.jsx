@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Target, Calculator, CreditCard, Shield, LogOut, BookOpen, Receipt, ChevronDown, ChevronRight, Package, Settings, Users, Layers, FolderTree, UserCheck, Banknote, BarChart3, Truck, Video } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Calculator, CreditCard, Shield, LogOut, BookOpen, Receipt, ChevronDown, ChevronRight, Package, Settings, Users, Layers, FolderTree, UserCheck, Banknote, BarChart3, Truck, Video, Repeat, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificacoesPanel from '@/components/NotificacoesPanel';
 
@@ -28,7 +28,9 @@ export const Sidebar = ({ user, onLogout, onNavigate }) => {
       label: 'Contas',
       items: [
         { path: '/contas-pagar', label: 'Contas a Pagar' },
-        { path: '/contas-receber', label: 'Contas a Receber' }
+        { path: '/contas-receber', label: 'Contas a Receber' },
+        { path: '/custos-fixos', label: 'Custos Fixos', icon: Repeat },
+        { path: '/custos-variaveis', label: 'Custos Variáveis', icon: Percent },
       ]
     },
     { path: '/dfc', icon: Banknote, label: 'DFC' },
