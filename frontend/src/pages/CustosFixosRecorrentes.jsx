@@ -150,6 +150,56 @@ const CustosFixosRecorrentes = ({ user, onLogout }) => {
     }
   };
 
+  // Funções de Importação do Plano de Contas
+  const handleOpenImport = async () => {
+    try {
+      const response = await axiosInstance.get(`/custos-fixos/importar/preview/${company.id}`);
+      setImportPreview(response.data);
+      setSelectedForImport([]);
+      setShowImportDialog(true);
+    } catch (error) {
+      toast.error('Erro ao carregar categorias do Plano de Contas');
+    }
+  };
+
+  const handleToggleImportItem = (id) => {
+    setSelectedForImport(prev => 
+      prev.includes(id) 
+        ? prev.filter(i => i !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleSelectAllImport = () => {
+    if (selectedForImport.length === importPreview?.disponiveis?.length) {
+      setSelectedForImport([]);
+    } else {
+      setSelectedForImport(importPreview?.disponiveis?.map(c => c.id) || []);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (selectedForImport.length === 0) {
+      toast.error('Selecione pelo menos uma categoria para importar');
+      return;
+    }
+
+    setImportando(true);
+    try {
+      const response = await axiosInstance.post(`/custos-fixos/importar/${company.id}`, {
+        categorias_ids: selectedForImport
+      });
+      
+      toast.success(response.data.mensagem);
+      setShowImportDialog(false);
+      fetchCustos();
+    } catch (error) {
+      toast.error('Erro ao importar categorias');
+    } finally {
+      setImportando(false);
+    }
+  };
+
   const resetForm = () => {
     setEditingCusto(null);
     setFormData({
