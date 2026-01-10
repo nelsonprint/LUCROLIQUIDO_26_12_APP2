@@ -15,6 +15,7 @@ import MarkupDonutChart from '@/components/MarkupDonutChart';
 import DREChart from '@/components/DREChart';
 import FluxoCaixaDashboard from '@/components/FluxoCaixaDashboard';
 import DFCResumoCard from '@/components/DFCResumoCard';
+import GPSFinanceiro from '@/components/GPSFinanceiro';
 
 const Dashboard = ({ user, onLogout }) => {
   const [showCompanyModal, setShowCompanyModal] = useState(false);
