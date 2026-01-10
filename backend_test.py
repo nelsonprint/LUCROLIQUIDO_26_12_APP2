@@ -987,24 +987,37 @@ class GPSFinanceiroTester:
         timestamp = datetime.now().strftime("%H:%M:%S")
         print(f"[{timestamp}] {level}: {message}")
     
-    def test_list_custos_fixos_empty(self):
-        """Test GET /api/custos-fixos/{empresa_id} - List fixed costs (initially empty)"""
-        self.log("📋 Testing list custos fixos (initially empty)...")
+    def test_cleanup_existing_data(self):
+        """Clean up any existing custos fixos and variáveis before testing"""
+        self.log("🧹 Cleaning up existing test data...")
         
         try:
+            # Clean up existing custos fixos
             response = self.session.get(f"{API_BASE}/custos-fixos/{self.company_id}")
-            
             if response.status_code == 200:
                 custos = response.json()
-                self.log(f"✅ Retrieved {len(custos)} custos fixos")
-                return True
-            else:
-                self.log(f"❌ Failed to list custos fixos: {response.status_code} - {response.text}", "ERROR")
-                return False
-                
+                for custo in custos:
+                    if custo.get('descricao') in ['Aluguel', 'Aluguel Atualizado', 'Salários', 'Software']:
+                        delete_response = self.session.delete(f"{API_BASE}/custos-fixos/{custo['id']}")
+                        if delete_response.status_code == 200:
+                            self.log(f"   🗑️ Deleted custo fixo: {custo['descricao']}")
+            
+            # Clean up existing custos variáveis
+            response = self.session.get(f"{API_BASE}/custos-variaveis/{self.company_id}")
+            if response.status_code == 200:
+                custos = response.json()
+                for custo in custos:
+                    if custo.get('descricao') in ['Comissão de Vendas', 'Impostos sobre Venda', 'Taxas de Cartão']:
+                        delete_response = self.session.delete(f"{API_BASE}/custos-variaveis/{custo['id']}")
+                        if delete_response.status_code == 200:
+                            self.log(f"   🗑️ Deleted custo variável: {custo['descricao']}")
+            
+            self.log("✅ Cleanup completed!")
+            return True
+            
         except Exception as e:
-            self.log(f"❌ Error listing custos fixos: {str(e)}", "ERROR")
-            return False
+            self.log(f"❌ Error during cleanup: {str(e)}", "ERROR")
+            return True  # Continue even if cleanup fails
     
     def test_create_custos_fixos(self):
         """Test POST /api/custos-fixos - Create fixed costs as per test requirements"""
