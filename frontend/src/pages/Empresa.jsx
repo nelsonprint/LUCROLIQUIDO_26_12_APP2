@@ -90,6 +90,7 @@ const Empresa = ({ user, onLogout }) => {
         setFormData({
           name: response.data.name || '',
           segment: response.data.segment || '',
+          slug: response.data.slug || '',
           razao_social: response.data.razao_social || '',
           nome_fantasia: response.data.nome_fantasia || '',
           cnpj: response.data.cnpj || '',
