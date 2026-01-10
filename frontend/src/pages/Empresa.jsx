@@ -16,6 +16,7 @@ const Empresa = ({ user, onLogout }) => {
   const [formData, setFormData] = useState({
     name: '',
     segment: '',
+    slug: '',
     razao_social: '',
     nome_fantasia: '',
     cnpj: '',
@@ -58,6 +59,7 @@ const Empresa = ({ user, onLogout }) => {
           setFormData({
             name: companyData.name || '',
             segment: companyData.segment || '',
+            slug: companyData.slug || '',
             razao_social: companyData.razao_social || '',
             nome_fantasia: companyData.nome_fantasia || '',
             cnpj: companyData.cnpj || '',
