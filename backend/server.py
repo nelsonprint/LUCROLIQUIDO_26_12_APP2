@@ -6,6 +6,8 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import re
+import unicodedata
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
@@ -26,6 +28,45 @@ from urllib.parse import quote
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+
+# ========== FUNÇÃO PARA GERAR SLUG ==========
+def generate_slug(text: str) -> str:
+    """
+    Gera um slug URL-friendly a partir de um texto.
+    Exemplo: "Construtora ABC Ltda" -> "construtora-abc-ltda"
+    """
+    # Normalizar unicode (remover acentos)
+    text = unicodedata.normalize('NFKD', text)
+    text = text.encode('ascii', 'ignore').decode('ascii')
+    # Converter para minúsculas
+    text = text.lower()
+    # Remover caracteres especiais, manter apenas letras, números e espaços
+    text = re.sub(r'[^a-z0-9\s-]', '', text)
+    # Substituir espaços por hífens
+    text = re.sub(r'[\s_]+', '-', text)
+    # Remover hífens duplicados
+    text = re.sub(r'-+', '-', text)
+    # Remover hífens no início e fim
+    text = text.strip('-')
+    return text
+
+
+async def generate_unique_slug(base_name: str, db) -> str:
+    """
+    Gera um slug único, adicionando número se necessário.
+    """
+    base_slug = generate_slug(base_name)
+    slug = base_slug
+    counter = 1
+    
+    while True:
+        existing = await db.companies.find_one({"slug": slug})
+        if not existing:
+            return slug
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
